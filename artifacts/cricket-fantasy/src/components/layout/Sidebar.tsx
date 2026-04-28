@@ -5,13 +5,16 @@ import {
   Swords,
   Users,
   UsersRound,
-  BarChart3,
+  Gavel,
   BookOpen,
   LogOut,
   Settings,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useSidebar } from "@/context/SidebarContext";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -19,52 +22,97 @@ const NAV_ITEMS = [
   { href: "/matches", label: "Matches", icon: Swords },
   { href: "/players", label: "Players", icon: Users },
   { href: "/my-teams", label: "My Teams", icon: UsersRound },
-  { href: "/auction", label: "Auction", icon: BarChart3 },
+  { href: "/auction", label: "Auction", icon: Gavel },
   { href: "/guide", label: "Guide", icon: BookOpen },
 ];
 
 export function Sidebar() {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const { collapsed, toggle } = useSidebar();
 
   return (
     <aside
-      className="w-20 lg:w-64 h-screen fixed left-0 top-0 flex flex-col transition-all duration-300 z-50"
       style={{
+        width: collapsed ? 64 : 256,
+        minWidth: collapsed ? 64 : 256,
+        height: "100vh",
+        position: "fixed",
+        left: 0,
+        top: 0,
+        display: "flex",
+        flexDirection: "column",
+        transition: "width 0.22s ease, min-width 0.22s ease",
+        zIndex: 50,
         background: "rgba(6,7,14,0.55)",
         borderRight: "1px solid rgba(255,255,255,0.07)",
         backdropFilter: "blur(20px) saturate(140%)",
         WebkitBackdropFilter: "blur(20px) saturate(140%)",
+        overflow: "hidden",
       }}
     >
-      {/* Logo */}
+      {/* Logo + collapse toggle */}
       <div
-        className="h-20 flex items-center justify-center lg:justify-start lg:px-6"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+        style={{
+          height: 64,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "space-between",
+          padding: collapsed ? "0" : "0 12px 0 20px",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          flexShrink: 0,
+        }}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg, rgba(99,102,241,0.3), rgba(99,102,241,0.1))",
-              border: "1px solid rgba(99,102,241,0.3)",
-            }}
-          >
-            <Trophy className="w-4 h-4" style={{ color: "#818cf8" }} />
+        {!collapsed && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                width: 32, height: 32, borderRadius: 10,
+                background: "linear-gradient(135deg, rgba(99,102,241,0.3), rgba(99,102,241,0.1))",
+                border: "1px solid rgba(99,102,241,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Trophy style={{ width: 15, height: 15, color: "#818cf8" }} />
+            </div>
+            <span style={{ fontWeight: 700, fontSize: "1rem", color: "#f1f5f9", letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>
+              Colosseum
+            </span>
           </div>
-          <span
-            className="font-bold text-lg hidden lg:block"
-            style={{ color: "#f1f5f9", letterSpacing: "-0.02em" }}
-          >
-            Colosseum
-          </span>
-        </div>
+        )}
+
+        {/* Toggle button */}
+        <button
+          onClick={toggle}
+          style={{
+            width: 28, height: 28, borderRadius: "50%",
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", flexShrink: 0,
+            transition: "background 0.2s",
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+        >
+          {collapsed
+            ? <ChevronRight style={{ width: 13, height: 13, color: "rgba(255,255,255,0.5)" }} />
+            : <ChevronLeft style={{ width: 13, height: 13, color: "rgba(255,255,255,0.5)" }} />
+          }
+        </button>
       </div>
 
       {/* Nav items */}
       <div
-        className="flex-1 py-5 px-3 flex flex-col gap-1 overflow-y-auto"
         style={{
+          flex: 1,
+          padding: "20px 10px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          overflowY: "auto",
+          overflowX: "hidden",
           background: "linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 100%)",
         }}
       >
@@ -73,43 +121,37 @@ export function Sidebar() {
           return (
             <Link key={item.href} href={item.href}>
               <div
-                className="flex items-center gap-3.5 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer group"
+                title={collapsed ? item.label : undefined}
                 style={{
-                  background: isActive
-                    ? "rgba(99,102,241,0.12)"
-                    : "transparent",
-                  border: isActive
-                    ? "1px solid rgba(99,102,241,0.2)"
-                    : "1px solid transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: collapsed ? "10px 0" : "10px 12px",
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  borderRadius: 12,
+                  cursor: "pointer",
+                  transition: "background 0.2s, border-color 0.2s",
+                  background: isActive ? "rgba(99,102,241,0.12)" : "transparent",
+                  border: isActive ? "1px solid rgba(99,102,241,0.2)" : "1px solid transparent",
                 }}
               >
-                {/* Icon circle */}
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200"
                   style={{
-                    background: isActive
-                      ? "rgba(99,102,241,0.2)"
-                      : "rgba(255,255,255,0.05)",
-                    border: isActive
-                      ? "1px solid rgba(99,102,241,0.35)"
-                      : "1px solid rgba(255,255,255,0.08)",
+                    width: 32, height: 32, borderRadius: "50%",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                    background: isActive ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.05)",
+                    border: isActive ? "1px solid rgba(99,102,241,0.35)" : "1px solid rgba(255,255,255,0.08)",
+                    transition: "background 0.2s, border-color 0.2s",
                   }}
                 >
-                  <item.icon
-                    className="w-3.5 h-3.5 transition-colors"
-                    style={{
-                      color: isActive ? "#818cf8" : "rgba(255,255,255,0.45)",
-                    }}
-                  />
+                  <item.icon style={{ width: 14, height: 14, color: isActive ? "#818cf8" : "rgba(255,255,255,0.45)" }} />
                 </div>
-                <span
-                  className="hidden lg:block text-sm font-medium transition-colors"
-                  style={{
-                    color: isActive ? "#e2e8f0" : "rgba(255,255,255,0.4)",
-                  }}
-                >
-                  {item.label}
-                </span>
+                {!collapsed && (
+                  <span style={{ fontSize: "0.875rem", fontWeight: 500, color: isActive ? "#e2e8f0" : "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>
+                    {item.label}
+                  </span>
+                )}
               </div>
             </Link>
           );
@@ -117,14 +159,17 @@ export function Sidebar() {
       </div>
 
       {/* Bottom actions */}
-      <div
-        className="p-3 flex flex-col gap-1"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-      >
+      <div style={{ padding: "10px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", flexDirection: "column", gap: 4 }}>
         {/* Settings */}
         <div
-          className="flex items-center gap-3.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 group"
-          style={{ border: "1px solid transparent" }}
+          title={collapsed ? "Settings" : undefined}
+          style={{
+            display: "flex", alignItems: "center", gap: 12,
+            padding: collapsed ? "10px 0" : "10px 12px",
+            justifyContent: collapsed ? "center" : "flex-start",
+            borderRadius: 12, cursor: "pointer",
+            border: "1px solid transparent", transition: "background 0.2s, border-color 0.2s",
+          }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)";
             (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)";
@@ -134,25 +179,24 @@ export function Sidebar() {
             (e.currentTarget as HTMLDivElement).style.borderColor = "transparent";
           }}
         >
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.09)",
-            }}
-          >
-            <Settings className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.45)" }} />
+          <div style={{ width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
+            <Settings style={{ width: 14, height: 14, color: "rgba(255,255,255,0.45)" }} />
           </div>
-          <span className="hidden lg:block text-sm font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Settings
-          </span>
+          {!collapsed && <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>Settings</span>}
         </div>
 
         {/* Log out */}
         <button
           onClick={logout}
-          className="flex items-center gap-3.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 group w-full text-left"
-          style={{ background: "transparent", border: "1px solid transparent" }}
+          title={collapsed ? "Log out" : undefined}
+          style={{
+            display: "flex", alignItems: "center", gap: 12,
+            padding: collapsed ? "10px 0" : "10px 12px",
+            justifyContent: collapsed ? "center" : "flex-start",
+            borderRadius: 12, cursor: "pointer", width: "100%",
+            background: "transparent", border: "1px solid transparent",
+            transition: "background 0.2s, border-color 0.2s",
+          }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLButtonElement).style.background = "rgba(220,38,38,0.07)";
             (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(220,38,38,0.15)";
@@ -162,18 +206,10 @@ export function Sidebar() {
             (e.currentTarget as HTMLButtonElement).style.borderColor = "transparent";
           }}
         >
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.09)",
-            }}
-          >
-            <LogOut className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.45)" }} />
+          <div style={{ width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
+            <LogOut style={{ width: 14, height: 14, color: "rgba(255,255,255,0.45)" }} />
           </div>
-          <span className="hidden lg:block text-sm font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Log out
-          </span>
+          {!collapsed && <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>Log out</span>}
         </button>
       </div>
     </aside>

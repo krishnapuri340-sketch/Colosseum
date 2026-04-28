@@ -12,6 +12,7 @@ import Auction from "@/pages/Auction";
 import Guide from "@/pages/Guide";
 import AuthPages from "@/pages/Auth";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { SidebarProvider } from "@/context/SidebarContext";
 
 const queryClient = new QueryClient();
 
@@ -80,7 +81,9 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
-            <AppRoutes />
+            <SidebarProvider>
+              <AppRoutes />
+            </SidebarProvider>
           </AuthProvider>
         </WouterRouter>
         <Toaster />

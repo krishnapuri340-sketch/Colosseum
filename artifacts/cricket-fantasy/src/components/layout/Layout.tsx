@@ -2,6 +2,7 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { RightPanel } from "./RightPanel";
 import { useLocation } from "wouter";
+import { useSidebar } from "@/context/SidebarContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const showRightPanel = location === "/";
+  const { collapsed } = useSidebar();
 
   return (
     <div
@@ -20,7 +22,7 @@ export function Layout({ children }: LayoutProps) {
     >
       <Sidebar />
       
-      <div className={`flex-1 flex flex-col transition-all duration-300 ml-20 lg:ml-64 ${showRightPanel ? 'xl:mr-80' : ''}`}>
+      <div className={`flex-1 flex flex-col ${showRightPanel ? 'xl:mr-80' : ''}`} style={{ marginLeft: collapsed ? 64 : 256, transition: "margin-left 0.22s ease" }}>
         <Header />
         
         <main
