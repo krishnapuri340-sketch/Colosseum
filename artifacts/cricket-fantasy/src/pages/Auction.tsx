@@ -49,7 +49,7 @@ function HostCard() {
         </span>
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: "1rem" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "1rem", paddingTop: "1.5rem" }}>
         <h2 style={{ margin: 0, fontSize: "2.2rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
           Host a new auction
         </h2>
@@ -141,7 +141,7 @@ function JoinCard() {
         </span>
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: "1rem" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "1rem", paddingTop: "1.5rem" }}>
         <h2 style={{ margin: 0, fontSize: "2.2rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
           Join with a code
         </h2>
