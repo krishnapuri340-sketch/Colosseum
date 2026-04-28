@@ -121,30 +121,6 @@ export function Sidebar() {
         className="p-3 flex flex-col gap-1"
         style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
       >
-        {/* User chip */}
-        {user && (
-          <div className="hidden lg:flex items-center gap-3 px-3 py-2 mb-2">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-              style={{
-                background: "rgba(99,102,241,0.15)",
-                border: "1px solid rgba(99,102,241,0.3)",
-                color: "#818cf8",
-              }}
-            >
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-            <div style={{ overflow: "hidden" }}>
-              <div className="text-xs font-semibold truncate" style={{ color: "#e2e8f0" }}>
-                {user.name}
-              </div>
-              <div className="text-xs truncate" style={{ color: "rgba(255,255,255,0.35)" }}>
-                {user.email}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Settings */}
         <div
           className="flex items-center gap-3.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 group"
