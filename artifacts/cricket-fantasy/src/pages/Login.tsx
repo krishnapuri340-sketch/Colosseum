@@ -188,84 +188,84 @@ export default function LoginPage() {
         </form>
       </div>
 
-      {/* Right panel — cricket visual */}
+      {/* Right panel — photo art */}
       <div style={{
         flex: "0 0 45%",
         position: "relative",
         overflow: "hidden",
-        background: "linear-gradient(160deg, #1e4d24 0%, #2d6b35 50%, #1a3a1e 100%)",
       }}>
-        {/* Geometric polygon shapes */}
-        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 500 700" preserveAspectRatio="xMidYMid slice">
-          <polygon points="500,0 500,350 250,200" fill="rgba(255,255,255,0.04)" />
-          <polygon points="0,700 300,700 150,400" fill="rgba(255,255,255,0.04)" />
-          <polygon points="100,0 400,150 200,300" fill="rgba(255,255,255,0.03)" />
-          <polygon points="500,400 350,700 500,700" fill="rgba(255,255,255,0.05)" />
-          <polygon points="0,200 200,100 150,350" fill="rgba(255,255,255,0.03)" />
-          <circle cx="400" cy="120" r="180" fill="rgba(255,255,255,0.03)" />
-          <circle cx="100" cy="600" r="140" fill="rgba(255,255,255,0.03)" />
-        </svg>
+        {/* Photo background */}
+        <img
+          src="/login-bg.jpeg"
+          alt=""
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center",
+          }}
+        />
+        {/* Dark overlay so text reads well */}
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.15) 100%)",
+        }} />
 
-        {/* Large cricket player silhouette */}
+        {/* Content on top of photo */}
         <div style={{
           position: "absolute",
           inset: 0,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "flex-end",
+          padding: "2.5rem",
+          textAlign: "center",
         }}>
-          {/* Big cricket emoji / art */}
-          <div style={{
-            fontSize: "clamp(8rem, 18vw, 14rem)",
-            lineHeight: 1,
-            filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.5))",
-            marginBottom: "1rem",
-            userSelect: "none",
-          }}>
-            🏏
-          </div>
-
           {/* Tagline */}
-          <div style={{ textAlign: "center", padding: "0 2rem" }}>
+          <div style={{ marginBottom: "1.5rem" }}>
             <div style={{
-              fontSize: "clamp(1.2rem, 2.5vw, 1.8rem)",
+              fontSize: "clamp(1.3rem, 2.5vw, 2rem)",
               fontWeight: 900,
               color: "#fff",
               letterSpacing: "-0.02em",
               textTransform: "uppercase",
               lineHeight: 1.1,
-              textShadow: "0 2px 20px rgba(0,0,0,0.4)",
+              textShadow: "0 2px 30px rgba(0,0,0,0.8)",
             }}>
               Pick Your<br />Dream XI
             </div>
             <div style={{
-              marginTop: "0.75rem",
+              marginTop: "0.6rem",
               fontSize: "0.85rem",
-              color: "rgba(255,255,255,0.55)",
-              letterSpacing: "0.06em",
+              color: "rgba(255,255,255,0.6)",
+              letterSpacing: "0.05em",
+              textShadow: "0 1px 10px rgba(0,0,0,0.9)",
             }}>
               Compete with cricket fans across India
             </div>
           </div>
 
           {/* Stats badges */}
-          <div style={{ display: "flex", gap: "1rem", marginTop: "2.5rem", flexWrap: "wrap", justifyContent: "center", padding: "0 1.5rem" }}>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
             {[
               { val: "70+", label: "IPL Matches" },
               { val: "200+", label: "Players" },
               { val: "10", label: "Teams" },
             ].map(({ val, label }) => (
               <div key={label} style={{
-                background: "rgba(255,255,255,0.1)",
+                background: "rgba(0,0,0,0.45)",
                 border: "1px solid rgba(255,255,255,0.15)",
                 borderRadius: 12,
-                padding: "0.75rem 1.25rem",
+                padding: "0.65rem 1.1rem",
                 textAlign: "center",
-                backdropFilter: "blur(10px)",
+                backdropFilter: "blur(12px)",
               }}>
-                <div style={{ fontWeight: 900, fontSize: "1.3rem", color: "#f97316" }}>{val}</div>
-                <div style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.5)", letterSpacing: "0.06em", textTransform: "uppercase", marginTop: 2 }}>{label}</div>
+                <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#f97316" }}>{val}</div>
+                <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", letterSpacing: "0.06em", textTransform: "uppercase", marginTop: 2 }}>{label}</div>
               </div>
             ))}
           </div>
