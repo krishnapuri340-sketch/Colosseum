@@ -38,7 +38,7 @@ export default function LoginPage() {
     }}>
       {/* Full-screen background photo */}
       <img
-        src="/login-bg.jpeg"
+        src="/register-bg.jpeg"
         alt=""
         style={{
           position: "absolute",
