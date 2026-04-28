@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { Gavel, Plus, ArrowRight, Hash, Users, Lock } from "lucide-react";
+import { Gavel, Plus, ArrowRight, Hash } from "lucide-react";
 
 const ACCENT = "#c0192c";
 const INDIGO = "#818cf8";
@@ -67,12 +67,12 @@ function HostCard() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
         {[
-          { icon: <Users style={{ width: 13, height: 13 }} />, text: "Up to 12 managers" },
-          { icon: <Lock style={{ width: 13, height: 13 }} />, text: "Private room with invite code" },
-          { icon: <Gavel style={{ width: 13, height: 13 }} />, text: "Real-time bidding" },
-        ].map(({ icon, text }) => (
-          <div key={text} style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "rgba(255,255,255,0.38)", fontSize: "0.78rem" }}>
-            <span style={{ color: "rgba(255,255,255,0.25)" }}>{icon}</span>
+          "Up to 12 managers",
+          "Private room with invite code",
+          "Real-time bidding",
+        ].map(text => (
+          <div key={text} style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "rgba(255,255,255,0.38)", fontSize: "0.78rem" }}>
+            <div style={{ width: 4, height: 4, borderRadius: "50%", background: `${ACCENT}80`, flexShrink: 0 }} />
             {text}
           </div>
         ))}
