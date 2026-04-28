@@ -19,7 +19,7 @@ const NAV_ITEMS = [
   { href: "/matches", label: "Matches", icon: Swords },
   { href: "/players", label: "Players", icon: Users },
   { href: "/my-teams", label: "My Teams", icon: UsersRound },
-  { href: "/leaderboard", label: "Leaderboard", icon: BarChart3 },
+  { href: "/auction", label: "Auction", icon: BarChart3 },
   { href: "/guide", label: "Guide", icon: BookOpen },
 ];
 
