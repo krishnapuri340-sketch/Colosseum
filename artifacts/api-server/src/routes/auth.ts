@@ -12,11 +12,11 @@ const COOKIE_OPTS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 };
 
 function signToken(userId: number) {
-  return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: "30d" });
 }
 
 export function getUserFromRequest(req: any): number | null {
