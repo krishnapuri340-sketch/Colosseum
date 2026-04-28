@@ -35,11 +35,11 @@ function ScoringCard({
       ...style,
     }}>
       <div style={{
-        padding: "0.8rem 1.1rem",
+        padding: "0.5rem 0.85rem",
         background: `${color}14`,
         borderBottom: `1px solid ${color}28`,
       }}>
-        <span style={{ color, fontWeight: 800, fontSize: "0.82rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        <span style={{ color, fontWeight: 800, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.09em" }}>
           {title}
         </span>
       </div>
@@ -48,12 +48,12 @@ function ScoringCard({
           <div key={gi}>
             {group.label && (
               <div style={{
-                padding: "0.45rem 1.1rem",
+                padding: "0.3rem 0.85rem",
                 background: `${group.color ?? color}0a`,
                 borderTop: gi > 0 ? `1px solid rgba(255,255,255,0.05)` : undefined,
                 borderBottom: "1px solid rgba(255,255,255,0.04)",
               }}>
-                <span style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: group.color ?? color, opacity: 0.75 }}>
+                <span style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: group.color ?? color, opacity: 0.7 }}>
                   {group.label}
                 </span>
               </div>
@@ -63,17 +63,17 @@ function ScoringCard({
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "0.48rem 1.1rem",
+                padding: "0.32rem 0.85rem",
                 borderBottom: (i < group.rules.length - 1 || gi < groups.length - 1)
                   ? "1px solid rgba(255,255,255,0.04)" : undefined,
               }}>
-                <span style={{ color: "rgba(255,255,255,0.68)", fontSize: "0.8rem" }}>{rule.event}</span>
+                <span style={{ color: "rgba(255,255,255,0.62)", fontSize: "0.72rem" }}>{rule.event}</span>
                 <span style={{
-                  fontWeight: 700, fontSize: "0.85rem",
+                  fontWeight: 700, fontSize: "0.75rem",
                   color: typeof rule.points === "number" && rule.points < 0 ? COLORS.penalty
                     : typeof rule.points === "string" ? COLORS.multi
                     : (group.color ?? color),
-                  minWidth: 36, textAlign: "right",
+                  minWidth: 28, textAlign: "right",
                 }}>
                   {typeof rule.points === "number"
                     ? (rule.points > 0 ? `+${rule.points}` : rule.points)
@@ -109,8 +109,8 @@ export default function GuidePage() {
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr 1.5fr",
-          gridTemplateAreas: '"base batting" "bowling fielding"',
-          gap: "1rem",
+          gridTemplateAreas: '"base batting" "bowling batting" "fielding fielding"',
+          gap: "0.75rem",
           marginBottom: "2rem",
         }}>
           <ScoringCard
