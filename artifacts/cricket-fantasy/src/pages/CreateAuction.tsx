@@ -12,8 +12,8 @@ const focusBorder = "rgba(192,25,44,0.55)";
 function WidgetLabel({ children }: { children: React.ReactNode }) {
   return (
     <span style={{
-      fontSize: "0.64rem", fontWeight: 700, letterSpacing: "0.12em",
-      textTransform: "uppercase", color: LABEL, display: "block", marginBottom: "0.6rem",
+      fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.13em",
+      textTransform: "uppercase", color: LABEL, display: "block", marginBottom: "1rem",
     }}>
       {children}
     </span>
@@ -26,39 +26,39 @@ function NumberStepper({
   value: number; onChange: (v: number) => void; min?: number; max?: number; suffix?: string;
 }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginTop: "0.25rem" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1 }}>
       <button
         type="button"
         onClick={() => onChange(Math.max(min, value - 1))}
         style={{
-          width: 36, height: 36, borderRadius: 10,
+          width: 52, height: 52, borderRadius: 14,
           background: "rgba(255,255,255,0.07)", border: `1px solid ${BORDER}`,
-          color: "rgba(255,255,255,0.6)", fontSize: "1.1rem", cursor: "pointer",
+          color: "rgba(255,255,255,0.65)", fontSize: "1.4rem", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontWeight: 700, flexShrink: 0, transition: "background 0.15s",
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
+        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.13)")}
         onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}
       >−</button>
       <div style={{ flex: 1, textAlign: "center" }}>
-        <span style={{ fontSize: "2rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>
+        <div style={{ fontSize: "3.5rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>
           {value}
-        </span>
+        </div>
         {suffix && (
-          <span style={{ fontSize: "0.75rem", color: LABEL, marginLeft: "0.3rem" }}>{suffix}</span>
+          <div style={{ fontSize: "0.78rem", color: LABEL, marginTop: "0.25rem" }}>{suffix}</div>
         )}
       </div>
       <button
         type="button"
         onClick={() => onChange(Math.min(max, value + 1))}
         style={{
-          width: 36, height: 36, borderRadius: 10,
+          width: 52, height: 52, borderRadius: 14,
           background: "rgba(255,255,255,0.07)", border: `1px solid ${BORDER}`,
-          color: "rgba(255,255,255,0.6)", fontSize: "1.1rem", cursor: "pointer",
+          color: "rgba(255,255,255,0.65)", fontSize: "1.4rem", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontWeight: 700, flexShrink: 0, transition: "background 0.15s",
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
+        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.13)")}
         onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}
       >+</button>
     </div>
@@ -70,16 +70,16 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     <div
       onClick={onToggle}
       style={{
-        width: 52, height: 28, borderRadius: 14, flexShrink: 0,
+        width: 64, height: 34, borderRadius: 17, flexShrink: 0,
         background: on ? ACCENT : "rgba(255,255,255,0.1)",
         border: `1.5px solid ${on ? ACCENT : "rgba(255,255,255,0.12)"}`,
         cursor: "pointer", position: "relative", transition: "all 0.22s",
       }}
     >
       <div style={{
-        position: "absolute", top: 3,
-        left: on ? 26 : 3,
-        width: 18, height: 18, borderRadius: "50%",
+        position: "absolute", top: 4,
+        left: on ? 32 : 4,
+        width: 22, height: 22, borderRadius: "50%",
         background: "#fff", transition: "left 0.22s",
         boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
       }} />
@@ -108,21 +108,31 @@ export default function CreateAuction() {
     navigate("/auction");
   };
 
+  const card = (extra?: React.CSSProperties): React.CSSProperties => ({
+    background: CARD,
+    border: `1px solid ${BORDER}`,
+    borderRadius: 20,
+    padding: "2rem 2.25rem",
+    display: "flex",
+    flexDirection: "column",
+    ...extra,
+  });
+
   return (
     <Layout>
-      <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: "1.5rem", maxWidth: 780 }}>
+      <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", height: "100%" }}>
 
-        {/* Page header */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <button
             type="button"
             onClick={() => navigate("/auction")}
             style={{
               background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}`,
-              borderRadius: 9, padding: "0.45rem 0.7rem",
+              borderRadius: 10, padding: "0.5rem 0.8rem",
               color: "rgba(255,255,255,0.45)", cursor: "pointer",
-              display: "flex", alignItems: "center", gap: "0.3rem",
-              fontSize: "0.78rem", fontWeight: 600, transition: "all 0.15s",
+              display: "flex", alignItems: "center", gap: "0.35rem",
+              fontSize: "0.8rem", fontWeight: 600, transition: "all 0.15s",
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLButtonElement).style.color = "#fff";
@@ -133,57 +143,65 @@ export default function CreateAuction() {
               (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)";
             }}
           >
-            <ArrowLeft style={{ width: 13, height: 13 }} /> Back
+            <ArrowLeft style={{ width: 14, height: 14 }} /> Back
           </button>
           <div>
             <p style={{ margin: 0, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: ACCENT }}>
               Auction
             </p>
-            <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.025em", lineHeight: 1 }}>
+            <h1 style={{ margin: 0, fontSize: "1.8rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
               Create New Auction
             </h1>
           </div>
         </div>
 
-        {/* Bento grid */}
+        {/* Bento grid — fills remaining vertical space */}
         <div style={{
+          flex: 1,
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gridTemplateRows: "auto auto auto",
-          gap: "0.85rem",
+          gridTemplateColumns: "1.6fr 1fr 1fr",
+          gridTemplateRows: "1fr 1fr",
+          gap: "1rem",
+          minHeight: 0,
         }}>
 
-          {/* 1. Auction Name — wide, spans 2 cols */}
+          {/* 1. Auction Name — large top-left */}
           <div style={{
-            gridColumn: "1 / 3", gridRow: "1",
-            background: CARD, border: `1px solid ${BORDER}`,
-            borderRadius: 16, padding: "1.4rem 1.5rem",
+            ...card(),
+            gridColumn: "1", gridRow: "1",
+            justifyContent: "space-between",
           }}>
             <WidgetLabel>Auction Name</WidgetLabel>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onFocus={() => setNameFocused(true)}
-              onBlur={() => setNameFocused(false)}
-              placeholder="e.g. Friday Night Draft"
-              style={{
-                width: "100%", boxSizing: "border-box",
-                padding: "0.8rem 1rem",
-                background: nameFocused ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)",
-                border: `1.5px solid ${nameFocused ? focusBorder : "rgba(255,255,255,0.1)"}`,
-                borderRadius: 10, color: "#fff", fontSize: "1rem",
-                outline: "none", transition: "all 0.18s",
-              }}
-            />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onFocus={() => setNameFocused(true)}
+                onBlur={() => setNameFocused(false)}
+                placeholder="e.g. Friday Night Draft"
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  padding: "1rem 1.25rem",
+                  background: nameFocused ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)",
+                  border: `1.5px solid ${nameFocused ? focusBorder : "rgba(255,255,255,0.1)"}`,
+                  borderRadius: 12, color: "#fff", fontSize: "1.15rem",
+                  outline: "none", transition: "all 0.18s",
+                }}
+              />
+              {name && (
+                <p style={{ margin: "0.75rem 0 0", fontSize: "0.8rem", color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>
+                  "{name}"
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* 2. Auction Format — tall, spans 2 rows */}
+          {/* 2. Auction Format — tall, spans 2 rows right side */}
           <div style={{
-            gridColumn: "3", gridRow: "1 / 3",
-            background: CARD, border: `1px solid ${BORDER}`,
-            borderRadius: 16, padding: "1.4rem 1.25rem",
-            display: "flex", flexDirection: "column", gap: "0.75rem",
+            ...card({ flexDirection: "column" }),
+            gridColumn: "2 / 4", gridRow: "1 / 3",
+            gap: "1.25rem",
           }}>
             <WidgetLabel>Auction Format</WidgetLabel>
             {(["classic", "tier"] as const).map(f => (
@@ -191,80 +209,91 @@ export default function CreateAuction() {
                 key={f}
                 onClick={() => setFormat(f)}
                 style={{
-                  flex: 1, borderRadius: 12, cursor: "pointer",
-                  padding: "1rem",
+                  flex: 1, borderRadius: 14, cursor: "pointer",
+                  padding: "1.5rem 1.6rem",
                   background: format === f ? `${ACCENT}14` : "rgba(255,255,255,0.025)",
                   border: `1.5px solid ${format === f ? `${ACCENT}55` : "rgba(255,255,255,0.07)"}`,
                   transition: "all 0.18s",
                   display: "flex", flexDirection: "column", justifyContent: "space-between",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                  <span style={{ fontWeight: 800, fontSize: "0.92rem", color: format === f ? "#fff" : "rgba(255,255,255,0.45)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                  <span style={{ fontWeight: 900, fontSize: "1.15rem", color: format === f ? "#fff" : "rgba(255,255,255,0.4)", letterSpacing: "-0.01em" }}>
                     {f === "classic" ? "Classic" : "Tier Based"}
                   </span>
                   <div style={{
-                    width: 12, height: 12, borderRadius: "50%",
+                    width: 18, height: 18, borderRadius: "50%",
                     background: format === f ? ACCENT : "transparent",
-                    border: `1.5px solid ${format === f ? ACCENT : "rgba(255,255,255,0.2)"}`,
-                    flexShrink: 0,
-                  }} />
+                    border: `2px solid ${format === f ? ACCENT : "rgba(255,255,255,0.2)"}`,
+                    flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    {format === f && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff" }} />}
+                  </div>
                 </div>
-                <p style={{ margin: 0, fontSize: "0.7rem", color: "rgba(255,255,255,0.28)", lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.32)", lineHeight: 1.6 }}>
                   {f === "classic"
-                    ? "All players enter one open pool. Highest bid wins."
-                    : "Players grouped by skill tier — Elite, Premium, Standard."}
+                    ? "All players enter one open pool. Highest bidder wins each player."
+                    : "Players are grouped into Elite, Premium, and Standard tiers for structured bidding."}
                 </p>
               </div>
             ))}
           </div>
 
-          {/* 3. Max Players — small */}
+          {/* 3. Max Players */}
           <div style={{
+            ...card({ justifyContent: "space-between" }),
             gridColumn: "1", gridRow: "2",
-            background: CARD, border: `1px solid ${BORDER}`,
-            borderRadius: 16, padding: "1.2rem 1.25rem",
           }}>
             <WidgetLabel>Max Players / Team</WidgetLabel>
-            <NumberStepper value={maxPlayers} onChange={setMaxPlayers} min={5} max={25} suffix="players" />
+            <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
+              <NumberStepper value={maxPlayers} onChange={setMaxPlayers} min={5} max={25} suffix="players" />
+            </div>
           </div>
 
-          {/* 4. Budget — small */}
-          <div style={{
-            gridColumn: "2", gridRow: "2",
-            background: CARD, border: `1px solid ${BORDER}`,
-            borderRadius: 16, padding: "1.2rem 1.25rem",
-          }}>
+        </div>
+
+        {/* Second row of smaller widgets */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1.6fr",
+          gap: "1rem",
+        }}>
+
+          {/* 4. Budget */}
+          <div style={card({ justifyContent: "space-between" })}>
             <WidgetLabel>Budget / Team</WidgetLabel>
-            <NumberStepper value={budget} onChange={setBudget} min={50} max={500} suffix="cr" />
+            <div style={{ display: "flex", alignItems: "center", flex: 1 }}>
+              <NumberStepper value={budget} onChange={setBudget} min={50} max={500} suffix="crores" />
+            </div>
           </div>
 
-          {/* 5. Points count — medium */}
-          <div style={{
-            gridColumn: "1", gridRow: "3",
-            background: CARD, border: `1px solid ${BORDER}`,
-            borderRadius: 16, padding: "1.2rem 1.25rem",
-          }}>
+          {/* 5. Points Count */}
+          <div style={card({ justifyContent: "space-between" })}>
             <WidgetLabel>Players Whose Points Count</WidgetLabel>
-            <NumberStepper value={countPlayers} onChange={setCountPlayers} min={1} max={maxPlayers} suffix="players" />
+            <div style={{ display: "flex", alignItems: "center", flex: 1 }}>
+              <NumberStepper value={countPlayers} onChange={setCountPlayers} min={1} max={maxPlayers} suffix="players" />
+            </div>
           </div>
 
-          {/* 6. Captain / Vice-Captain — wide */}
+          {/* 6. Captain / Vice-Captain */}
           <div style={{
-            gridColumn: "2 / 4", gridRow: "3",
-            background: captainVC ? `${ACCENT}0a` : CARD,
-            border: `1px solid ${captainVC ? `${ACCENT}30` : BORDER}`,
-            borderRadius: 16, padding: "1.2rem 1.5rem",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            gap: "1rem", transition: "all 0.22s",
+            ...card({
+              background: captainVC ? `${ACCENT}0d` : CARD,
+              border: `1px solid ${captainVC ? `${ACCENT}35` : BORDER}`,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "2rem",
+            }),
+            transition: "all 0.22s",
           }}>
-            <div>
+            <div style={{ flex: 1 }}>
               <WidgetLabel>Captain &amp; Vice-Captain</WidgetLabel>
-              <p style={{ margin: 0, fontSize: "0.88rem", fontWeight: 700, color: captainVC ? "#fff" : "rgba(255,255,255,0.4)", transition: "color 0.2s" }}>
+              <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 900, color: captainVC ? "#fff" : "rgba(255,255,255,0.3)", letterSpacing: "-0.02em", lineHeight: 1, transition: "color 0.2s" }}>
                 Point Multipliers
               </p>
-              <p style={{ margin: "0.2rem 0 0", fontSize: "0.72rem", color: "rgba(255,255,255,0.28)" }}>
-                Captain 2× &nbsp;·&nbsp; Vice-Captain 1.5×
+              <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
+                Captain scores <span style={{ color: captainVC ? "#fff" : "inherit", fontWeight: 700 }}>2×</span> points &nbsp;·&nbsp; Vice-Captain scores <span style={{ color: captainVC ? "#fff" : "inherit", fontWeight: 700 }}>1.5×</span> points
               </p>
             </div>
             <Toggle on={captainVC} onToggle={() => setCaptainVC(v => !v)} />
@@ -272,17 +301,16 @@ export default function CreateAuction() {
 
         </div>
 
-        {/* Submit row */}
-        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+        {/* Footer */}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", paddingBottom: "0.5rem" }}>
           <button
             type="button"
             onClick={() => navigate("/auction")}
             style={{
-              padding: "0.8rem 1.4rem",
+              padding: "0.85rem 1.5rem",
               background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`,
-              borderRadius: 11, color: "rgba(255,255,255,0.4)",
-              fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
-              transition: "all 0.15s",
+              borderRadius: 12, color: "rgba(255,255,255,0.4)",
+              fontWeight: 700, fontSize: "0.88rem", cursor: "pointer", transition: "all 0.15s",
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLButtonElement).style.color = "#fff";
@@ -299,20 +327,20 @@ export default function CreateAuction() {
             type="submit"
             disabled={!name.trim() || loading}
             style={{
-              padding: "0.8rem 1.75rem",
+              padding: "0.85rem 2rem",
               background: !name.trim() ? "rgba(192,25,44,0.15)" : ACCENT,
               border: `1.5px solid ${!name.trim() ? "rgba(192,25,44,0.2)" : ACCENT}`,
-              borderRadius: 11,
+              borderRadius: 12,
               color: !name.trim() ? "rgba(255,255,255,0.22)" : "#fff",
-              fontWeight: 800, fontSize: "0.88rem",
+              fontWeight: 800, fontSize: "0.9rem",
               cursor: name.trim() && !loading ? "pointer" : "default",
               transition: "all 0.15s",
-              display: "flex", alignItems: "center", gap: "0.4rem",
+              display: "flex", alignItems: "center", gap: "0.45rem",
             }}
             onMouseEnter={e => { if (name.trim()) (e.currentTarget as HTMLButtonElement).style.background = "#a8172a"; }}
             onMouseLeave={e => { if (name.trim()) (e.currentTarget as HTMLButtonElement).style.background = ACCENT; }}
           >
-            {loading ? "Creating…" : <><span>Create Auction</span><ChevronRight style={{ width: 15, height: 15 }} /></>}
+            {loading ? "Creating…" : <><span>Create Auction</span><ChevronRight style={{ width: 16, height: 16 }} /></>}
           </button>
         </div>
 
