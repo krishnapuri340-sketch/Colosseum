@@ -58,6 +58,18 @@ function HostCard() {
         </p>
       </div>
 
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+        {[
+          "Private room with invite code",
+          "Real-time bidding",
+        ].map(text => (
+          <div key={text} style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "rgba(255,255,255,0.38)", fontSize: "0.78rem" }}>
+            <div style={{ width: 4, height: 4, borderRadius: "50%", background: `${ACCENT}80`, flexShrink: 0 }} />
+            {text}
+          </div>
+        ))}
+      </div>
+
       <button
         onClick={() => setClicked(true)}
         style={{
