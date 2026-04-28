@@ -9,6 +9,8 @@ import Players from "@/pages/Players";
 import MyTeams from "@/pages/MyTeams";
 import Auction from "@/pages/Auction";
 import CreateAuction from "@/pages/CreateAuction";
+import AuctionRoom from "@/pages/AuctionRoom";
+import Predictions from "@/pages/Predictions";
 import Guide from "@/pages/Guide";
 import AuthPages from "@/pages/Auth";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -18,23 +20,13 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, loading } = useAuth();
-
   if (loading) {
     return (
-      <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#0a0f1e",
-        color: "rgba(255,255,255,0.5)",
-        fontSize: "0.9rem",
-      }}>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0f1e", color: "rgba(255,255,255,0.5)", fontSize: "0.9rem" }}>
         Loading…
       </div>
     );
   }
-
   if (!user) return <Redirect to="/login" />;
   return <Component />;
 }
@@ -46,16 +38,10 @@ function AppRoutes() {
   if (isAuthRoute) {
     return (
       <>
-        {/* Fixed background — never remounts while on any auth route */}
         <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
-          <img
-            src="/register-bg.jpeg"
-            alt=""
-            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
-          />
+          <img src="/register-bg.jpeg" alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.55) 100%)" }} />
         </div>
-        {/* Card — rendered once, switches form internally without remounting */}
         <AuthPages mode={location === "/register" ? "register" : "login"} />
       </>
     );
@@ -63,13 +49,15 @@ function AppRoutes() {
 
   return (
     <Switch>
-      <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/matches" component={() => <ProtectedRoute component={Matches} />} />
-      <Route path="/players" component={() => <ProtectedRoute component={Players} />} />
-      <Route path="/my-teams" component={() => <ProtectedRoute component={MyTeams} />} />
-      <Route path="/auction" component={() => <ProtectedRoute component={Auction} />} />
+      <Route path="/"               component={() => <ProtectedRoute component={Dashboard} />} />
+      <Route path="/matches"        component={() => <ProtectedRoute component={Matches} />} />
+      <Route path="/players"        component={() => <ProtectedRoute component={Players} />} />
+      <Route path="/my-teams"       component={() => <ProtectedRoute component={MyTeams} />} />
+      <Route path="/auction"        component={() => <ProtectedRoute component={Auction} />} />
       <Route path="/auction/create" component={() => <ProtectedRoute component={CreateAuction} />} />
-      <Route path="/guide" component={() => <ProtectedRoute component={Guide} />} />
+      <Route path="/auction/room"   component={() => <ProtectedRoute component={AuctionRoom} />} />
+      <Route path="/predictions"    component={() => <ProtectedRoute component={Predictions} />} />
+      <Route path="/guide"          component={() => <ProtectedRoute component={Guide} />} />
       <Route component={NotFound} />
     </Switch>
   );
