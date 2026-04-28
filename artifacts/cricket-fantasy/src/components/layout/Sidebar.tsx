@@ -54,7 +54,7 @@ export function Sidebar() {
       {/* Logo */}
       <div
         style={{
-          height: 64,
+          height: 80,
           display: "flex",
           alignItems: "center",
           justifyContent: collapsed ? "center" : "flex-start",
