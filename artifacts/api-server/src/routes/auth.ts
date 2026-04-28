@@ -10,8 +10,9 @@ const JWT_SECRET = process.env.SESSION_SECRET ?? "change-me-in-production";
 const COOKIE_NAME = "cricstrat_token";
 const COOKIE_OPTS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
+  secure: true,
+  sameSite: "none" as const,
+  path: "/",
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 };
 
@@ -80,7 +81,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 });
 
 router.post("/auth/logout", (_req, res): void => {
-  res.clearCookie(COOKIE_NAME);
+  res.clearCookie(COOKIE_NAME, { path: "/", sameSite: "none", secure: true });
   res.json({ ok: true });
 });
 
