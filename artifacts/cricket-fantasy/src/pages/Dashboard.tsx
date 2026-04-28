@@ -58,8 +58,8 @@ export default function Dashboard() {
               <p className="text-muted-foreground text-lg">You have {summary?.liveMatches || 0} live matches and {summary?.upcomingMatches || 0} upcoming.</p>
               
               <div className="mt-6 flex gap-4">
-                <Link href="/contests" className="inline-flex items-center justify-center h-10 px-6 font-medium bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors shadow-[0_0_20px_-5px_rgba(6,182,212,0.5)]">
-                  Join Contests
+                <Link href="/matches" className="inline-flex items-center justify-center h-10 px-6 font-medium bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors shadow-[0_0_20px_-5px_rgba(6,182,212,0.5)]">
+                  View Matches
                 </Link>
                 <Link href="/my-teams" className="inline-flex items-center justify-center h-10 px-6 font-medium bg-white/5 text-white border border-white/10 rounded-full hover:bg-white/10 transition-colors">
                   Create Team
@@ -108,10 +108,7 @@ export default function Dashboard() {
                   <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/20">
                     {match.matchType}
                   </span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Star className="w-3 h-3" />
-                    {match.contestCount} Contests
-                  </span>
+                  <span className="text-xs text-muted-foreground">{match.venue?.split(",")[0]}</span>
                 </div>
 
                 <div className="flex justify-between items-center mb-6">
@@ -150,8 +147,8 @@ export default function Dashboard() {
               <Trophy className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <div className="text-2xl font-bold">{summary?.totalContests || 0}</div>
-              <div className="text-sm text-muted-foreground">Total Contests</div>
+              <div className="text-2xl font-bold">{summary?.upcomingMatches || 0}</div>
+              <div className="text-sm text-muted-foreground">Upcoming Matches</div>
             </div>
           </div>
           
@@ -180,8 +177,8 @@ export default function Dashboard() {
               <Star className="w-6 h-6 text-orange-400" />
             </div>
             <div>
-              <div className="text-2xl font-bold">{summary?.contestsJoined || 0}</div>
-              <div className="text-sm text-muted-foreground">Contests Joined</div>
+              <div className="text-2xl font-bold">{summary?.totalPoints || 0}</div>
+              <div className="text-sm text-muted-foreground">Total Points</div>
             </div>
           </div>
         </motion.div>

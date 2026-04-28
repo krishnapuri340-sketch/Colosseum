@@ -188,7 +188,7 @@ export default function MyTeams() {
         {/* Empty state hint */}
         <div className="text-center py-6 border border-dashed border-white/10 rounded-2xl">
           <Plus size={24} className="text-slate-600 mx-auto mb-2" />
-          <p className="text-slate-500 text-sm">Create more teams to join more contests</p>
+          <p className="text-slate-500 text-sm">Create more teams to join more auctions</p>
           <button
             data-testid="button-create-team-empty"
             className="mt-3 text-primary text-sm font-medium hover:underline"

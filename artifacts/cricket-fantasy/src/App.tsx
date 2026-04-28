@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Matches from "@/pages/Matches";
-import Contests from "@/pages/Contests";
 import Players from "@/pages/Players";
 import MyTeams from "@/pages/MyTeams";
 import Auction from "@/pages/Auction";
@@ -65,7 +64,6 @@ function AppRoutes() {
   return (
     <Switch>
       <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/contests" component={() => <ProtectedRoute component={Contests} />} />
       <Route path="/matches" component={() => <ProtectedRoute component={Matches} />} />
       <Route path="/players" component={() => <ProtectedRoute component={Players} />} />
       <Route path="/my-teams" component={() => <ProtectedRoute component={MyTeams} />} />

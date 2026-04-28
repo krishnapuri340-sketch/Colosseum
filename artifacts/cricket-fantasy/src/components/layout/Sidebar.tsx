@@ -18,7 +18,6 @@ import { useSidebar } from "@/context/SidebarContext";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/contests", label: "Contests", icon: Trophy },
   { href: "/matches", label: "Matches", icon: Swords },
   { href: "/players", label: "Players", icon: Users },
   { href: "/my-teams", label: "My Teams", icon: UsersRound },
