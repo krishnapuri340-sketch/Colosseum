@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { db, matchesTable, contestsTable } from "@workspace/db";
 import {
   ListMatchesQueryParams,
@@ -12,7 +12,7 @@ const router: IRouter = Router();
 
 router.get("/matches", async (req, res): Promise<void> => {
   const query = ListMatchesQueryParams.safeParse(req.query);
-  const rows = await db.select().from(matchesTable);
+  const rows = await db.select().from(matchesTable).orderBy(asc(matchesTable.scheduledAt));
 
   const filtered = query.success && query.data.status
     ? rows.filter((m) => m.status === query.data.status)
