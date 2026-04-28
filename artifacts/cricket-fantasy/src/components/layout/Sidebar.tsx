@@ -34,7 +34,7 @@ export function Sidebar() {
             <Trophy className="w-5 h-5 text-primary" />
           </div>
           <span className="font-bold text-xl hidden lg:block bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-            CricStrat
+            Colosseum
           </span>
         </div>
       </div>

@@ -146,7 +146,7 @@ export default function RegisterPage() {
           <span style={{ fontSize: "1.8rem" }}>🏏</span>
           <div>
             <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#fff", letterSpacing: "-0.02em", lineHeight: 1 }}>
-              CricStrat
+              Colosseum
             </div>
             <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
               IPL Fantasy

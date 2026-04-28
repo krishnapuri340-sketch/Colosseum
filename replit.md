@@ -1,4 +1,4 @@
-# CricStrat — Cricket Fantasy App
+# Colosseum — Cricket Fantasy App
 
 ## Overview
 
