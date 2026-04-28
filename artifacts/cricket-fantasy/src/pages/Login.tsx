@@ -71,19 +71,6 @@ export default function LoginPage() {
         backdropFilter: "blur(24px)",
         boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
       }}>
-        {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "2.25rem" }}>
-          <span style={{ fontSize: "1.8rem" }}>🏏</span>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#fff", letterSpacing: "-0.02em", lineHeight: 1 }}>
-              Colosseum
-            </div>
-            <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-              IPL Fantasy
-            </div>
-          </div>
-        </div>
-
         {/* Heading */}
         <div style={{ marginBottom: "1.75rem" }}>
           <p style={{ margin: 0, color: "#f97316", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
