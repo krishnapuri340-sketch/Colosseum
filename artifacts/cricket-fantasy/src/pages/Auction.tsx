@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { Gavel, Plus, ArrowRight, Hash } from "lucide-react";
+import { Plus, ArrowRight, Hash } from "lucide-react";
 
 const ACCENT = "#c0192c";
 const INDIGO = "#818cf8";
@@ -39,14 +39,7 @@ function HostCard() {
         borderRadius: "50%", background: `${ACCENT}0d`, pointerEvents: "none",
       }} />
 
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: 14,
-          background: `${ACCENT}18`, border: `1.5px solid ${ACCENT}40`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Gavel style={{ width: 24, height: 24, color: ACCENT }} />
-        </div>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "flex-end" }}>
         <span style={{
           fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
           color: ACCENT, background: `${ACCENT}18`, border: `1px solid ${ACCENT}35`,
@@ -144,14 +137,7 @@ function JoinCard() {
         borderRadius: "50%", background: `${INDIGO}0d`, pointerEvents: "none",
       }} />
 
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: 14,
-          background: `${INDIGO}18`, border: `1.5px solid ${INDIGO}40`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Hash style={{ width: 24, height: 24, color: INDIGO }} />
-        </div>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "flex-end" }}>
         <span style={{
           fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
           color: INDIGO, background: `${INDIGO}18`, border: `1px solid ${INDIGO}35`,
