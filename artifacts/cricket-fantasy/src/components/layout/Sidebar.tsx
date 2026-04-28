@@ -33,13 +33,14 @@ export function Sidebar() {
   const { collapsed, toggle } = useSidebar();
   const isMobile = useIsMobile();
 
-  if (isMobile) return null;
+  // On mobile always force collapsed icon-only mode
+  const effectiveCollapsed = isMobile ? true : collapsed;
 
   return (
     <aside
       style={{
-        width: collapsed ? 64 : 256,
-        minWidth: collapsed ? 64 : 256,
+        width: effectiveCollapsed ? 64 : 256,
+        minWidth: effectiveCollapsed ? 64 : 256,
         height: "100vh",
         position: "fixed",
         left: 0,
@@ -61,13 +62,13 @@ export function Sidebar() {
           height: 64,
           display: "flex",
           alignItems: "center",
-          justifyContent: collapsed ? "center" : "flex-start",
-          padding: collapsed ? "0" : "0 20px",
+          justifyContent: effectiveCollapsed ? "center" : "flex-start",
+          padding: effectiveCollapsed ? "0" : "0 20px",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           flexShrink: 0,
         }}
       >
-        {collapsed ? (
+        {effectiveCollapsed ? (
           <div
             style={{
               width: 32, height: 32, borderRadius: 10,
@@ -98,37 +99,39 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Floating collapse toggle — pinned to right edge, vertically centred */}
-      <button
-        onClick={toggle}
-        style={{
-          position: "absolute",
-          right: -12,
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: 24, height: 24, borderRadius: "50%",
-          background: "rgba(15,16,24,0.9)",
-          border: "1px solid rgba(255,255,255,0.13)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer",
-          zIndex: 10,
-          transition: "background 0.2s, border-color 0.2s",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = "rgba(99,102,241,0.25)";
-          e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)";
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = "rgba(15,16,24,0.9)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.13)";
-        }}
-      >
-        {collapsed
-          ? <ChevronRight style={{ width: 12, height: 12, color: "rgba(255,255,255,0.6)" }} />
-          : <ChevronLeft style={{ width: 12, height: 12, color: "rgba(255,255,255,0.6)" }} />
-        }
-      </button>
+      {/* Floating collapse toggle — pinned to right edge, vertically centred — hidden on mobile */}
+      {!isMobile && (
+        <button
+          onClick={toggle}
+          style={{
+            position: "absolute",
+            right: -12,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 24, height: 24, borderRadius: "50%",
+            background: "rgba(15,16,24,0.9)",
+            border: "1px solid rgba(255,255,255,0.13)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer",
+            zIndex: 10,
+            transition: "background 0.2s, border-color 0.2s",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = "rgba(99,102,241,0.25)";
+            e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = "rgba(15,16,24,0.9)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.13)";
+          }}
+        >
+          {effectiveCollapsed
+            ? <ChevronRight style={{ width: 12, height: 12, color: "rgba(255,255,255,0.6)" }} />
+            : <ChevronLeft style={{ width: 12, height: 12, color: "rgba(255,255,255,0.6)" }} />
+          }
+        </button>
+      )}
 
       {/* Nav items */}
       <div
@@ -148,13 +151,13 @@ export function Sidebar() {
           return (
             <Link key={item.href} href={item.href}>
               <div
-                title={collapsed ? item.label : undefined}
+                title={effectiveCollapsed ? item.label : undefined}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 12,
-                  padding: collapsed ? "10px 0" : "10px 12px",
-                  justifyContent: collapsed ? "center" : "flex-start",
+                  padding: effectiveCollapsed ? "10px 0" : "10px 12px",
+                  justifyContent: effectiveCollapsed ? "center" : "flex-start",
                   borderRadius: 12,
                   cursor: "pointer",
                   transition: "background 0.2s, border-color 0.2s",
@@ -174,7 +177,7 @@ export function Sidebar() {
                 >
                   <item.icon style={{ width: 14, height: 14, color: isActive ? "#818cf8" : "rgba(255,255,255,0.45)" }} />
                 </div>
-                {!collapsed && (
+                {!effectiveCollapsed && (
                   <span style={{ fontSize: "0.875rem", fontWeight: 500, color: isActive ? "#e2e8f0" : "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>
                     {item.label}
                   </span>
@@ -189,11 +192,11 @@ export function Sidebar() {
       <div style={{ padding: "10px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", flexDirection: "column", gap: 4 }}>
         {/* Settings */}
         <div
-          title={collapsed ? "Settings" : undefined}
+          title={effectiveCollapsed ? "Settings" : undefined}
           style={{
             display: "flex", alignItems: "center", gap: 12,
-            padding: collapsed ? "10px 0" : "10px 12px",
-            justifyContent: collapsed ? "center" : "flex-start",
+            padding: effectiveCollapsed ? "10px 0" : "10px 12px",
+            justifyContent: effectiveCollapsed ? "center" : "flex-start",
             borderRadius: 12, cursor: "pointer",
             border: "1px solid transparent", transition: "background 0.2s, border-color 0.2s",
           }}
@@ -209,17 +212,17 @@ export function Sidebar() {
           <div style={{ width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
             <Settings style={{ width: 14, height: 14, color: "rgba(255,255,255,0.45)" }} />
           </div>
-          {!collapsed && <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>Settings</span>}
+          {!effectiveCollapsed && <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>Settings</span>}
         </div>
 
         {/* Log out */}
         <button
           onClick={logout}
-          title={collapsed ? "Log out" : undefined}
+          title={effectiveCollapsed ? "Log out" : undefined}
           style={{
             display: "flex", alignItems: "center", gap: 12,
-            padding: collapsed ? "10px 0" : "10px 12px",
-            justifyContent: collapsed ? "center" : "flex-start",
+            padding: effectiveCollapsed ? "10px 0" : "10px 12px",
+            justifyContent: effectiveCollapsed ? "center" : "flex-start",
             borderRadius: 12, cursor: "pointer", width: "100%",
             background: "transparent", border: "1px solid transparent",
             transition: "background 0.2s, border-color 0.2s",
@@ -236,7 +239,7 @@ export function Sidebar() {
           <div style={{ width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
             <LogOut style={{ width: 14, height: 14, color: "rgba(255,255,255,0.45)" }} />
           </div>
-          {!collapsed && <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>Log out</span>}
+          {!effectiveCollapsed && <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>Log out</span>}
         </button>
       </div>
     </aside>

@@ -1,5 +1,4 @@
 import { Sidebar } from "./Sidebar";
-import { BottomNav } from "./BottomNav";
 import { Header } from "./Header";
 import { RightPanel } from "./RightPanel";
 import { useLocation } from "wouter";
@@ -28,7 +27,7 @@ export function Layout({ children }: LayoutProps) {
       <div
         className={`flex-1 flex flex-col ${showRightPanel && !isMobile ? 'xl:mr-80' : ''}`}
         style={{
-          marginLeft: isMobile ? 0 : (collapsed ? 64 : 256),
+          marginLeft: isMobile ? 64 : (collapsed ? 64 : 256),
           transition: "margin-left 0.22s ease",
         }}
       >
@@ -39,7 +38,6 @@ export function Layout({ children }: LayoutProps) {
           style={{
             background: "rgba(255,255,255,0.025)",
             backdropFilter: "blur(2px)",
-            paddingBottom: isMobile ? "calc(80px + env(safe-area-inset-bottom))" : undefined,
           }}
         >
           <div className="max-w-7xl mx-auto">
@@ -49,7 +47,6 @@ export function Layout({ children }: LayoutProps) {
       </div>
 
       {showRightPanel && !isMobile && <RightPanel />}
-      {isMobile && <BottomNav />}
     </div>
   );
 }
