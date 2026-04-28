@@ -10,15 +10,13 @@ import Players from "@/pages/Players";
 import MyTeams from "@/pages/MyTeams";
 import Leaderboard from "@/pages/Leaderboard";
 import Guide from "@/pages/Guide";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
+import AuthPages from "@/pages/Auth";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, loading } = useAuth();
-  const [location] = useLocation();
 
   if (loading) {
     return (
@@ -36,18 +34,34 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     );
   }
 
-  if (!user) {
-    return <Redirect to="/login" />;
-  }
-
+  if (!user) return <Redirect to="/login" />;
   return <Component />;
 }
 
-function Router() {
+function AppRoutes() {
+  const [location] = useLocation();
+  const isAuthRoute = location === "/login" || location === "/register";
+
+  if (isAuthRoute) {
+    return (
+      <>
+        {/* Fixed background — never remounts while on any auth route */}
+        <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
+          <img
+            src="/register-bg.jpeg"
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+          />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.55) 100%)" }} />
+        </div>
+        {/* Card — rendered once, switches form internally without remounting */}
+        <AuthPages mode={location === "/register" ? "register" : "login"} />
+      </>
+    );
+  }
+
   return (
     <Switch>
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
       <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/contests" component={() => <ProtectedRoute component={Contests} />} />
       <Route path="/matches" component={() => <ProtectedRoute component={Matches} />} />
@@ -66,7 +80,7 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
-            <Router />
+            <AppRoutes />
           </AuthProvider>
         </WouterRouter>
         <Toaster />
