@@ -48,22 +48,33 @@ export function Sidebar() {
         borderRight: "1px solid rgba(255,255,255,0.07)",
         backdropFilter: "blur(20px) saturate(140%)",
         WebkitBackdropFilter: "blur(20px) saturate(140%)",
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
-      {/* Logo + collapse toggle */}
+      {/* Logo */}
       <div
         style={{
           height: 64,
           display: "flex",
           alignItems: "center",
-          justifyContent: collapsed ? "center" : "space-between",
-          padding: collapsed ? "0" : "0 12px 0 20px",
+          justifyContent: collapsed ? "center" : "flex-start",
+          padding: collapsed ? "0" : "0 20px",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           flexShrink: 0,
         }}
       >
-        {!collapsed && (
+        {collapsed ? (
+          <div
+            style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: "linear-gradient(135deg, rgba(99,102,241,0.3), rgba(99,102,241,0.1))",
+              border: "1px solid rgba(99,102,241,0.3)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <Trophy style={{ width: 15, height: 15, color: "#818cf8" }} />
+          </div>
+        ) : (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div
               style={{
@@ -81,27 +92,39 @@ export function Sidebar() {
             </span>
           </div>
         )}
-
-        {/* Toggle button */}
-        <button
-          onClick={toggle}
-          style={{
-            width: 28, height: 28, borderRadius: "50%",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", flexShrink: 0,
-            transition: "background 0.2s",
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-        >
-          {collapsed
-            ? <ChevronRight style={{ width: 13, height: 13, color: "rgba(255,255,255,0.5)" }} />
-            : <ChevronLeft style={{ width: 13, height: 13, color: "rgba(255,255,255,0.5)" }} />
-          }
-        </button>
       </div>
+
+      {/* Floating collapse toggle — pinned to right edge, vertically centred */}
+      <button
+        onClick={toggle}
+        style={{
+          position: "absolute",
+          right: -12,
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 24, height: 24, borderRadius: "50%",
+          background: "rgba(15,16,24,0.9)",
+          border: "1px solid rgba(255,255,255,0.13)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer",
+          zIndex: 10,
+          transition: "background 0.2s, border-color 0.2s",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = "rgba(99,102,241,0.25)";
+          e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)";
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = "rgba(15,16,24,0.9)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.13)";
+        }}
+      >
+        {collapsed
+          ? <ChevronRight style={{ width: 12, height: 12, color: "rgba(255,255,255,0.6)" }} />
+          : <ChevronLeft style={{ width: 12, height: 12, color: "rgba(255,255,255,0.6)" }} />
+        }
+      </button>
 
       {/* Nav items */}
       <div
