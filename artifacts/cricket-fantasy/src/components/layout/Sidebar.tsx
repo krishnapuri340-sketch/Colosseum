@@ -31,8 +31,10 @@ export function Sidebar() {
     <aside
       className="w-20 lg:w-64 h-screen fixed left-0 top-0 flex flex-col transition-all duration-300 z-50"
       style={{
-        background: "rgba(4,5,10,0.98)",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(6,7,14,0.55)",
+        borderRight: "1px solid rgba(255,255,255,0.07)",
+        backdropFilter: "blur(20px) saturate(140%)",
+        WebkitBackdropFilter: "blur(20px) saturate(140%)",
       }}
     >
       {/* Logo */}
