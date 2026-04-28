@@ -252,15 +252,15 @@ export default function AuthPages({ mode }: { mode: "login" | "register" }) {
       <div style={{
         position: "relative",
         zIndex: 2,
-        width: "100%",
+        width: "calc(100% - 2rem)",
         maxWidth: 480,
         margin: "1rem",
         /* Premium glass layers */
         background: "linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.04) 100%)",
         border: "1px solid rgba(255,255,255,0.14)",
         borderTop: "1px solid rgba(255,255,255,0.22)",
-        borderRadius: 22,
-        padding: "2.75rem",
+        borderRadius: 20,
+        padding: "clamp(1.5rem, 6vw, 2.75rem)",
         backdropFilter: "blur(32px) saturate(160%)",
         WebkitBackdropFilter: "blur(32px) saturate(160%)",
         boxShadow: "0 8px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.3) inset",

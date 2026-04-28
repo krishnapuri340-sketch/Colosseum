@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebar } from "@/context/SidebarContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -30,6 +31,9 @@ export function Sidebar() {
   const [location] = useLocation();
   const { logout } = useAuth();
   const { collapsed, toggle } = useSidebar();
+  const isMobile = useIsMobile();
+
+  if (isMobile) return null;
 
   return (
     <aside
