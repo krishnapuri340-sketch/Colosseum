@@ -69,6 +69,7 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -77,7 +78,7 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       navigate("/");
     } catch (err: any) {
       setError(err.message ?? "Login failed");
@@ -114,6 +115,27 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
             </button>
           }
         />
+
+        {/* Keep me signed in */}
+        <label style={{ display: "flex", alignItems: "center", gap: "0.6rem", cursor: "pointer", userSelect: "none" }}>
+          <div
+            onClick={() => setRememberMe(v => !v)}
+            style={{
+              width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+              background: rememberMe ? ACCENT : "rgba(255,255,255,0.06)",
+              border: rememberMe ? `1.5px solid ${ACCENT}` : "1.5px solid rgba(255,255,255,0.18)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background 0.18s, border-color 0.18s",
+            }}
+          >
+            {rememberMe && (
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                <path d="M1 3.5L3.8 6.5L9 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </div>
+          <span style={{ fontSize: "0.83rem", color: "rgba(255,255,255,0.45)" }}>Keep me signed in</span>
+        </label>
         <button
           type="submit"
           disabled={loading}

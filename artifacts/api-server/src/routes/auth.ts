@@ -59,7 +59,7 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
 });
 
 router.post("/auth/login", async (req, res): Promise<void> => {
-  const { email, password } = req.body ?? {};
+  const { email, password, rememberMe } = req.body ?? {};
   if (!email || !password) {
     res.status(400).json({ error: "email and password are required" });
     return;
@@ -75,8 +75,10 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Invalid email or password" });
     return;
   }
+  const keep = rememberMe !== false;
   const token = signToken(user.id);
-  res.cookie(COOKIE_NAME, token, COOKIE_OPTS);
+  const opts = keep ? COOKIE_OPTS : { ...COOKIE_OPTS, maxAge: undefined };
+  res.cookie(COOKIE_NAME, token, opts);
   res.json({ id: user.id, email: user.email, name: user.name });
 });
 
