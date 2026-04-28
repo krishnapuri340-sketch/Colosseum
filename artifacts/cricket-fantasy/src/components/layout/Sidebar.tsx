@@ -27,8 +27,8 @@ export function Sidebar() {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="w-20 lg:w-64 h-screen fixed left-0 top-0 border-r border-white/5 bg-background flex flex-col transition-all duration-300 z-50">
-      <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-white/5">
+    <aside className="w-20 lg:w-64 h-screen fixed left-0 top-0 flex flex-col transition-all duration-300 z-50" style={{ background: "rgba(4,4,8,0.97)", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
             <Trophy className="w-5 h-5 text-primary" />
@@ -39,7 +39,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="flex-1 py-8 px-4 flex flex-col gap-2 overflow-y-auto">
+      <div className="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)", backdropFilter: "blur(8px)" }}>
         {NAV_ITEMS.map((item) => {
           const isActive = location === item.href;
           return (
