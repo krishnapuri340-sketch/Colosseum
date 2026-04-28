@@ -428,7 +428,7 @@ export default function CreateAuction() {
             onMouseEnter={e => { if (name.trim()) (e.currentTarget as HTMLButtonElement).style.background = "#a8172a"; }}
             onMouseLeave={e => { if (name.trim()) (e.currentTarget as HTMLButtonElement).style.background = ACCENT; }}
           >
-            {loading ? "Creating…" : <><span>Create Auction</span><ChevronRight style={{ width: 16, height: 16 }} /></>}
+            {loading ? "Loading…" : <><span>Next: Player Pool</span><ChevronRight style={{ width: 16, height: 16 }} /></>}
           </button>
         </div>
 
