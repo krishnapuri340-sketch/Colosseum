@@ -2,26 +2,52 @@ import { useLocation } from "wouter";
 import { ChevronRight, Search, Bell } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
+const PAGE_LABELS: Record<string, string> = {
+  "/":               "Dashboard",
+  "/matches":        "Matches",
+  "/players":        "Players",
+  "/my-teams":       "My Teams",
+  "/auction":        "Auction",
+  "/auction/create": "Create Auction",
+  "/auction/room":   "Auction Room",
+  "/predictions":    "Predictions",
+  "/guide":          "Guide",
+};
+
 export function Header() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user }   = useAuth();
 
-  const pathParts = location.split('/').filter(Boolean);
-  const currentPath = pathParts.length > 0 ? pathParts[0] : 'Dashboard';
-  const label = currentPath
-    .split('-')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+  const label = PAGE_LABELS[location] ?? location
+    .split("/").filter(Boolean)
+    .map(w => w.split("-").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" "))
+    .join(" · ");
 
   const displayName = user?.name ?? "Guest";
-  const avatarSeed = displayName.replace(/\s+/g, "");
+  const avatarSeed  = displayName.replace(/\s+/g, "");
+
+  // Breadcrumb segments
+  const parts = location.split("/").filter(Boolean);
+  const crumbs: { label:string; href:string }[] = [{ label:"Colosseum", href:"/" }];
+  if (parts[0]) {
+    crumbs.push({ label: PAGE_LABELS[`/${parts[0]}`] ?? parts[0], href:`/${parts[0]}` });
+  }
+  if (parts[1]) {
+    crumbs.push({ label: PAGE_LABELS[location] ?? parts[1], href: location });
+  }
 
   return (
-    <header className="flex items-center justify-between px-8 border-b border-white/5 bg-background/80 backdrop-blur-sm sticky top-0 z-40" style={{ height: 70 }}>
+    <header className="flex items-center justify-between px-8 border-b border-white/5 bg-background/80 backdrop-blur-sm sticky top-0 z-40"
+      style={{ height:70 }}>
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-muted-foreground">Colosseum</span>
-        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        <span className="font-medium text-foreground">{label}</span>
+        {crumbs.map((c, i) => (
+          <span key={c.href} className="flex items-center gap-2">
+            {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+            <span className={i === crumbs.length-1 ? "font-semibold text-foreground" : "text-muted-foreground"}>
+              {c.label}
+            </span>
+          </span>
+        ))}
       </div>
 
       <div className="flex items-center gap-6">
@@ -36,7 +62,7 @@ export function Header() {
 
         <button className="relative p-2 text-muted-foreground hover:text-white transition-colors">
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-background"></span>
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-background" />
         </button>
 
         <div className="flex items-center gap-3 pl-6 border-l border-white/10">
