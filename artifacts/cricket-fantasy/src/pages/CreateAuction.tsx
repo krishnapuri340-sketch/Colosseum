@@ -317,10 +317,10 @@ export default function CreateAuction() {
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
               {foreignLimitEnabled ? (
                 <NumberStepper
-                  value={Math.min(foreignLimit, maxPlayers)}
-                  onChange={v => setForeignLimit(Math.min(v, maxPlayers))}
+                  value={Math.min(foreignLimit, topScoringEnabled ? topScoringCount : maxPlayers)}
+                  onChange={v => setForeignLimit(Math.min(v, topScoringEnabled ? topScoringCount : maxPlayers))}
                   min={1}
-                  max={maxPlayers}
+                  max={topScoringEnabled ? topScoringCount : maxPlayers}
                   suffix="overseas"
                 />
               ) : (
