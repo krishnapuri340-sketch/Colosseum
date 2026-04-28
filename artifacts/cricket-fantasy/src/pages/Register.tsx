@@ -30,137 +30,71 @@ export default function RegisterPage() {
     }
   };
 
-  const inputStyle = (focused: boolean = false): React.CSSProperties => ({
-    width: "100%",
-    padding: "0.8rem 2.5rem 0.8rem 1rem",
-    background: "rgba(255,255,255,0.08)",
-    border: `1.5px solid ${focused ? "rgba(249,115,22,0.6)" : "rgba(255,255,255,0.14)"}`,
-    borderRadius: 10,
-    color: "#fff",
-    fontSize: "0.9rem",
-    outline: "none",
-    boxSizing: "border-box" as const,
-    transition: "border-color 0.2s",
-  });
+  const focusStyle = "rgba(249,115,22,0.6)";
+  const blurStyle = "rgba(255,255,255,0.12)";
 
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #0b1f0e 0%, #142b17 40%, #1a3a1e 100%)",
+      position: "relative",
       display: "flex",
-      alignItems: "stretch",
-      overflow: "hidden",
+      alignItems: "center",
+      justifyContent: "center",
       fontFamily: "'Inter', sans-serif",
+      overflow: "hidden",
     }}>
-      {/* Right panel — cricket visual (flipped for register) */}
-      <div style={{
-        flex: "0 0 42%",
-        position: "relative",
-        overflow: "hidden",
-        background: "linear-gradient(160deg, #2d6b35 0%, #1e4d24 50%, #0f2912 100%)",
-      }}>
-        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 500 700" preserveAspectRatio="xMidYMid slice">
-          <polygon points="0,0 0,300 250,150" fill="rgba(255,255,255,0.04)" />
-          <polygon points="500,700 200,700 350,400" fill="rgba(255,255,255,0.04)" />
-          <polygon points="400,0 100,100 300,280" fill="rgba(255,255,255,0.03)" />
-          <polygon points="0,450 150,700 0,700" fill="rgba(255,255,255,0.05)" />
-          <circle cx="100" cy="150" r="160" fill="rgba(255,255,255,0.03)" />
-          <circle cx="400" cy="580" r="130" fill="rgba(255,255,255,0.03)" />
-        </svg>
-
-        <div style={{
+      {/* Full-screen background photo */}
+      <img
+        src="/register-bg.jpeg"
+        alt=""
+        style={{
           position: "absolute",
           inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-        }}>
-          <div style={{
-            fontSize: "clamp(6rem, 14vw, 11rem)",
-            lineHeight: 1,
-            filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.5))",
-            marginBottom: "1.25rem",
-            userSelect: "none",
-          }}>
-            🏆
-          </div>
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition: "center",
+        }}
+      />
 
-          <div style={{ textAlign: "center", padding: "0 2rem" }}>
-            <div style={{
-              fontSize: "clamp(1rem, 2.2vw, 1.6rem)",
-              fontWeight: 900,
-              color: "#fff",
-              letterSpacing: "-0.02em",
-              textTransform: "uppercase",
-              lineHeight: 1.1,
-              textShadow: "0 2px 20px rgba(0,0,0,0.4)",
-            }}>
-              Build Your<br />Legacy
-            </div>
-            <div style={{
-              marginTop: "0.75rem",
-              fontSize: "0.82rem",
-              color: "rgba(255,255,255,0.5)",
-              letterSpacing: "0.05em",
-            }}>
-              Draft players. Score points. Win glory.
-            </div>
-          </div>
-
-          {/* Feature list */}
-          <div style={{ marginTop: "2.5rem", padding: "0 2rem", width: "100%" }}>
-            {[
-              { icon: "⚡", text: "Real-time IPL scoring" },
-              { icon: "🎯", text: "Strategic team building" },
-              { icon: "🥇", text: "Compete on leaderboards" },
-            ].map(({ icon, text }) => (
-              <div key={text} style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.75rem",
-                padding: "0.6rem 0",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
-              }}>
-                <span style={{ fontSize: "1.1rem" }}>{icon}</span>
-                <span style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.85rem", fontWeight: 500 }}>{text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Left panel — form */}
+      {/* Dark overlay */}
       <div style={{
-        flex: "0 0 58%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        padding: "2.5rem 4rem",
+        position: "absolute",
+        inset: 0,
+        background: "linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.55) 100%)",
+      }} />
+
+      {/* Floating form card */}
+      <div style={{
         position: "relative",
         zIndex: 2,
-        overflowY: "auto",
+        width: "100%",
+        maxWidth: 420,
+        margin: "1rem",
+        background: "rgba(10,10,14,0.7)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 20,
+        padding: "2.5rem",
+        backdropFilter: "blur(24px)",
+        boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
       }}>
         {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "2.5rem" }}>
-          <span style={{ fontSize: "1.8rem" }}>🏏</span>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#fff", letterSpacing: "-0.02em", lineHeight: 1 }}>
-              Colosseum
-            </div>
-            <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-              IPL Fantasy
-            </div>
+        <div style={{ marginBottom: "2.25rem" }}>
+          <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#fff", letterSpacing: "-0.02em", lineHeight: 1 }}>
+            Colosseum
+          </div>
+          <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            IPL Fantasy
           </div>
         </div>
 
         {/* Heading */}
         <div style={{ marginBottom: "1.75rem" }}>
-          <p style={{ margin: 0, color: "#f97316", fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
+          <p style={{ margin: 0, color: "#f97316", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
             Start for Free
           </p>
-          <h1 style={{ margin: 0, fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1, textTransform: "uppercase" }}>
-            Create New Account
+          <h1 style={{ margin: 0, fontSize: "2.25rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1, textTransform: "uppercase" }}>
+            Create Account
           </h1>
           <p style={{ margin: "0.5rem 0 0", color: "rgba(255,255,255,0.45)", fontSize: "0.875rem" }}>
             Already a member?{" "}
@@ -175,7 +109,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.9rem", maxWidth: 440 }}>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
           {error && (
             <div style={{
               padding: "0.7rem 1rem",
@@ -189,9 +123,9 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Name row */}
+          {/* Full Name */}
           <div>
-            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
               Full Name
             </label>
             <div style={{ position: "relative" }}>
@@ -201,17 +135,17 @@ export default function RegisterPage() {
                 onChange={e => setName(e.target.value)}
                 required
                 placeholder="Rohit Sharma"
-                style={inputStyle()}
-                onFocus={e => (e.target.style.borderColor = "rgba(249,115,22,0.6)")}
-                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.14)")}
+                style={{ width: "100%", padding: "0.85rem 2.5rem 0.85rem 1rem", background: "rgba(255,255,255,0.07)", border: `1.5px solid ${blurStyle}`, borderRadius: 10, color: "#fff", fontSize: "0.95rem", outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
+                onFocus={e => (e.target.style.borderColor = focusStyle)}
+                onBlur={e => (e.target.style.borderColor = blurStyle)}
               />
-              <User style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", width: 15, height: 15 }} />
+              <User style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", width: 16, height: 16 }} />
             </div>
           </div>
 
           {/* Email */}
           <div>
-            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
               Email
             </label>
             <div style={{ position: "relative" }}>
@@ -221,17 +155,17 @@ export default function RegisterPage() {
                 onChange={e => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                style={inputStyle()}
-                onFocus={e => (e.target.style.borderColor = "rgba(249,115,22,0.6)")}
-                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.14)")}
+                style={{ width: "100%", padding: "0.85rem 2.5rem 0.85rem 1rem", background: "rgba(255,255,255,0.07)", border: `1.5px solid ${blurStyle}`, borderRadius: 10, color: "#fff", fontSize: "0.95rem", outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
+                onFocus={e => (e.target.style.borderColor = focusStyle)}
+                onBlur={e => (e.target.style.borderColor = blurStyle)}
               />
-              <Mail style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", width: 15, height: 15 }} />
+              <Mail style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", width: 16, height: 16 }} />
             </div>
           </div>
 
           {/* Password */}
           <div>
-            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
               Password
             </label>
             <div style={{ position: "relative" }}>
@@ -241,23 +175,23 @@ export default function RegisterPage() {
                 onChange={e => setPassword(e.target.value)}
                 required
                 placeholder="Min 8 characters"
-                style={inputStyle()}
-                onFocus={e => (e.target.style.borderColor = "rgba(249,115,22,0.6)")}
-                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.14)")}
+                style={{ width: "100%", padding: "0.85rem 2.5rem 0.85rem 1rem", background: "rgba(255,255,255,0.07)", border: `1.5px solid ${blurStyle}`, borderRadius: 10, color: "#fff", fontSize: "0.95rem", outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
+                onFocus={e => (e.target.style.borderColor = focusStyle)}
+                onBlur={e => (e.target.style.borderColor = blurStyle)}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
                 style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", padding: 0, display: "flex" }}
               >
-                {showPassword ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
+                {showPassword ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
               </button>
             </div>
           </div>
 
-          {/* Confirm password */}
+          {/* Confirm Password */}
           <div>
-            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
               Confirm Password
             </label>
             <div style={{ position: "relative" }}>
@@ -267,9 +201,9 @@ export default function RegisterPage() {
                 onChange={e => setConfirm(e.target.value)}
                 required
                 placeholder="Re-enter password"
-                style={inputStyle()}
-                onFocus={e => (e.target.style.borderColor = "rgba(249,115,22,0.6)")}
-                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.14)")}
+                style={{ width: "100%", padding: "0.85rem 1rem", background: "rgba(255,255,255,0.07)", border: `1.5px solid ${blurStyle}`, borderRadius: 10, color: "#fff", fontSize: "0.95rem", outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
+                onFocus={e => (e.target.style.borderColor = focusStyle)}
+                onBlur={e => (e.target.style.borderColor = blurStyle)}
               />
             </div>
           </div>
@@ -279,12 +213,12 @@ export default function RegisterPage() {
             type="submit"
             disabled={loading}
             style={{
-              padding: "0.875rem",
+              padding: "0.9rem",
               background: loading ? "rgba(249,115,22,0.4)" : "#f97316",
               border: "none",
               borderRadius: 10,
               color: "#fff",
-              fontSize: "0.9rem",
+              fontSize: "0.95rem",
               fontWeight: 800,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
