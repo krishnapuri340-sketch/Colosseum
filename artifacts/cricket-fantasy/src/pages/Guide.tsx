@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { SCORING_RULES, ROLE_ICON, ROLE_LABEL, TEAM_COLOR, TEAM_FULL_NAME, TEAM_LOGO } from "../lib/ipl-constants";
+import { SCORING_RULES, TEAM_COLOR, TEAM_FULL_NAME, TEAM_LOGO } from "../lib/ipl-constants";
 
 const SECTION_COLOR: Record<string, string> = {
   "Base": "#00d4ff",
@@ -30,32 +30,6 @@ export default function GuidePage() {
         <p style={{ margin: "0.4rem 0 0", color: "rgba(255,255,255,0.5)", fontSize: "0.9rem" }}>
           Everything you need to know about scoring, teams, and player roles
         </p>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.25rem", marginBottom: "2rem" }}>
-        <Section title="How to Play" icon="🏆" color="#00d4ff">
-          <ol style={{ margin: 0, paddingLeft: "1.25rem", color: "rgba(255,255,255,0.75)", lineHeight: 1.9, fontSize: "0.875rem" }}>
-            <li>Pick a contest for an upcoming IPL match</li>
-            <li>Select 11 players within a 100-credit budget</li>
-            <li>Choose 1 Captain (2× points) and 1 Vice-Captain (1.5× points)</li>
-            <li>Points are calculated from the official live scorecard</li>
-            <li>Top teams on the leaderboard win prizes</li>
-          </ol>
-        </Section>
-
-        <Section title="Player Roles" icon="👥" color="#34d399">
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            {Object.entries(ROLE_LABEL).map(([code, label]) => (
-              <div key={code} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <span style={{ fontSize: "1.2rem" }}>{ROLE_ICON[code]}</span>
-                <div>
-                  <span style={{ color: "#fff", fontWeight: 600, fontSize: "0.875rem" }}>{label}</span>
-                  <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.75rem", marginLeft: "0.5rem" }}>({code})</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Section>
       </div>
 
       <h2 style={{ margin: "0 0 1rem", fontSize: "1.2rem", fontWeight: 700, color: "#fff" }}>
@@ -144,28 +118,3 @@ export default function GuidePage() {
   );
 }
 
-function Section({ title, icon, color, children }: {
-  title: string; icon: string; color: string; children: React.ReactNode;
-}) {
-  return (
-    <div style={{
-      background: "rgba(255,255,255,0.03)",
-      border: `1px solid ${color}30`,
-      borderRadius: 14,
-      overflow: "hidden",
-    }}>
-      <div style={{
-        padding: "0.875rem 1rem",
-        background: `${color}12`,
-        borderBottom: `1px solid ${color}25`,
-        display: "flex",
-        alignItems: "center",
-        gap: "0.6rem",
-      }}>
-        <span style={{ fontSize: "1.1rem" }}>{icon}</span>
-        <span style={{ color, fontWeight: 700, fontSize: "0.875rem" }}>{title}</span>
-      </div>
-      <div style={{ padding: "1rem" }}>{children}</div>
-    </div>
-  );
-}
