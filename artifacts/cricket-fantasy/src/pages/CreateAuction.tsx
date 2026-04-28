@@ -95,7 +95,10 @@ export default function CreateAuction() {
   const [format, setFormat] = useState<"classic" | "tier">("classic");
   const [maxPlayers, setMaxPlayers] = useState(11);
   const [budget, setBudget] = useState(100);
-  const [countPlayers, setCountPlayers] = useState(11);
+  const [topScoringEnabled, setTopScoringEnabled] = useState(false);
+  const [topScoringCount, setTopScoringCount] = useState(11);
+  const [foreignLimitEnabled, setForeignLimitEnabled] = useState(false);
+  const [foreignLimit, setForeignLimit] = useState(4);
   const [captainVC, setCaptainVC] = useState(true);
   const [loading, setLoading] = useState(false);
 
@@ -255,7 +258,7 @@ export default function CreateAuction() {
         {/* Second row of smaller widgets */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1.6fr",
+          gridTemplateColumns: "1fr 1fr 1fr 1.5fr",
           gap: "1rem",
         }}>
 
@@ -267,15 +270,73 @@ export default function CreateAuction() {
             </div>
           </div>
 
-          {/* 5. Points Count */}
+          {/* 5. Top Scoring Player Count */}
           <div style={card({ justifyContent: "space-between" })}>
-            <WidgetLabel>Players Whose Points Count</WidgetLabel>
-            <div style={{ display: "flex", alignItems: "center", flex: 1 }}>
-              <NumberStepper value={countPlayers} onChange={setCountPlayers} min={1} max={maxPlayers} suffix="players" />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+              <span style={{
+                fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.13em",
+                textTransform: "uppercase", color: LABEL,
+              }}>
+                Top Scoring Player Count
+              </span>
+              <Toggle on={topScoringEnabled} onToggle={() => setTopScoringEnabled(v => !v)} />
+            </div>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {topScoringEnabled ? (
+                <NumberStepper
+                  value={Math.min(topScoringCount, maxPlayers)}
+                  onChange={v => setTopScoringCount(Math.min(v, maxPlayers))}
+                  min={1}
+                  max={maxPlayers}
+                  suffix="players"
+                />
+              ) : (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "rgba(255,255,255,0.2)", lineHeight: 1.4 }}>
+                    All players
+                  </div>
+                  <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.15)", marginTop: "0.2rem" }}>
+                    points count
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* 6. Captain / Vice-Captain */}
+          {/* 6. Foreign Players Limit */}
+          <div style={card({ justifyContent: "space-between" })}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+              <span style={{
+                fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.13em",
+                textTransform: "uppercase", color: LABEL,
+              }}>
+                Foreign Players Limit
+              </span>
+              <Toggle on={foreignLimitEnabled} onToggle={() => setForeignLimitEnabled(v => !v)} />
+            </div>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {foreignLimitEnabled ? (
+                <NumberStepper
+                  value={Math.min(foreignLimit, maxPlayers)}
+                  onChange={v => setForeignLimit(Math.min(v, maxPlayers))}
+                  min={1}
+                  max={maxPlayers}
+                  suffix="overseas"
+                />
+              ) : (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "rgba(255,255,255,0.2)", lineHeight: 1.4 }}>
+                    No limit
+                  </div>
+                  <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.15)", marginTop: "0.2rem" }}>
+                    on overseas players
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 7. Captain / Vice-Captain */}
           <div style={{
             ...card({
               background: captainVC ? `${ACCENT}0d` : CARD,
