@@ -3,7 +3,6 @@ import { Header } from "./Header";
 import { RightPanel } from "./RightPanel";
 import { useLocation } from "wouter";
 import { useSidebar } from "@/context/SidebarContext";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,7 +12,6 @@ export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const showRightPanel = location === "/";
   const { collapsed } = useSidebar();
-  const isMobile = useIsMobile();
 
   return (
     <div
@@ -23,16 +21,10 @@ export function Layout({ children }: LayoutProps) {
       }}
     >
       <Sidebar />
-
-      <div
-        className={`flex-1 flex flex-col ${showRightPanel && !isMobile ? 'xl:mr-80' : ''}`}
-        style={{
-          marginLeft: isMobile ? 64 : (collapsed ? 64 : 256),
-          transition: "margin-left 0.22s ease",
-        }}
-      >
+      
+      <div className={`flex-1 flex flex-col ${showRightPanel ? 'xl:mr-80' : ''}`} style={{ marginLeft: collapsed ? 64 : 256, transition: "margin-left 0.22s ease" }}>
         <Header />
-
+        
         <main
           className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8"
           style={{
@@ -46,7 +38,7 @@ export function Layout({ children }: LayoutProps) {
         </main>
       </div>
 
-      {showRightPanel && !isMobile && <RightPanel />}
+      {showRightPanel && <RightPanel />}
     </div>
   );
 }
