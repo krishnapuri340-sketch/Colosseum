@@ -268,18 +268,9 @@ export default function AuthPages({ mode }: { mode: "login" | "register" }) {
         opacity: animating ? 0 : 1,
       }}>
         {/* Logo */}
-        <div style={{ marginBottom: "2.1rem", display: "flex", alignItems: "center", gap: "0.6rem" }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: `linear-gradient(135deg, #c0192c, #7a0e1c)`,
-            boxShadow: `0 2px 12px ${ACCENT_GLOW}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "0.85rem", fontWeight: 900, color: "#fff",
-          }}>C</div>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: "1.05rem", color: "#fff", letterSpacing: "-0.01em", lineHeight: 1 }}>Colosseum</div>
-            <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.14em", textTransform: "uppercase" }}>IPL Fantasy</div>
-          </div>
+        <div style={{ marginBottom: "2.1rem" }}>
+          <div style={{ fontWeight: 900, fontSize: "1.05rem", color: "#fff", letterSpacing: "-0.01em", lineHeight: 1 }}>Colosseum</div>
+          <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.14em", textTransform: "uppercase" }}>IPL Fantasy</div>
         </div>
 
         {mode === "login"
