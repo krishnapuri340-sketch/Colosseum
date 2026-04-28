@@ -15,7 +15,7 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div
-      className="min-h-screen text-foreground flex overflow-hidden selection:bg-primary/30"
+      className="h-screen text-foreground flex overflow-hidden selection:bg-primary/30"
       style={{
         background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99,102,241,0.18) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 80% 80%, rgba(192,25,44,0.08) 0%, transparent 60%), #07080f",
       }}
