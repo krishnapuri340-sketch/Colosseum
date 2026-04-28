@@ -258,7 +258,7 @@ export default function CreateAuction() {
         {/* Second row of smaller widgets */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr 1.5fr",
+          gridTemplateColumns: "1fr 1fr 1.5fr",
           gap: "1rem",
         }}>
 
@@ -270,73 +270,94 @@ export default function CreateAuction() {
             </div>
           </div>
 
-          {/* 5. Top Scoring Player Count */}
-          <div style={card({ justifyContent: "space-between" })}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+          {/* 5. Top Scoring Player Count + nested Foreign Players Limit */}
+          <div style={card({ justifyContent: "space-between", gap: "0.75rem" })}>
+            {/* Header toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{
                 fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.13em",
                 textTransform: "uppercase", color: LABEL,
               }}>
                 Top Scoring Player Count
               </span>
-              <Toggle on={topScoringEnabled} onToggle={() => setTopScoringEnabled(v => !v)} />
+              <Toggle on={topScoringEnabled} onToggle={() => {
+                setTopScoringEnabled(v => !v);
+                if (topScoringEnabled) setForeignLimitEnabled(false);
+              }} />
             </div>
+
+            {/* Main stepper or placeholder */}
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
               {topScoringEnabled ? (
                 <NumberStepper
                   value={Math.min(topScoringCount, maxPlayers)}
-                  onChange={v => setTopScoringCount(Math.min(v, maxPlayers))}
+                  onChange={v => {
+                    const clamped = Math.min(v, maxPlayers);
+                    setTopScoringCount(clamped);
+                    if (foreignLimit > clamped) setForeignLimit(clamped);
+                  }}
                   min={1}
                   max={maxPlayers}
                   suffix="players"
                 />
               ) : (
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "rgba(255,255,255,0.2)", lineHeight: 1.4 }}>
-                    All players
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.15)", marginTop: "0.2rem" }}>
-                    points count
-                  </div>
+                  <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "rgba(255,255,255,0.2)", lineHeight: 1.4 }}>All players</div>
+                  <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.15)", marginTop: "0.2rem" }}>points count</div>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* 6. Foreign Players Limit */}
-          <div style={card({ justifyContent: "space-between" })}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-              <span style={{
-                fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.13em",
-                textTransform: "uppercase", color: LABEL,
+            {/* Foreign Players Limit — nested sub-section, only shown when top scoring is on */}
+            {topScoringEnabled && (
+              <div style={{
+                borderTop: "1px solid rgba(255,255,255,0.07)",
+                paddingTop: "0.85rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.6rem",
               }}>
-                Foreign Players Limit
-              </span>
-              <Toggle on={foreignLimitEnabled} onToggle={() => setForeignLimitEnabled(v => !v)} />
-            </div>
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {foreignLimitEnabled ? (
-                <NumberStepper
-                  value={Math.min(foreignLimit, topScoringEnabled ? topScoringCount : maxPlayers)}
-                  onChange={v => setForeignLimit(Math.min(v, topScoringEnabled ? topScoringCount : maxPlayers))}
-                  min={1}
-                  max={topScoringEnabled ? topScoringCount : maxPlayers}
-                  suffix="overseas"
-                />
-              ) : (
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "rgba(255,255,255,0.2)", lineHeight: 1.4 }}>
-                    No limit
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.15)", marginTop: "0.2rem" }}>
-                    on overseas players
-                  </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)" }}>
+                    Foreign Players Limit
+                  </span>
+                  <Toggle on={foreignLimitEnabled} onToggle={() => setForeignLimitEnabled(v => !v)} />
                 </div>
-              )}
-            </div>
+                {foreignLimitEnabled ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                    <button type="button"
+                      onClick={() => setForeignLimit(f => Math.max(1, f - 1))}
+                      style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                        color: "rgba(255,255,255,0.6)", fontSize: "1rem", cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700,
+                      }}>−</button>
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <span style={{ fontSize: "1.6rem", fontWeight: 900, color: "#fff" }}>
+                        {Math.min(foreignLimit, topScoringCount)}
+                      </span>
+                      <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.3)", marginLeft: "0.35rem" }}>overseas</span>
+                    </div>
+                    <button type="button"
+                      onClick={() => setForeignLimit(f => Math.min(topScoringCount, f + 1))}
+                      style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                        color: "rgba(255,255,255,0.6)", fontSize: "1rem", cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700,
+                      }}>+</button>
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,255,255,0.18)", fontStyle: "italic" }}>
+                    No overseas player limit
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* 7. Captain / Vice-Captain */}
+          {/* 6. Captain / Vice-Captain */}
           <div style={{
             ...card({
               background: captainVC ? `${ACCENT}0d` : CARD,
