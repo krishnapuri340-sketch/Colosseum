@@ -19,7 +19,7 @@ export function Header() {
   return (
     <header className="h-20 flex items-center justify-between px-8 border-b border-white/5 bg-background/80 backdrop-blur-sm sticky top-0 z-40">
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-muted-foreground">Pages</span>
+        <span className="text-muted-foreground">Colosseum</span>
         <ChevronRight className="w-4 h-4 text-muted-foreground" />
         <span className="font-medium text-foreground">{label}</span>
       </div>
