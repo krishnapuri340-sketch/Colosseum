@@ -21,19 +21,23 @@ function WidgetLabel({ children }: { children: React.ReactNode }) {
 }
 
 function NumberStepper({
-  value, onChange, min = 1, max = 99, suffix,
+  value, onChange, min = 1, max = 99, suffix, compact = false,
 }: {
-  value: number; onChange: (v: number) => void; min?: number; max?: number; suffix?: string;
+  value: number; onChange: (v: number) => void; min?: number; max?: number; suffix?: string; compact?: boolean;
 }) {
+  const btnSize = compact ? 38 : 52;
+  const btnRadius = compact ? 10 : 14;
+  const btnFontSize = compact ? "1.1rem" : "1.4rem";
+  const numFontSize = compact ? "2.2rem" : "3.5rem";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: compact ? "0.6rem" : "1rem", flex: 1 }}>
       <button
         type="button"
         onClick={() => onChange(Math.max(min, value - 1))}
         style={{
-          width: 52, height: 52, borderRadius: 14,
+          width: btnSize, height: btnSize, borderRadius: btnRadius,
           background: "rgba(255,255,255,0.07)", border: `1px solid ${BORDER}`,
-          color: "rgba(255,255,255,0.65)", fontSize: "1.4rem", cursor: "pointer",
+          color: "rgba(255,255,255,0.65)", fontSize: btnFontSize, cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontWeight: 700, flexShrink: 0, transition: "background 0.15s",
         }}
@@ -41,20 +45,20 @@ function NumberStepper({
         onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}
       >−</button>
       <div style={{ flex: 1, textAlign: "center" }}>
-        <div style={{ fontSize: "3.5rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>
+        <div style={{ fontSize: numFontSize, fontWeight: 900, color: "#fff", lineHeight: 1 }}>
           {value}
         </div>
         {suffix && (
-          <div style={{ fontSize: "0.78rem", color: LABEL, marginTop: "0.25rem" }}>{suffix}</div>
+          <div style={{ fontSize: "0.75rem", color: LABEL, marginTop: "0.2rem" }}>{suffix}</div>
         )}
       </div>
       <button
         type="button"
         onClick={() => onChange(Math.min(max, value + 1))}
         style={{
-          width: 52, height: 52, borderRadius: 14,
+          width: btnSize, height: btnSize, borderRadius: btnRadius,
           background: "rgba(255,255,255,0.07)", border: `1px solid ${BORDER}`,
-          color: "rgba(255,255,255,0.65)", fontSize: "1.4rem", cursor: "pointer",
+          color: "rgba(255,255,255,0.65)", fontSize: btnFontSize, cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontWeight: 700, flexShrink: 0, transition: "background 0.15s",
         }}
@@ -263,15 +267,15 @@ export default function CreateAuction() {
         }}>
 
           {/* 4. Budget */}
-          <div style={card({ justifyContent: "space-between" })}>
+          <div style={card({ justifyContent: "space-between", padding: "1.4rem 1.6rem" })}>
             <WidgetLabel>Budget / Team</WidgetLabel>
             <div style={{ display: "flex", alignItems: "center", flex: 1 }}>
-              <NumberStepper value={budget} onChange={setBudget} min={50} max={500} suffix="crores" />
+              <NumberStepper value={budget} onChange={setBudget} min={50} max={500} suffix="crores" compact />
             </div>
           </div>
 
           {/* 5. Top Scoring Player Count + nested Foreign Players Limit */}
-          <div style={card({ justifyContent: "space-between", gap: "0.75rem" })}>
+          <div style={card({ justifyContent: "space-between", gap: "0.75rem", padding: "1.4rem 1.6rem" })}>
             {/* Header toggle */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{
@@ -299,6 +303,7 @@ export default function CreateAuction() {
                   min={1}
                   max={maxPlayers}
                   suffix="players"
+                  compact
                 />
               ) : (
                 <div style={{ textAlign: "center" }}>
@@ -365,17 +370,18 @@ export default function CreateAuction() {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
-              gap: "2rem",
+              gap: "1.5rem",
+              padding: "1.4rem 1.6rem",
             }),
             transition: "all 0.22s",
           }}>
             <div style={{ flex: 1 }}>
               <WidgetLabel>Captain &amp; Vice-Captain</WidgetLabel>
-              <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 900, color: captainVC ? "#fff" : "rgba(255,255,255,0.3)", letterSpacing: "-0.02em", lineHeight: 1, transition: "color 0.2s" }}>
+              <p style={{ margin: 0, fontSize: "1.15rem", fontWeight: 900, color: captainVC ? "#fff" : "rgba(255,255,255,0.3)", letterSpacing: "-0.02em", lineHeight: 1, transition: "color 0.2s" }}>
                 Point Multipliers
               </p>
-              <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
-                Captain scores <span style={{ color: captainVC ? "#fff" : "inherit", fontWeight: 700 }}>2×</span> points &nbsp;·&nbsp; Vice-Captain scores <span style={{ color: captainVC ? "#fff" : "inherit", fontWeight: 700 }}>1.5×</span> points
+              <p style={{ margin: "0.4rem 0 0", fontSize: "0.78rem", color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
+                Captain scores <span style={{ color: captainVC ? "#fff" : "inherit", fontWeight: 700 }}>2×</span> &nbsp;·&nbsp; Vice-Captain scores <span style={{ color: captainVC ? "#fff" : "inherit", fontWeight: 700 }}>1.5×</span>
               </p>
             </div>
             <Toggle on={captainVC} onToggle={() => setCaptainVC(v => !v)} />
