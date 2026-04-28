@@ -3,20 +3,32 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Cricket Fantasy App API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: contests
+    description: Fantasy contests
+  - name: teams
+    description: User fantasy teams
+  - name: players
+    description: Cricket players
+  - name: matches
+    description: Cricket matches
+  - name: leaderboard
+    description: Leaderboard and rankings
+  - name: dashboard
+    description: Dashboard aggregates
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +36,332 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /matches:
+    get:
+      operationId: listMatches
+      tags: [matches]
+      summary: List all matches
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [upcoming, live, completed]
+      responses:
+        "200":
+          description: List of matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Match"
+
+  /matches/{matchId}:
+    get:
+      operationId: getMatch
+      tags: [matches]
+      summary: Get match details
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Match details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Match"
+
+  /players:
+    get:
+      operationId: listPlayers
+      tags: [players]
+      summary: List all players
+      parameters:
+        - name: team
+          in: query
+          schema:
+            type: string
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [batsman, bowler, all-rounder, wicket-keeper]
+      responses:
+        "200":
+          description: List of players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Player"
+
+  /players/{playerId}:
+    get:
+      operationId: getPlayer
+      tags: [players]
+      summary: Get player details
+      parameters:
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Player details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /contests:
+    get:
+      operationId: listContests
+      tags: [contests]
+      summary: List all contests
+      parameters:
+        - name: matchId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [upcoming, live, completed]
+      responses:
+        "200":
+          description: List of contests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contest"
+    post:
+      operationId: createContest
+      tags: [contests]
+      summary: Create a new contest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContestBody"
+      responses:
+        "201":
+          description: Contest created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contest"
+
+  /contests/{contestId}:
+    get:
+      operationId: getContest
+      tags: [contests]
+      summary: Get contest details
+      parameters:
+        - name: contestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contest details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contest"
+
+  /contests/{contestId}/join:
+    post:
+      operationId: joinContest
+      tags: [contests]
+      summary: Join a contest with a team
+      parameters:
+        - name: contestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinContestBody"
+      responses:
+        "200":
+          description: Joined contest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contest"
+
+  /teams:
+    get:
+      operationId: listTeams
+      tags: [teams]
+      summary: List user's fantasy teams
+      responses:
+        "200":
+          description: List of teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Team"
+    post:
+      operationId: createTeam
+      tags: [teams]
+      summary: Create a new fantasy team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeamBody"
+      responses:
+        "201":
+          description: Team created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+
+  /teams/{teamId}:
+    get:
+      operationId: getTeam
+      tags: [teams]
+      summary: Get team details
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Team details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+    put:
+      operationId: updateTeam
+      tags: [teams]
+      summary: Update a fantasy team
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeamBody"
+      responses:
+        "200":
+          description: Team updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+    delete:
+      operationId: deleteTeam
+      tags: [teams]
+      summary: Delete a fantasy team
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Team deleted
+
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get global leaderboard
+      parameters:
+        - name: contestId
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/top-players:
+    get:
+      operationId: getTopPlayers
+      tags: [dashboard]
+      summary: Get top performing players this week
+      responses:
+        "200":
+          description: Top players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Player"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +372,297 @@ components:
       required:
         - status
 
+    Match:
+      type: object
+      properties:
+        id:
+          type: integer
+        team1:
+          type: string
+        team2:
+          type: string
+        team1Code:
+          type: string
+        team2Code:
+          type: string
+        venue:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [upcoming, live, completed]
+        team1Score:
+          type: string
+          nullable: true
+        team2Score:
+          type: string
+          nullable: true
+        matchType:
+          type: string
+          enum: [T20, ODI, Test]
+        contestCount:
+          type: integer
+      required:
+        - id
+        - team1
+        - team2
+        - team1Code
+        - team2Code
+        - venue
+        - scheduledAt
+        - status
+        - matchType
+        - contestCount
+
+    Player:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        team:
+          type: string
+        teamCode:
+          type: string
+        role:
+          type: string
+          enum: [batsman, bowler, all-rounder, wicket-keeper]
+        credits:
+          type: number
+        points:
+          type: number
+        selectionPercentage:
+          type: number
+        avatar:
+          type: string
+          nullable: true
+        battingAvg:
+          type: number
+          nullable: true
+        bowlingAvg:
+          type: number
+          nullable: true
+        recentForm:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - team
+        - teamCode
+        - role
+        - credits
+        - points
+        - selectionPercentage
+
+    Contest:
+      type: object
+      properties:
+        id:
+          type: integer
+        matchId:
+          type: integer
+        name:
+          type: string
+        prizePool:
+          type: number
+        entryFee:
+          type: number
+        totalSpots:
+          type: integer
+        filledSpots:
+          type: integer
+        status:
+          type: string
+          enum: [upcoming, live, completed]
+        type:
+          type: string
+          enum: [mega, head-to-head, small, free]
+        firstPrize:
+          type: number
+        matchName:
+          type: string
+      required:
+        - id
+        - matchId
+        - name
+        - prizePool
+        - entryFee
+        - totalSpots
+        - filledSpots
+        - status
+        - type
+        - firstPrize
+        - matchName
+
+    Team:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        matchId:
+          type: integer
+        captain:
+          type: string
+        viceCaptain:
+          type: string
+        players:
+          type: array
+          items:
+            type: integer
+        totalCredits:
+          type: number
+        totalPoints:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - matchId
+        - captain
+        - viceCaptain
+        - players
+        - totalCredits
+        - createdAt
+
+    CreateContestBody:
+      type: object
+      properties:
+        matchId:
+          type: integer
+        name:
+          type: string
+        prizePool:
+          type: number
+        entryFee:
+          type: number
+        totalSpots:
+          type: integer
+        type:
+          type: string
+          enum: [mega, head-to-head, small, free]
+      required:
+        - matchId
+        - name
+        - prizePool
+        - entryFee
+        - totalSpots
+        - type
+
+    JoinContestBody:
+      type: object
+      properties:
+        teamId:
+          type: integer
+      required:
+        - teamId
+
+    CreateTeamBody:
+      type: object
+      properties:
+        name:
+          type: string
+        matchId:
+          type: integer
+        captain:
+          type: string
+        viceCaptain:
+          type: string
+        players:
+          type: array
+          items:
+            type: integer
+      required:
+        - name
+        - matchId
+        - captain
+        - viceCaptain
+        - players
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: integer
+        username:
+          type: string
+        avatar:
+          type: string
+          nullable: true
+        points:
+          type: number
+        winnings:
+          type: number
+        teamsJoined:
+          type: integer
+      required:
+        - rank
+        - userId
+        - username
+        - points
+        - winnings
+        - teamsJoined
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalContests:
+          type: integer
+        liveMatches:
+          type: integer
+        upcomingMatches:
+          type: integer
+        totalWinnings:
+          type: number
+        rank:
+          type: integer
+        totalPoints:
+          type: number
+        teamsCreated:
+          type: integer
+        contestsJoined:
+          type: integer
+      required:
+        - totalContests
+        - liveMatches
+        - upcomingMatches
+        - totalWinnings
+        - rank
+        - totalPoints
+        - teamsCreated
+        - contestsJoined
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [match_started, contest_joined, team_created, prize_won, match_result]
+        title:
+          type: string
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        meta:
+          type: object
+          nullable: true
+      required:
+        - id
+        - type
+        - title
+        - description
+        - timestamp

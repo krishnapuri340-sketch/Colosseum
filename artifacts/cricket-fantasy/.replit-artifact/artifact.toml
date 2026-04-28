@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Cricket Fantasy App"
+version = "1.0.0"
+id = "artifacts/cricket-fantasy"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19147
+
+[services.development]
+run = "pnpm --filter @workspace/cricket-fantasy run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cricket-fantasy", "run", "build" ]
+publicDir = "artifacts/cricket-fantasy/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19147"
+BASE_PATH = "/"
