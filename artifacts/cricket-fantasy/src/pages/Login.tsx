@@ -29,24 +29,50 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #0b1f0e 0%, #142b17 40%, #1a3a1e 100%)",
+      position: "relative",
       display: "flex",
-      alignItems: "stretch",
-      overflow: "hidden",
+      alignItems: "center",
+      justifyContent: "center",
       fontFamily: "'Inter', sans-serif",
+      overflow: "hidden",
     }}>
-      {/* Left panel — form */}
+      {/* Full-screen background photo */}
+      <img
+        src="/login-bg.jpeg"
+        alt=""
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition: "center",
+        }}
+      />
+
+      {/* Dark overlay */}
       <div style={{
-        flex: "0 0 55%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        padding: "3rem 4rem",
+        position: "absolute",
+        inset: 0,
+        background: "linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.55) 100%)",
+      }} />
+
+      {/* Floating form card */}
+      <div style={{
         position: "relative",
         zIndex: 2,
+        width: "100%",
+        maxWidth: 420,
+        margin: "1rem",
+        background: "rgba(10,10,14,0.7)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 20,
+        padding: "2.5rem",
+        backdropFilter: "blur(24px)",
+        boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
       }}>
         {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "3rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "2.25rem" }}>
           <span style={{ fontSize: "1.8rem" }}>🏏</span>
           <div>
             <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#fff", letterSpacing: "-0.02em", lineHeight: 1 }}>
@@ -59,14 +85,14 @@ export default function LoginPage() {
         </div>
 
         {/* Heading */}
-        <div style={{ marginBottom: "2rem" }}>
-          <p style={{ margin: 0, color: "#f97316", fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
+        <div style={{ marginBottom: "1.75rem" }}>
+          <p style={{ margin: 0, color: "#f97316", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
             Play for Free
           </p>
-          <h1 style={{ margin: 0, fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1, textTransform: "uppercase" }}>
+          <h1 style={{ margin: 0, fontSize: "2.25rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1, textTransform: "uppercase" }}>
             Sign In
           </h1>
-          <p style={{ margin: "0.6rem 0 0", color: "rgba(255,255,255,0.45)", fontSize: "0.9rem" }}>
+          <p style={{ margin: "0.5rem 0 0", color: "rgba(255,255,255,0.45)", fontSize: "0.875rem" }}>
             Don't have an account?{" "}
             <a
               href="/register"
@@ -79,7 +105,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: 380 }}>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {error && (
             <div style={{
               padding: "0.7rem 1rem",
@@ -95,7 +121,7 @@ export default function LoginPage() {
 
           {/* Email */}
           <div>
-            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
+            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
               Email or Username
             </label>
             <div style={{ position: "relative" }}>
@@ -108,8 +134,8 @@ export default function LoginPage() {
                 style={{
                   width: "100%",
                   padding: "0.85rem 2.5rem 0.85rem 1rem",
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1.5px solid rgba(255,255,255,0.14)",
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1.5px solid rgba(255,255,255,0.12)",
                   borderRadius: 10,
                   color: "#fff",
                   fontSize: "0.95rem",
@@ -118,7 +144,7 @@ export default function LoginPage() {
                   transition: "border-color 0.2s",
                 }}
                 onFocus={e => (e.target.style.borderColor = "rgba(249,115,22,0.6)")}
-                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.14)")}
+                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.12)")}
               />
               <Mail style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", width: 16, height: 16 }} />
             </div>
@@ -126,7 +152,7 @@ export default function LoginPage() {
 
           {/* Password */}
           <div>
-            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
+            <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
               Password
             </label>
             <div style={{ position: "relative" }}>
@@ -139,8 +165,8 @@ export default function LoginPage() {
                 style={{
                   width: "100%",
                   padding: "0.85rem 2.5rem 0.85rem 1rem",
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1.5px solid rgba(255,255,255,0.14)",
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1.5px solid rgba(255,255,255,0.12)",
                   borderRadius: 10,
                   color: "#fff",
                   fontSize: "0.95rem",
@@ -149,7 +175,7 @@ export default function LoginPage() {
                   transition: "border-color 0.2s",
                 }}
                 onFocus={e => (e.target.style.borderColor = "rgba(249,115,22,0.6)")}
-                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.14)")}
+                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.12)")}
               />
               <button
                 type="button"
@@ -177,99 +203,15 @@ export default function LoginPage() {
               textTransform: "uppercase",
               cursor: loading ? "not-allowed" : "pointer",
               marginTop: "0.25rem",
-              transition: "opacity 0.2s, transform 0.1s",
               boxShadow: loading ? "none" : "0 4px 20px rgba(249,115,22,0.4)",
+              transition: "opacity 0.2s",
             }}
-            onMouseEnter={e => { if (!loading) (e.currentTarget.style.opacity = "0.92"); }}
+            onMouseEnter={e => { if (!loading) (e.currentTarget.style.opacity = "0.9"); }}
             onMouseLeave={e => { (e.currentTarget.style.opacity = "1"); }}
           >
             {loading ? "Signing in…" : "Login"}
           </button>
         </form>
-      </div>
-
-      {/* Right panel — photo art */}
-      <div style={{
-        flex: "0 0 45%",
-        position: "relative",
-        overflow: "hidden",
-      }}>
-        {/* Photo background */}
-        <img
-          src="/login-bg.jpeg"
-          alt=""
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center",
-          }}
-        />
-        {/* Dark overlay so text reads well */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.15) 100%)",
-        }} />
-
-        {/* Content on top of photo */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          padding: "2.5rem",
-          textAlign: "center",
-        }}>
-          {/* Tagline */}
-          <div style={{ marginBottom: "1.5rem" }}>
-            <div style={{
-              fontSize: "clamp(1.3rem, 2.5vw, 2rem)",
-              fontWeight: 900,
-              color: "#fff",
-              letterSpacing: "-0.02em",
-              textTransform: "uppercase",
-              lineHeight: 1.1,
-              textShadow: "0 2px 30px rgba(0,0,0,0.8)",
-            }}>
-              Pick Your<br />Dream XI
-            </div>
-            <div style={{
-              marginTop: "0.6rem",
-              fontSize: "0.85rem",
-              color: "rgba(255,255,255,0.6)",
-              letterSpacing: "0.05em",
-              textShadow: "0 1px 10px rgba(0,0,0,0.9)",
-            }}>
-              Compete with cricket fans across India
-            </div>
-          </div>
-
-          {/* Stats badges */}
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
-            {[
-              { val: "70+", label: "IPL Matches" },
-              { val: "200+", label: "Players" },
-              { val: "10", label: "Teams" },
-            ].map(({ val, label }) => (
-              <div key={label} style={{
-                background: "rgba(0,0,0,0.45)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                borderRadius: 12,
-                padding: "0.65rem 1.1rem",
-                textAlign: "center",
-                backdropFilter: "blur(12px)",
-              }}>
-                <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#f97316" }}>{val}</div>
-                <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", letterSpacing: "0.06em", textTransform: "uppercase", marginTop: 2 }}>{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
