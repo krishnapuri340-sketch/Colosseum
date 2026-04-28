@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { SCORING_RULES, TEAM_COLOR, TEAM_FULL_NAME, TEAM_LOGO } from "../lib/ipl-constants";
+import { SCORING_RULES } from "../lib/ipl-constants";
 
 const COLORS = {
   base:    "#00d4ff",
@@ -155,33 +155,6 @@ export default function GuidePage() {
           />
         </div>
 
-        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem", fontWeight: 700, color: "#fff" }}>
-          IPL 2026 Teams
-        </h2>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-          gap: "0.75rem",
-        }}>
-          {Object.entries(TEAM_FULL_NAME).map(([code, name]) => (
-            <div key={code} style={{
-              background: "rgba(255,255,255,0.03)",
-              border: `1px solid ${TEAM_COLOR[code]}30`,
-              borderRadius: 12,
-              padding: "0.875rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.75rem",
-            }}>
-              <img src={TEAM_LOGO[code]} alt={code} style={{ width: 32, height: 32, objectFit: "contain" }}
-                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-              <div>
-                <div style={{ fontWeight: 700, fontSize: "0.9rem", color: TEAM_COLOR[code] }}>{code}</div>
-                <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.3 }}>{name}</div>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </Layout>
   );
