@@ -9,6 +9,7 @@ import Contests from "@/pages/Contests";
 import Players from "@/pages/Players";
 import MyTeams from "@/pages/MyTeams";
 import Auction from "@/pages/Auction";
+import CreateAuction from "@/pages/CreateAuction";
 import Guide from "@/pages/Guide";
 import AuthPages from "@/pages/Auth";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -69,6 +70,7 @@ function AppRoutes() {
       <Route path="/players" component={() => <ProtectedRoute component={Players} />} />
       <Route path="/my-teams" component={() => <ProtectedRoute component={MyTeams} />} />
       <Route path="/auction" component={() => <ProtectedRoute component={Auction} />} />
+      <Route path="/auction/create" component={() => <ProtectedRoute component={CreateAuction} />} />
       <Route path="/guide" component={() => <ProtectedRoute component={Guide} />} />
       <Route component={NotFound} />
     </Switch>

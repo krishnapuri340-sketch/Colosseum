@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { Plus, ArrowRight, Hash } from "lucide-react";
 
@@ -6,7 +7,7 @@ const ACCENT = "#c0192c";
 const INDIGO = "#818cf8";
 
 function HostCard() {
-  const [clicked, setClicked] = useState(false);
+  const [, navigate] = useLocation();
 
   return (
     <div
@@ -71,12 +72,12 @@ function HostCard() {
       </div>
 
       <button
-        onClick={() => setClicked(true)}
+        onClick={() => navigate("/auction/create")}
         style={{
           marginTop: "auto",
           display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
           padding: "0.85rem 1.5rem",
-          background: clicked ? `${ACCENT}cc` : ACCENT,
+          background: ACCENT,
           border: "none", borderRadius: 12,
           color: "#fff", fontWeight: 800, fontSize: "0.9rem", cursor: "pointer",
           transition: "background 0.2s, transform 0.1s",
