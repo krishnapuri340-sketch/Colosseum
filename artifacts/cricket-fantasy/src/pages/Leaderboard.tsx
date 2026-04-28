@@ -2,17 +2,18 @@ import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
 import { Trophy, Medal, TrendingUp, Users } from "lucide-react";
 
+// Real-feeling IPL fantasy usernames with plausible stats
 const mockLeaderboard = [
-  { rank: 1, username: "CricketKing99", points: 8542, winnings: 125000, teams: 48 },
-  { rank: 2, username: "FantasyMaster", points: 7891, winnings: 98000, teams: 42 },
-  { rank: 3, username: "SixHitter", points: 7234, winnings: 75000, teams: 37 },
-  { rank: 4, username: "PitchPerfect", points: 6987, winnings: 62000, teams: 35 },
-  { rank: 5, username: "WicketWizard", points: 6543, winnings: 48000, teams: 31 },
-  { rank: 6, username: "BoundaryBlaster", points: 6012, winnings: 35000, teams: 28 },
-  { rank: 7, username: "SpinMaster", points: 5834, winnings: 27500, teams: 25 },
-  { rank: 8, username: "PowerPlay", points: 5421, winnings: 21000, teams: 22 },
-  { rank: 9, username: "LegBreak", points: 4987, winnings: 15000, teams: 19 },
-  { rank: 10, username: "SlipCordons", points: 4512, winnings: 10000, teams: 16 },
+  { rank: 1,  username: "SRH_Fanatic",      points: 9142, winnings: 150000, teams: 52 },
+  { rank: 2,  username: "BumrahOrNothing",  points: 8734, winnings: 110000, teams: 47 },
+  { rank: 3,  username: "KKR_Narine_Gang",  points: 8291, winnings: 85000,  teams: 43 },
+  { rank: 4,  username: "GillForPresident", points: 7988, winnings: 68000,  teams: 39 },
+  { rank: 5,  username: "PantBackStronger", points: 7612, winnings: 52000,  teams: 35 },
+  { rank: 6,  username: "TravisHeadCase",   points: 7204, winnings: 38000,  teams: 31 },
+  { rank: 7,  username: "RCB_Believer",     points: 6891, winnings: 27000,  teams: 27 },
+  { rank: 8,  username: "KingKohliFC",      points: 6543, winnings: 19500,  teams: 24 },
+  { rank: 9,  username: "MI_PalTan",        points: 6187, winnings: 13000,  teams: 21 },
+  { rank: 10, username: "RashidSpinZone",   points: 5834, winnings: 8500,   teams: 18 },
 ];
 
 const rankStyle = (rank: number) => {
@@ -41,7 +42,7 @@ export default function Leaderboard() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-white">Leaderboard</h1>
-          <p className="text-sm text-slate-400 mt-1">Global fantasy cricket rankings</p>
+          <p className="text-sm text-slate-400 mt-1">IPL 2026 fantasy rankings — Season standings</p>
         </div>
 
         {/* Top 3 Podium */}
@@ -74,7 +75,6 @@ export default function Leaderboard() {
 
         {/* Full Table */}
         <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-          {/* Table Header */}
           <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-white/10 text-xs text-slate-500 font-medium uppercase tracking-wider">
             <div className="col-span-1">Rank</div>
             <div className="col-span-5">Player</div>
@@ -83,7 +83,6 @@ export default function Leaderboard() {
             <div className="col-span-2 text-right">Teams</div>
           </div>
 
-          {/* Rows */}
           {mockLeaderboard.map((entry, i) => (
             <motion.div
               key={entry.rank}
@@ -133,9 +132,9 @@ export default function Leaderboard() {
         {/* Stats Bar */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: "Total Players", value: "1,24,892", icon: <Users size={16} className="text-primary" /> },
-            { label: "Prize Distributed", value: "₹4.8Cr", icon: <Trophy size={16} className="text-yellow-400" /> },
-            { label: "Avg Points", value: "3,210", icon: <TrendingUp size={16} className="text-green-400" /> },
+            { label: "Total Players",     value: "2,14,738",  icon: <Users size={16} className="text-primary" /> },
+            { label: "Prize Pool",        value: "₹5.2 Cr",   icon: <Trophy size={16} className="text-yellow-400" /> },
+            { label: "Avg Points",        value: "4,820",     icon: <TrendingUp size={16} className="text-green-400" /> },
           ].map((stat) => (
             <div key={stat.label} className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center">
