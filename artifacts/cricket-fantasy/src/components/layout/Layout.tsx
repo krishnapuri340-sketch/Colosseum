@@ -83,13 +83,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {BOTTOM_NAV.map(item => {
             const active = isActive(item.href);
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href} style={{
+                flex:1, display:"flex", minWidth:0,
+                WebkitTapHighlightColor:"transparent",
+              }}>
                 <div
                   style={{
                     flex:1, display:"flex", flexDirection:"column",
                     alignItems:"center", justifyContent:"center", gap:3,
                     padding:"8px 4px", cursor:"pointer", minWidth:0,
-                    WebkitTapHighlightColor:"transparent",
                   }}
                 >
                   <div style={{
