@@ -14,6 +14,7 @@ const PAGE_LABELS: Record<string, string> = {
   "/predictions":    "Predictions",
   "/guide":          "Guide",
   "/leaderboard":    "Leaderboard",
+  "/auction/join":   "Join Auction",
 };
 
 export function Header() {
