@@ -9,6 +9,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Activity, Trophy, TrendingUp, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { TEAM_LOGO } from "@/lib/ipl-constants";
 
 export function RightPanel() {
   const { data: activity, isLoading: loadingActivity } = useGetDashboardActivity({
@@ -90,7 +91,13 @@ export function RightPanel() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-white truncate">{player.name}</div>
-                  <div className="text-xs text-muted-foreground">{player.teamCode} • {player.role}</div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    {TEAM_LOGO[player.teamCode] && (
+                      <img src={TEAM_LOGO[player.teamCode]} alt={player.teamCode}
+                        className="w-4 h-4 object-contain" />
+                    )}
+                    {player.teamCode} • {player.role}
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-bold text-primary">{player.points}</div>
