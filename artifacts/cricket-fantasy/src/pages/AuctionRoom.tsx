@@ -6,10 +6,8 @@ import {
   ChevronRight, ChevronDown, RotateCcw, Plus, Minus,
   Copy, TriangleAlert, History,
 } from "lucide-react";
-import {
-  IPL_2026_PLAYERS, TEAM_COLOR, TEAM_FULL_NAME,
-  ROLE_LABEL, ROLE_ICON, ROLE_COLOR,
-} from "@/lib/ipl-constants";
+import { ALL_IPL_2026_PLAYERS as IPL_2026_PLAYERS } from "@/lib/ipl-players-2026";
+import { TEAM_COLOR, TEAM_FULL_NAME, ROLE_LABEL, ROLE_ICON, ROLE_COLOR } from "@/lib/ipl-constants";
 
 interface Player   { name:string; team:string; role:string; credits:number; }
 interface SquadEntry extends Player { price:number; }
