@@ -152,3 +152,7 @@ export const IPL_2026_PLAYERS: Array<{
   { name: "Andre Russell",       team: "KKR",  role: "AR",  credits: 10.5 },
   { name: "Rinku Singh",         team: "KKR",  role: "BAT", credits: 9.0 },
 ];
+
+// ── Re-export full 2026 player database ──────────────
+export { ALL_IPL_2026_PLAYERS, IPL_2026_PLAYERS, getPlayersByTeam, getPlayersByRole, getMarqueePlayers, PLAYER_COUNT } from "./ipl-players-2026";
+export type { IPLPlayer } from "./ipl-players-2026";
