@@ -1,12 +1,33 @@
 import { Layout } from "@/components/layout/Layout";
-import { useListMatches, useGetDashboardSummary, getListMatchesQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
+import { useState, useEffect } from "react";
+import { useGetDashboardSummary, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { ArrowRight, Swords, Trophy, Users, Star, Flame, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
-import { format } from "date-fns";
 import { ResponsiveContainer, AreaChart, Area, XAxis, Tooltip } from "recharts";
-import { TEAM_COLOR } from "@/lib/ipl-constants";
+import { TEAM_COLOR, TEAM_LOGO, TEAM_FULL_NAME } from "@/lib/ipl-constants";
+import { apiFetch } from "@/lib/api";
+
+interface IplMatch {
+  iplId: string;
+  matchNumber: number;
+  homeTeam: string;
+  awayTeam: string;
+  homeTeamFull: string;
+  awayTeamFull: string;
+  venue: string;
+  city: string;
+  matchDate: string;
+  matchTime: string;
+  firstInningsScore: string | null;
+  secondInningsScore: string | null;
+  result: string | null;
+  winningTeamCode: string | null;
+  isLive: boolean;
+  isCompleted: boolean;
+  isUpcoming: boolean;
+}
 
 // Week-by-week points across IPL 2026 season (realistic fantasy arc)
 const chartData = [
@@ -27,10 +48,18 @@ const DIFFERENTIALS = [
 ];
 
 export default function Dashboard() {
-  const { data: matches, isLoading: loadingMatches } = useListMatches(
-    { status: "upcoming" },
-    { query: { queryKey: getListMatchesQueryKey({ status: "upcoming" }) } }
-  );
+  const [iplMatches, setIplMatches] = useState<IplMatch[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+
+  useEffect(() => {
+    apiFetch("/ipl/matches")
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d.matches)) setIplMatches(d.matches); })
+      .catch(() => {})
+      .finally(() => setLoadingMatches(false));
+  }, []);
+
+  const upcomingMatches = iplMatches.filter(m => m.isUpcoming || m.isLive).slice(0, 3);
 
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary({
     query: { queryKey: getGetDashboardSummaryQueryKey() },
@@ -138,13 +167,17 @@ export default function Dashboard() {
               Array.from({ length: 3 }).map((_, i) => (
                 <Skeleton key={i} className="h-48 rounded-2xl bg-white/5" />
               ))
+            ) : upcomingMatches.length === 0 ? (
+              <div className="col-span-3 text-center py-10 text-muted-foreground text-sm">No upcoming matches found.</div>
             ) : (
-              matches?.slice(0, 3).map((match) => {
-                const c1 = TEAM_COLOR[match.team1Code ?? ""] ?? "hsl(var(--primary))";
-                const c2 = TEAM_COLOR[match.team2Code ?? ""] ?? "hsl(var(--primary))";
+              upcomingMatches.map((match) => {
+                const c1 = TEAM_COLOR[match.homeTeam] ?? "hsl(var(--primary))";
+                const c2 = TEAM_COLOR[match.awayTeam] ?? "hsl(var(--primary))";
+                const logo1 = TEAM_LOGO[match.homeTeam];
+                const logo2 = TEAM_LOGO[match.awayTeam];
                 return (
                   <div
-                    key={match.id}
+                    key={match.iplId}
                     className="glass-card rounded-2xl p-5 group hover:border-primary/50 transition-colors relative overflow-hidden"
                   >
                     <div className="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -153,42 +186,37 @@ export default function Dashboard() {
 
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/20">
-                        {match.matchType}
+                        M{match.matchNumber}
                       </span>
-                      <span className="text-xs text-muted-foreground">{match.venue?.split(",")[0]}</span>
+                      <span className="text-xs text-muted-foreground">{match.matchDate} • {match.matchTime}</span>
                     </div>
 
-                    <div className="flex justify-between items-center mb-6">
-                      <div className="flex flex-col items-center gap-2 w-1/3">
-                        <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-inner"
-                          style={{ background: `${c1}22`, border: `1.5px solid ${c1}50`, color: c1 }}
-                        >
-                          {match.team1Code}
-                        </div>
-                        <span className="text-sm font-medium text-center truncate w-full">{match.team1}</span>
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex flex-col items-center gap-2 w-5/12">
+                        {logo1
+                          ? <img src={logo1} alt={match.homeTeam} className="w-12 h-12 object-contain" />
+                          : <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg" style={{ background: `${c1}22`, border: `1.5px solid ${c1}50`, color: c1 }}>{match.homeTeam}</div>
+                        }
+                        <span className="text-xs font-semibold text-center" style={{ color: c1 }}>{match.homeTeam}</span>
+                        <span className="text-xs text-muted-foreground text-center leading-tight">{TEAM_FULL_NAME[match.homeTeam] ?? match.homeTeamFull}</span>
                       </div>
 
-                      <div className="flex flex-col items-center justify-center w-1/3">
-                        <span className="text-xs text-muted-foreground font-mono bg-white/5 px-2 py-1 rounded-md">VS</span>
+                      <div className="flex flex-col items-center justify-center w-2/12">
+                        <span className="text-xs text-muted-foreground font-mono bg-white/5 px-2 py-1 rounded-md font-bold">VS</span>
                       </div>
 
-                      <div className="flex flex-col items-center gap-2 w-1/3">
-                        <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-inner"
-                          style={{ background: `${c2}22`, border: `1.5px solid ${c2}50`, color: c2 }}
-                        >
-                          {match.team2Code}
-                        </div>
-                        <span className="text-sm font-medium text-center truncate w-full">{match.team2}</span>
+                      <div className="flex flex-col items-center gap-2 w-5/12">
+                        {logo2
+                          ? <img src={logo2} alt={match.awayTeam} className="w-12 h-12 object-contain" />
+                          : <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg" style={{ background: `${c2}22`, border: `1.5px solid ${c2}50`, color: c2 }}>{match.awayTeam}</div>
+                        }
+                        <span className="text-xs font-semibold text-center" style={{ color: c2 }}>{match.awayTeam}</span>
+                        <span className="text-xs text-muted-foreground text-center leading-tight">{TEAM_FULL_NAME[match.awayTeam] ?? match.awayTeamFull}</span>
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-white/5 flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground truncate max-w-[60%]">{match.venue}</span>
-                      <span className="font-medium text-white font-mono">
-                        {format(new Date(match.scheduledAt), "MMM dd, HH:mm")}
-                      </span>
+                    <div className="pt-3 border-t border-white/5 flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="truncate">{match.venue}{match.city ? `, ${match.city}` : ""}</span>
                     </div>
                   </div>
                 );

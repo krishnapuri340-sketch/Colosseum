@@ -34,6 +34,8 @@ interface IplMatch {
   status: string;
   firstInningsScore: string | null;
   secondInningsScore: string | null;
+  result: string | null;
+  winningTeamCode: string | null;
   mom: string | null;
   tossText: string | null;
   isLive: boolean;
@@ -290,7 +292,14 @@ function MatchCard({ match }: { match: IplMatch }) {
           </div>
         </div>
 
-        {match.tossText && (
+        {match.isCompleted && match.result && (
+          <div className="mt-4 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-center">
+            <p className="text-xs font-semibold" style={{ color: match.winningTeamCode ? (TEAM_COLOR[match.winningTeamCode] ?? "#34d399") : "#34d399" }}>
+              {match.result}
+            </p>
+          </div>
+        )}
+        {!match.isCompleted && match.tossText && (
           <p className="text-xs text-muted-foreground mt-4 text-center italic">{match.tossText}</p>
         )}
         {match.mom && (
