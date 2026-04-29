@@ -90,8 +90,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <div
                   style={{
                     flex:1, display:"flex", flexDirection:"column",
-                    alignItems:"center", justifyContent:"center", gap:3,
-                    padding:"8px 4px", cursor:"pointer", minWidth:0,
+                    alignItems:"center", justifyContent:"flex-end", gap:3,
+                    padding:"6px 4px 10px", cursor:"pointer", minWidth:0,
                   }}
                 >
                   <div style={{
