@@ -1,9 +1,8 @@
 import { Layout } from "@/components/layout/Layout";
 import { useState, useEffect } from "react";
-import { useGetDashboardSummary, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { ArrowRight, Swords, Trophy, Users, Star, Flame, TrendingUp } from "lucide-react";
+import { ArrowRight, Swords, Trophy, Star, Flame, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
 import { ResponsiveContainer, AreaChart, Area, XAxis, Tooltip } from "recharts";
 import { TEAM_COLOR, TEAM_LOGO, TEAM_FULL_NAME } from "@/lib/ipl-constants";
@@ -61,9 +60,10 @@ export default function Dashboard() {
 
   const upcomingMatches = iplMatches.filter(m => m.isUpcoming || m.isLive).slice(0, 3);
 
-  const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary({
-    query: { queryKey: getGetDashboardSummaryQueryKey() },
-  });
+  const liveCount      = iplMatches.filter(m => m.isLive).length;
+  const upcomingCount  = iplMatches.filter(m => m.isUpcoming).length;
+  const completedCount = iplMatches.filter(m => m.isCompleted).length;
+  const totalCount     = iplMatches.length;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -96,11 +96,11 @@ export default function Dashboard() {
                 Welcome back, Strategist!
               </h1>
               <p className="text-muted-foreground text-lg">
-                You have{" "}
-                <span className="text-white font-semibold">{summary?.liveMatches ?? 0}</span>{" "}
-                live match{(summary?.liveMatches ?? 0) !== 1 ? "es" : ""} and{" "}
-                <span className="text-white font-semibold">{summary?.upcomingMatches ?? 0}</span>{" "}
-                upcoming — IPL 2026.
+                {liveCount > 0
+                  ? <><span className="text-green-400 font-semibold">{liveCount} live</span> now · </>
+                  : null}
+                <span className="text-white font-semibold">{upcomingCount}</span> upcoming ·{" "}
+                <span className="text-white font-semibold">{completedCount}</span> completed — IPL 2026.
               </p>
 
               <div className="mt-6 flex gap-4">
@@ -226,44 +226,54 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Stats Grid */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="glass-card rounded-2xl p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-              <Trophy className="w-6 h-6 text-blue-400" />
+        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="glass-card rounded-2xl p-5 flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
+              <Trophy className="w-5 h-5 text-blue-400" />
             </div>
-            <div>
-              <div className="text-2xl font-bold">{summary?.upcomingMatches ?? 0}</div>
-              <div className="text-sm text-muted-foreground">Upcoming Matches</div>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-2xl p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
-              <Swords className="w-6 h-6 text-green-400" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{summary?.liveMatches ?? 0}</div>
-              <div className="text-sm text-muted-foreground">Live Now</div>
+            <div className="min-w-0">
+              <div className="text-2xl font-bold tabular-nums">
+                {loadingMatches ? "—" : upcomingCount}
+              </div>
+              <div className="text-xs text-muted-foreground">Upcoming</div>
             </div>
           </div>
 
-          <div className="glass-card rounded-2xl p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-              <Users className="w-6 h-6 text-purple-400" />
+          <div className="glass-card rounded-2xl p-5 flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0">
+              <Swords className="w-5 h-5 text-green-400" />
             </div>
-            <div>
-              <div className="text-2xl font-bold">{summary?.teamsCreated ?? 0}</div>
-              <div className="text-sm text-muted-foreground">Teams Created</div>
+            <div className="min-w-0">
+              <div className="text-2xl font-bold tabular-nums">
+                {loadingMatches ? "—" : liveCount > 0
+                  ? <span className="text-green-400">{liveCount}</span>
+                  : 0}
+              </div>
+              <div className="text-xs text-muted-foreground">Live Now</div>
             </div>
           </div>
 
-          <div className="glass-card rounded-2xl p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center">
-              <Star className="w-6 h-6 text-orange-400" />
+          <div className="glass-card rounded-2xl p-5 flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0">
+              <Flame className="w-5 h-5 text-purple-400" />
             </div>
-            <div>
-              <div className="text-2xl font-bold">{summary?.totalPoints ?? 0}</div>
-              <div className="text-sm text-muted-foreground">Total Points</div>
+            <div className="min-w-0">
+              <div className="text-2xl font-bold tabular-nums">
+                {loadingMatches ? "—" : completedCount}
+              </div>
+              <div className="text-xs text-muted-foreground">Completed</div>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-2xl p-5 flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-orange-500/20 flex items-center justify-center shrink-0">
+              <Star className="w-5 h-5 text-orange-400" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-2xl font-bold tabular-nums">
+                {loadingMatches ? "—" : totalCount}
+              </div>
+              <div className="text-xs text-muted-foreground">Total Matches</div>
             </div>
           </div>
         </motion.div>
