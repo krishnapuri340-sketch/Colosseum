@@ -8,6 +8,7 @@ import Matches from "@/pages/Matches";
 import Players from "@/pages/Players";
 import MyTeams from "@/pages/MyTeams";
 import Auction from "@/pages/Auction";
+import JoinAuction from "@/pages/JoinAuction";
 import CreateAuction from "@/pages/CreateAuction";
 import AuctionRoom from "@/pages/AuctionRoom";
 import Predictions from "@/pages/Predictions";
@@ -23,7 +24,9 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   const { user, loading } = useAuth();
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0f1e", color: "rgba(255,255,255,0.5)", fontSize: "0.9rem" }}>
+      <div style={{ minHeight:"100vh", display:"flex", alignItems:"center",
+        justifyContent:"center", background:"#07080f",
+        color:"rgba(255,255,255,0.4)", fontSize:"0.9rem" }}>
         Loading…
       </div>
     );
@@ -39,9 +42,11 @@ function AppRoutes() {
   if (isAuthRoute) {
     return (
       <>
-        <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
-          <img src="/register-bg.jpeg" alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.55) 100%)" }} />
+        <div style={{ position:"fixed", inset:0, zIndex:0 }}>
+          <img src="/register-bg.jpeg" alt="" style={{ width:"100%", height:"100%",
+            objectFit:"cover", objectPosition:"center" }} />
+          <div style={{ position:"absolute", inset:0,
+            background:"linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.55) 100%)" }} />
         </div>
         <AuthPages mode={location === "/register" ? "register" : "login"} />
       </>
@@ -55,6 +60,7 @@ function AppRoutes() {
       <Route path="/players"        component={() => <ProtectedRoute component={Players} />} />
       <Route path="/my-teams"       component={() => <ProtectedRoute component={MyTeams} />} />
       <Route path="/auction"        component={() => <ProtectedRoute component={Auction} />} />
+      <Route path="/auction/join"   component={() => <ProtectedRoute component={JoinAuction} />} />
       <Route path="/auction/create" component={() => <ProtectedRoute component={CreateAuction} />} />
       <Route path="/auction/room"   component={() => <ProtectedRoute component={AuctionRoom} />} />
       <Route path="/predictions"    component={() => <ProtectedRoute component={Predictions} />} />
