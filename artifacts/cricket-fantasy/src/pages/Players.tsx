@@ -1,196 +1,307 @@
 import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Search, Filter, TrendingUp, Zap, Shield, Star } from "lucide-react";
-import { IPL_2026_PLAYERS, TEAM_COLOR, ROLE_LABEL, ROLE_COLOR, ROLE_ICON } from "@/lib/ipl-constants";
+import { useState, useMemo } from "react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import { ALL_IPL_2026_PLAYERS, getPlayerTier, TIER_CONFIG, type PlayerTier } from "@/lib/ipl-players-2026";
+import { TEAM_COLOR, ROLE_LABEL, ROLE_COLOR, ROLE_ICON, ALL_TEAMS, TEAM_FULL_NAME } from "@/lib/ipl-constants";
 
-const ROLES = ["All", "BAT", "BWL", "AR", "WK"];
-const ROLE_DISPLAY: Record<string, string> = { All: "All", BAT: "Batsman", BWL: "Bowler", AR: "All-Rounder", WK: "Wicket-Keeper" };
+const TIERS: PlayerTier[] = ["T1","T2","T3","T4"];
+const TIER_LABELS: Record<PlayerTier,string> = { T1:"👑 Marquee", T2:"⭐ Premium", T3:"🏏 Mid-Level", T4:"🌱 Rookie" };
+const TIER_COLORS: Record<PlayerTier,string> = { T1:"#e8a020", T2:"#818cf8", T3:"#34d399", T4:"#94a3b8" };
 
-const roleIcon = (role: string) => {
-  if (role === "BAT") return <TrendingUp size={12} />;
-  if (role === "BWL") return <Zap size={12} />;
-  if (role === "WK")  return <Shield size={12} />;
-  return <Star size={12} />;
-};
+type SortKey = "credits"|"name"|"team";
 
-const roleColor = (role: string) => {
-  if (role === "BAT") return "text-blue-400 bg-blue-400/10 border-blue-400/20";
-  if (role === "BWL") return "text-pink-400 bg-pink-400/10 border-pink-400/20";
-  if (role === "WK")  return "text-yellow-400 bg-yellow-400/10 border-yellow-400/20";
-  return "text-green-400 bg-green-400/10 border-green-400/20";
-};
-
-// Deterministic form based on player name hash
-function getForm(name: string): string[] {
-  const seed = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  return Array.from({ length: 5 }, (_, i) => ((seed + i * 7) % 3 === 0 ? "B" : "A"));
+function estimatePoints(credits: number) {
+  return Math.round(credits * 48 + (credits >= 10 ? 85 : credits >= 8 ? 30 : 10));
 }
-
-// Rough points estimate from credits
-function estimatePoints(credits: number): number {
-  return Math.round(credits * 47 + (credits > 10 ? 80 : 20));
+function estimateSel(credits: number, role: string) {
+  const base = role==="BAT"?70:role==="AR"?60:role==="WK"?52:56;
+  return Math.min(96, Math.round(base + (credits - 8) * 5));
 }
-
-// Selection % estimate
-function estimateSel(credits: number, role: string): number {
-  const base = role === "BAT" ? 72 : role === "AR" ? 61 : role === "WK" ? 54 : 58;
-  return Math.min(95, Math.round(base + (credits - 8) * 4.5));
+function getForm(name: string) {
+  const seed = name.split("").reduce((a,c) => a + c.charCodeAt(0), 0);
+  return Array.from({ length:5 }, (_,i) => ((seed + i*7) % 3 === 0 ? "B" : "A"));
 }
-
-const formColor = (f: string) => f === "A" ? "bg-green-500" : "bg-slate-600";
 
 export default function Players() {
-  const [search, setSearch] = useState("");
-  const [activeRole, setActiveRole] = useState("All");
+  const [search, setSearch]       = useState("");
+  const [roleFilter, setRole]     = useState("ALL");
+  const [teamFilter, setTeam]     = useState("ALL");
+  const [tierFilter, setTier]     = useState<PlayerTier|"ALL">("ALL");
+  const [sortBy, setSort]         = useState<SortKey>("credits");
+  const [showFilters, setShowF]   = useState(false);
+  const [capFilter, setCap]       = useState<"all"|"capped"|"uncapped">("all");
 
-  const filtered = IPL_2026_PLAYERS.filter(p => {
-    const matchRole = activeRole === "All" || p.role === activeRole;
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.team.toLowerCase().includes(search.toLowerCase());
-    return matchRole && matchSearch;
-  });
+  const filtered = useMemo(() => {
+    return ALL_IPL_2026_PLAYERS
+      .filter(p => {
+        if (roleFilter !== "ALL" && p.role !== roleFilter) return false;
+        if (teamFilter !== "ALL" && p.team !== teamFilter) return false;
+        if (tierFilter !== "ALL" && getPlayerTier(p.credits) !== tierFilter) return false;
+        if (capFilter === "capped"   && !p.capped)  return false;
+        if (capFilter === "uncapped" &&  p.capped)  return false;
+        if (search) {
+          const q = search.toLowerCase();
+          if (!p.name.toLowerCase().includes(q) && !p.team.toLowerCase().includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a,b) => {
+        if (sortBy === "credits") return b.credits - a.credits;
+        if (sortBy === "name")    return a.name.localeCompare(b.name);
+        return a.team.localeCompare(b.team);
+      });
+  }, [search, roleFilter, teamFilter, tierFilter, sortBy, capFilter]);
+
+  const activeFilters = [
+    roleFilter !== "ALL" && `Role: ${roleFilter}`,
+    teamFilter !== "ALL" && `Team: ${teamFilter}`,
+    tierFilter !== "ALL" && TIER_LABELS[tierFilter],
+    capFilter  !== "all"  && capFilter,
+  ].filter(Boolean);
 
   return (
     <Layout>
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="space-y-6"
-      >
+      <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.3 }}
+        className="space-y-5">
+
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-white">Players</h1>
-            <p className="text-sm text-slate-400 mt-1">
-              IPL 2026 player pool — {filtered.length} of {IPL_2026_PLAYERS.length} players
+            <h1 className="text-2xl font-black text-white">Players</h1>
+            <p className="text-sm text-white/40 mt-0.5">
+              {filtered.length} of {ALL_IPL_2026_PLAYERS.length} · IPL 2026 official squads
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 w-64">
-              <Search size={14} className="text-slate-400" />
-              <input
-                data-testid="input-player-search"
-                type="search"
-                placeholder="Search players or teams..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="bg-transparent text-sm text-white placeholder:text-slate-500 outline-none w-full"
-              />
+            {/* Search */}
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/35 pointer-events-none" />
+              <input value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Search name or team…"
+                className="w-full pl-9 pr-3 py-2 text-sm text-white rounded-xl outline-none"
+                style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.09)" }} />
             </div>
-            <button
-              data-testid="button-filter"
-              className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-300 hover:bg-white/10 transition-colors"
-            >
-              <Filter size={14} />
-              Filter
+            {/* Filter toggle */}
+            <button onClick={() => setShowF(v=>!v)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors"
+              style={{ background: showFilters ? "rgba(129,140,248,0.15)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${showFilters ? "rgba(129,140,248,0.35)" : "rgba(255,255,255,0.09)"}`,
+                color: showFilters ? "#818cf8" : "rgba(255,255,255,0.5)" }}>
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Filters</span>
+              {activeFilters.length > 0 && (
+                <span className="w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{ background:"#818cf8", color:"#fff" }}>{activeFilters.length}</span>
+              )}
             </button>
           </div>
         </div>
 
-        {/* Role Tabs */}
-        <div className="flex gap-2 flex-wrap">
-          {ROLES.map((role) => (
-            <button
-              key={role}
-              data-testid={`tab-role-${role.toLowerCase()}`}
-              onClick={() => setActiveRole(role)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                activeRole === role
-                  ? "bg-primary text-white"
-                  : "bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              {ROLE_DISPLAY[role]} {role !== "All" && `(${IPL_2026_PLAYERS.filter(p => p.role === role).length})`}
-            </button>
-          ))}
-        </div>
-
-        {/* Players Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {filtered.map((player, i) => {
-            const teamColor = TEAM_COLOR[player.team] ?? "#818cf8";
-            const form = getForm(player.name);
-            const points = estimatePoints(player.credits);
-            const sel = estimateSel(player.credits, player.role);
-
-            return (
-              <motion.div
-                key={player.name}
-                data-testid={`card-player-${i + 1}`}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer group"
-                style={{ borderTop: `2px solid ${teamColor}30` }}
-              >
-                {/* Avatar + Name */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border"
-                      style={{ background: `${teamColor}20`, borderColor: `${teamColor}40` }}
-                    >
-                      {player.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                    </div>
-                    <div>
-                      <p className="text-white font-semibold text-sm leading-tight">{player.name}</p>
-                      <p className="text-xs mt-0.5" style={{ color: teamColor }}>
-                        {player.team}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    data-testid={`button-add-player-${i + 1}`}
-                    className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/40 text-xs font-bold"
-                  >
-                    +
+        {/* Filter panel */}
+        {showFilters && (
+          <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }}
+            className="rounded-2xl p-4 space-y-4"
+            style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)" }}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Role */}
+              <div>
+                <div className="text-xs font-bold text-white/35 uppercase tracking-wider mb-2">Role</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {["ALL","BAT","BWL","AR","WK"].map(r => (
+                    <button key={r} onClick={() => setRole(r)}
+                      className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all"
+                      style={{ background: roleFilter===r ? ROLE_COLOR[r]??"rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)",
+                        color: roleFilter===r ? "#fff" : "rgba(255,255,255,0.45)",
+                        border:`1px solid ${roleFilter===r ? (ROLE_COLOR[r]??"rgba(255,255,255,0.3)") : "rgba(255,255,255,0.08)"}` }}>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Tier */}
+              <div>
+                <div className="text-xs font-bold text-white/35 uppercase tracking-wider mb-2">Tier</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <button onClick={() => setTier("ALL")}
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all"
+                    style={{ background: tierFilter==="ALL"?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.05)",
+                      color: tierFilter==="ALL"?"#fff":"rgba(255,255,255,0.45)",
+                      border:`1px solid ${tierFilter==="ALL"?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.08)"}` }}>
+                    All
                   </button>
+                  {TIERS.map(t => (
+                    <button key={t} onClick={() => setTier(t)}
+                      className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all"
+                      style={{ background: tierFilter===t?`${TIER_COLORS[t]}22`:"rgba(255,255,255,0.05)",
+                        color: tierFilter===t ? TIER_COLORS[t] : "rgba(255,255,255,0.45)",
+                        border:`1px solid ${tierFilter===t?`${TIER_COLORS[t]}45`:"rgba(255,255,255,0.08)"}` }}>
+                      {t}
+                    </button>
+                  ))}
                 </div>
-
-                {/* Role Badge */}
-                <div className="mb-3">
-                  <span className={`inline-flex items-center gap-1 border rounded-full px-2 py-0.5 text-xs font-medium ${roleColor(player.role)}`}>
-                    {roleIcon(player.role)}
-                    {ROLE_LABEL[player.role] ?? player.role}
-                  </span>
-                </div>
-
-                {/* Stats Row */}
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="text-center">
-                    <p className="text-white font-bold text-sm">{player.credits}</p>
-                    <p className="text-slate-500 text-xs">Credits</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-bold text-sm" style={{ color: teamColor }}>{points}</p>
-                    <p className="text-slate-500 text-xs">Est. Pts</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-slate-300 font-bold text-sm">{sel}%</p>
-                    <p className="text-slate-500 text-xs">Selected</p>
-                  </div>
-                </div>
-
-                {/* Form */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500 text-xs">Form</span>
-                  <div className="flex gap-1">
-                    {form.map((f, fi) => (
-                      <div key={fi} className={`w-4 h-1.5 rounded-full ${formColor(f)}`} />
+              </div>
+              {/* Team */}
+              <div>
+                <div className="text-xs font-bold text-white/35 uppercase tracking-wider mb-2">Team</div>
+                <select value={teamFilter} onChange={e => setTeam(e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg text-xs text-white outline-none"
+                  style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)" }}>
+                  <option value="ALL">All Teams</option>
+                  {ALL_TEAMS.map(t => <option key={t} value={t}>{t} — {TEAM_FULL_NAME[t]}</option>)}
+                </select>
+              </div>
+              {/* Capped / Sort */}
+              <div className="space-y-2">
+                <div>
+                  <div className="text-xs font-bold text-white/35 uppercase tracking-wider mb-2">Status</div>
+                  <div className="flex gap-1.5">
+                    {(["all","capped","uncapped"] as const).map(c => (
+                      <button key={c} onClick={() => setCap(c)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all capitalize"
+                        style={{ background: capFilter===c?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.05)",
+                          color: capFilter===c?"#fff":"rgba(255,255,255,0.4)",
+                          border:`1px solid ${capFilter===c?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.08)"}` }}>
+                        {c}
+                      </button>
                     ))}
                   </div>
                 </div>
+                <div>
+                  <div className="text-xs font-bold text-white/35 uppercase tracking-wider mb-2">Sort</div>
+                  <select value={sortBy} onChange={e => setSort(e.target.value as SortKey)}
+                    className="w-full px-2.5 py-1.5 rounded-lg text-xs text-white outline-none"
+                    style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)" }}>
+                    <option value="credits">Credits (High-Low)</option>
+                    <option value="name">Name (A-Z)</option>
+                    <option value="team">Team (A-Z)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            {/* Active filter chips */}
+            {activeFilters.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-white/6">
+                <span className="text-xs text-white/30">Active:</span>
+                {activeFilters.map((f,i) => (
+                  <span key={i} className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                    style={{ background:"rgba(129,140,248,0.15)", color:"#818cf8", border:"1px solid rgba(129,140,248,0.2)" }}>
+                    {f}
+                  </span>
+                ))}
+                <button onClick={() => { setRole("ALL"); setTeam("ALL"); setTier("ALL"); setCap("all"); }}
+                  className="flex items-center gap-1 text-xs text-white/35 hover:text-white transition-colors ml-1">
+                  <X className="w-3 h-3" /> Clear all
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Role tabs (quick) */}
+        {!showFilters && (
+          <div className="flex gap-2 flex-wrap">
+            {["ALL","BAT","BWL","AR","WK"].map(r => (
+              <button key={r} onClick={() => setRole(r)}
+                className="px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all"
+                style={{ background: roleFilter===r ? (ROLE_COLOR[r]??"rgba(255,255,255,0.15)") : "rgba(255,255,255,0.05)",
+                  color: roleFilter===r ? "#fff" : "rgba(255,255,255,0.45)",
+                  border:`1px solid ${roleFilter===r ? (ROLE_COLOR[r]??"rgba(255,255,255,0.2)") : "rgba(255,255,255,0.08)"}` }}>
+                {r === "ALL" ? `All (${ALL_IPL_2026_PLAYERS.length})` : `${ROLE_LABEL[r]} (${ALL_IPL_2026_PLAYERS.filter(p=>p.role===r).length})`}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {filtered.map((player, i) => {
+            const tc    = TEAM_COLOR[player.team] ?? "#aaa";
+            const tier  = getPlayerTier(player.credits);
+            const tc2   = TIER_COLORS[tier];
+            const form  = getForm(player.name);
+            const pts   = estimatePoints(player.credits);
+            const sel   = estimateSel(player.credits, player.role);
+            const base  = TIER_CONFIG[tier].basePrice;
+
+            return (
+              <motion.div key={player.name}
+                initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
+                transition={{ delay: Math.min(i * 0.015, 0.4) }}
+                className="rounded-2xl p-3.5 cursor-pointer hover:scale-[1.02] transition-all group relative overflow-hidden"
+                style={{ background:"rgba(255,255,255,0.03)", border:`1px solid rgba(255,255,255,0.08)`,
+                  borderTop:`2px solid ${tc}40` }}>
+
+                {/* Tier pip */}
+                <div className="absolute top-2.5 right-2.5 text-xs font-bold px-1.5 py-0.5 rounded-full"
+                  style={{ background:`${tc2}18`, color:tc2, border:`1px solid ${tc2}30`, fontSize:"0.6rem" }}>
+                  {tier}
+                </div>
+
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black mb-2.5"
+                  style={{ background:`${tc}18`, color:tc, border:`1px solid ${tc}30` }}>
+                  {player.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
+                </div>
+
+                <div className="font-bold text-sm text-white leading-tight truncate mb-0.5">{player.name}</div>
+                <div className="text-xs font-semibold mb-2.5" style={{ color:tc }}>{player.team}
+                  {!player.capped && <span className="ml-1 text-white/25 font-normal text-xs">UC</span>}
+                </div>
+
+                {/* Role + base */}
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded-md"
+                    style={{ background:`${ROLE_COLOR[player.role]??"#aaa"}15`, color:ROLE_COLOR[player.role]??"#aaa" }}>
+                    {player.role}
+                  </span>
+                  <span className="text-xs font-semibold" style={{ color:tc2 }}>
+                    Base {base < 1 ? `₹${base*100}L` : `₹${base}Cr`}
+                  </span>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-1 text-center mb-2.5">
+                  <div>
+                    <div className="text-sm font-black text-white">{player.credits}</div>
+                    <div className="text-white/30" style={{ fontSize:"0.55rem" }}>CR</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-black" style={{ color:tc }}>{pts}</div>
+                    <div className="text-white/30" style={{ fontSize:"0.55rem" }}>PTS</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-white/70">{sel}%</div>
+                    <div className="text-white/30" style={{ fontSize:"0.55rem" }}>SEL</div>
+                  </div>
+                </div>
+
+                {/* Form dots */}
+                <div className="flex items-center gap-1">
+                  <span className="text-white/25" style={{ fontSize:"0.55rem" }}>FORM</span>
+                  <div className="flex gap-0.5 ml-1">
+                    {form.map((f,fi) => (
+                      <div key={fi} className="w-3.5 h-1 rounded-full"
+                        style={{ background: f==="A"?"#22c55e":"#334155" }} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Add button */}
+                <button className="absolute bottom-2.5 right-2.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ background:`${tc}30`, color:tc, border:`1px solid ${tc}50` }}>
+                  +
+                </button>
               </motion.div>
             );
           })}
         </div>
 
         {filtered.length === 0 && (
-          <div className="text-center py-16 text-slate-500">
-            <p className="text-lg font-semibold">No players found</p>
-            <p className="text-sm mt-1">Try a different search or role filter</p>
+          <div className="text-center py-20 text-white/25">
+            <div className="text-3xl mb-3">🏏</div>
+            <div className="text-base font-semibold">No players match your filters</div>
+            <div className="text-sm mt-1">Try adjusting the role, tier, or team</div>
           </div>
         )}
       </motion.div>
