@@ -73,7 +73,7 @@ export default function MyTeams() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-3">
           {[
             { label: "Teams Created",  value: mockTeams.length.toString(), color: "text-white" },
             { label: "Avg Points",     value: "450",                       color: "text-cyan-400" },

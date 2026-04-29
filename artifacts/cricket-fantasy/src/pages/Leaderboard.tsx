@@ -75,7 +75,7 @@ export default function Leaderboard() {
 
         {/* Full Table */}
         <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
-          <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-white/10 text-xs text-slate-500 font-medium uppercase tracking-wider">
+          <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 border-b border-white/10 text-xs text-slate-500 font-medium uppercase tracking-wider">
             <div className="col-span-1">Rank</div>
             <div className="col-span-5">Player</div>
             <div className="col-span-2 text-right">Points</div>
