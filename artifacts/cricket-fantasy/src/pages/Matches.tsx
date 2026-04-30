@@ -73,7 +73,7 @@ function SmallLogo({ code }: { code: string }) {
 
 function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading: boolean }) {
   const rows: StandingRow[] = standings.length > 0
-    ? standings
+    ? [...standings].sort((a, b) => a.position - b.position)
     : ALL_TEAMS.map((t, i) => ({
         team: t, teamFull: TEAM_FULL_NAME[t] ?? t,
         played: 0, won: 0, lost: 0, tied: 0, nrr: 0, points: 0, position: i + 1,
@@ -129,7 +129,7 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
                 ))
               : rows.map((row, idx) => {
                   const color = TEAM_COLOR[row.team] ?? "#aaa";
-                  const isTop4 = idx < 4;
+                  const isTop4 = row.position <= 4;
                   return (
                     <tr
                       key={row.team}
@@ -150,7 +150,7 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
                           fontSize: "0.65rem", fontWeight: 800,
                           color: isTop4 ? color : "rgba(255,255,255,0.4)",
                         }}>
-                          {idx + 1}
+                          {row.position}
                         </div>
                       </td>
                       <td style={{ padding: "9px 16px 9px 8px", whiteSpace: "nowrap" }}>
@@ -172,7 +172,7 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
                         </td>
                       ))}
                       <td style={{ padding: "9px 14px", textAlign: "center", fontVariantNumeric: "tabular-nums", color: row.nrr > 0 ? "#34d399" : row.nrr < 0 ? "#f87171" : "rgba(255,255,255,0.35)" }}>
-                        {row.played > 0 ? (row.nrr >= 0 ? "+" : "") + row.nrr.toFixed(3) : "—"}
+                        {row.played > 0 ? (() => { const n = parseFloat(String(row.nrr)); return (isNaN(n) ? "—" : (n >= 0 ? "+" : "") + n.toFixed(3)); })() : "—"}
                       </td>
                       <td style={{ padding: "9px 14px", textAlign: "center", fontWeight: 800, fontSize: "0.88rem", color: isTop4 ? color : "rgba(255,255,255,0.75)", fontVariantNumeric: "tabular-nums" }}>
                         {row.points}
