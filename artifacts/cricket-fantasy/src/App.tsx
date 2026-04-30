@@ -14,6 +14,8 @@ import AuctionRoom from "@/pages/AuctionRoom";
 import Predictions from "@/pages/Predictions";
 import Guide from "@/pages/Guide";
 import Leaderboard from "@/pages/Leaderboard";
+import LiveScore from "@/pages/LiveScore";
+import Watchlist from "@/pages/Watchlist";
 import AuthPages from "@/pages/Auth";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { SidebarProvider } from "@/context/SidebarContext";
@@ -66,6 +68,8 @@ function AppRoutes() {
       <Route path="/predictions"    component={() => <ProtectedRoute component={Predictions} />} />
       <Route path="/guide"          component={() => <ProtectedRoute component={Guide} />} />
       <Route path="/leaderboard"    component={() => <ProtectedRoute component={Leaderboard} />} />
+      <Route path="/live"           component={() => <ProtectedRoute component={LiveScore} />} />
+      <Route path="/watchlist"      component={() => <ProtectedRoute component={Watchlist} />} />
       <Route component={NotFound} />
     </Switch>
   );
