@@ -211,33 +211,35 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
       const winCode = winId === firstId ? code1 : code2;
       const loseCode = winCode === code1 ? code2 : code1;
 
-      const s1 = parseScore(m["1Summary"]);
-      const s2 = parseScore(m["2Summary"]);
-
-      if (table[code1]) {
-        table[code1].played++;
-        table[code1].runsFor += s1.runs; table[code1].ballsFor += s1.balls;
-        table[code1].runsAgainst += s2.runs; table[code1].ballsAgainst += s2.balls;
-      }
-      if (table[code2]) {
-        table[code2].played++;
-        table[code2].runsFor += s2.runs; table[code2].ballsFor += s2.balls;
-        table[code2].runsAgainst += s1.runs; table[code2].ballsAgainst += s1.balls;
-      }
-
-      // Determine result type from comment text
+      // Determine result type FIRST so NR matches don't pollute NRR
       const commentss = String(m.Commentss ?? "").toLowerCase();
       const isNoResult = commentss.includes("no result") || commentss.includes("abandon");
       const hasSuperOver = commentss.includes("super over");
 
       if (isNoResult) {
-        // Both teams get 1 point, no win/loss recorded
-        if (table[code1]) { table[code1].noResult++; table[code1].points += 1; }
-        if (table[code2]) { table[code2].noResult++; table[code2].points += 1; }
-      } else if (winId && (table[winCode] || hasSuperOver)) {
-        // Normal win (including super-over): winner gets 2 pts, loser 0
-        if (table[winCode]) { table[winCode].won++; table[winCode].points += 2; }
-        if (table[loseCode]) { table[loseCode].lost++; }
+        // Both teams get 1 point; played counts but NO runs/balls added to NRR
+        if (table[code1]) { table[code1].played++; table[code1].noResult++; table[code1].points += 1; }
+        if (table[code2]) { table[code2].played++; table[code2].noResult++; table[code2].points += 1; }
+      } else {
+        const s1 = parseScore(m["1Summary"]);
+        const s2 = parseScore(m["2Summary"]);
+
+        if (table[code1]) {
+          table[code1].played++;
+          table[code1].runsFor += s1.runs; table[code1].ballsFor += s1.balls;
+          table[code1].runsAgainst += s2.runs; table[code1].ballsAgainst += s2.balls;
+        }
+        if (table[code2]) {
+          table[code2].played++;
+          table[code2].runsFor += s2.runs; table[code2].ballsFor += s2.balls;
+          table[code2].runsAgainst += s1.runs; table[code2].ballsAgainst += s1.balls;
+        }
+
+        if (winId && (table[winCode] || hasSuperOver)) {
+          // Normal win (including super-over): winner gets 2 pts, loser 0
+          if (table[winCode]) { table[winCode].won++; table[winCode].points += 2; }
+          if (table[loseCode]) { table[loseCode].lost++; }
+        }
       }
     }
 
