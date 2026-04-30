@@ -6,12 +6,12 @@ import { db, usersTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
-const JWT_SECRET = process.env.SESSION_SECRET ?? "change-me-in-production";
+const JWT_SECRET = process.env.SESSION_SECRET!;
 const COOKIE_NAME = "cricstrat_token";
 const COOKIE_OPTS = {
   httpOnly: true,
   secure: true,
-  sameSite: "none" as const,
+  sameSite: "lax" as const,
   path: "/",
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 };
@@ -83,7 +83,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 });
 
 router.post("/auth/logout", (_req, res): void => {
-  res.clearCookie(COOKIE_NAME, { path: "/", sameSite: "none", secure: true });
+  res.clearCookie(COOKIE_NAME, { path: "/", sameSite: "lax", secure: true });
   res.json({ ok: true });
 });
 

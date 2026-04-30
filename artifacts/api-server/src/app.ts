@@ -7,6 +7,23 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+function buildAllowedOrigins(): string[] {
+  const explicit = process.env.ALLOWED_ORIGINS;
+  if (explicit) {
+    return explicit
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
+  }
+  return (process.env.REPLIT_DOMAINS ?? "")
+    .split(",")
+    .map((d) => d.trim())
+    .filter(Boolean)
+    .map((d) => `https://${d}`);
+}
+
+const allowedOrigins = buildAllowedOrigins();
+
 app.use(
   pinoHttp({
     logger,
@@ -26,7 +43,16 @@ app.use(
     },
   }),
 );
-app.use(cors({ origin: true, credentials: true }));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error("Origin not allowed"));
+    },
+    credentials: true,
+  }),
+);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
