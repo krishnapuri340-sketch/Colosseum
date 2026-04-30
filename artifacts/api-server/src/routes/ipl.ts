@@ -191,12 +191,16 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
 
     function parseScore(summary: string | null): { runs: number; balls: number } {
       if (!summary) return { runs: 0, balls: 0 };
-      const m = summary.match(/(\d+)\/\d+\s*\((\d+)\.(\d+)\s*Ov/i) ?? summary.match(/(\d+)\/\d+\s*\((\d+)\)/i);
+      // Capture wickets too — needed for ICC NRR all-out rule
+      const m = summary.match(/(\d+)\/(\d+)\s*\((\d+)\.(\d+)\s*Ov/i) ?? summary.match(/(\d+)\/(\d+)\s*\((\d+)\)/i);
       if (!m) return { runs: 0, balls: 0 };
       const runs = parseInt(m[1]) || 0;
-      const overs = parseInt(m[2]) || 0;
-      const balls = m[3] ? (overs * 6) + (parseInt(m[3]) || 0) : overs * 6;
-      return { runs, balls: balls || 120 };
+      const wickets = parseInt(m[2]) || 0;
+      const overs = parseInt(m[3]) || 0;
+      const actualBalls = m[4] ? (overs * 6) + (parseInt(m[4]) || 0) : (overs * 6) || 120;
+      // ICC NRR rule: if bowled out (10 wickets), use full allotted overs (120 balls for T20)
+      const balls = wickets >= 10 ? 120 : actualBalls;
+      return { runs, balls };
     }
 
     for (const m of fixtures) {
