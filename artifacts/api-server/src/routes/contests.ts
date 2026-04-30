@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, contestsTable, matchesTable } from "@workspace/db";
+import { eq, and, lt, sql } from "drizzle-orm";
+import { db, contestsTable, matchesTable, usersTable, teamsTable } from "@workspace/db";
 import {
   ListContestsQueryParams,
   ListContestsResponse,
@@ -11,6 +11,7 @@ import {
   JoinContestBody,
   JoinContestResponse,
 } from "@workspace/api-zod";
+import { getUserFromRequest } from "./auth";
 
 const router: IRouter = Router();
 
@@ -45,6 +46,18 @@ router.get("/contests", async (req, res): Promise<void> => {
 });
 
 router.post("/contests", async (req, res): Promise<void> => {
+  const userId = getUserFromRequest(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  const [user] = await db.select({ isAdmin: usersTable.isAdmin }).from(usersTable).where(eq(usersTable.id, userId));
+  if (!user || !user.isAdmin) {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+
   const parsed = CreateContestBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -102,6 +115,12 @@ router.get("/contests/:contestId", async (req, res): Promise<void> => {
 });
 
 router.post("/contests/:contestId/join", async (req, res): Promise<void> => {
+  const userId = getUserFromRequest(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
   const rawId = Array.isArray(req.params.contestId) ? req.params.contestId[0] : req.params.contestId;
   const params = JoinContestParams.safeParse({ contestId: parseInt(rawId, 10) });
   if (!params.success) {
@@ -115,17 +134,34 @@ router.post("/contests/:contestId/join", async (req, res): Promise<void> => {
     return;
   }
 
-  const [contest] = await db.select().from(contestsTable).where(eq(contestsTable.id, params.data.contestId));
-  if (!contest) {
+  const [team] = await db
+    .select({ id: teamsTable.id })
+    .from(teamsTable)
+    .where(and(eq(teamsTable.id, body.data.teamId), eq(teamsTable.userId, userId)));
+  if (!team) {
+    res.status(403).json({ error: "Team not found or does not belong to you" });
+    return;
+  }
+
+  const contestExists = await db.select({ id: contestsTable.id }).from(contestsTable).where(eq(contestsTable.id, params.data.contestId));
+  if (contestExists.length === 0) {
     res.status(404).json({ error: "Contest not found" });
     return;
   }
 
   const [updated] = await db
     .update(contestsTable)
-    .set({ filledSpots: contest.filledSpots + 1 })
-    .where(eq(contestsTable.id, contest.id))
+    .set({ filledSpots: sql`${contestsTable.filledSpots} + 1` })
+    .where(and(
+      eq(contestsTable.id, params.data.contestId),
+      lt(contestsTable.filledSpots, contestsTable.totalSpots),
+    ))
     .returning();
+
+  if (!updated) {
+    res.status(409).json({ error: "Contest is full" });
+    return;
+  }
 
   const matches = await db.select().from(matchesTable).where(eq(matchesTable.id, updated.matchId));
   const match = matches[0];

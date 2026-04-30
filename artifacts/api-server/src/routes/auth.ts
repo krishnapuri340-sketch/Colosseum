@@ -24,7 +24,7 @@ export function getUserFromRequest(req: any): number | null {
   const token = req.cookies?.[COOKIE_NAME];
   if (!token) return null;
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as { sub: number };
+    const payload = jwt.verify(token, JWT_SECRET) as unknown as { sub: number };
     return payload.sub;
   } catch {
     return null;

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db, teamsTable } from "@workspace/db";
 import {
   ListTeamsResponse,
@@ -11,11 +11,18 @@ import {
   UpdateTeamResponse,
   DeleteTeamParams,
 } from "@workspace/api-zod";
+import { getUserFromRequest } from "./auth";
 
 const router: IRouter = Router();
 
-router.get("/teams", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(teamsTable);
+router.get("/teams", async (req, res): Promise<void> => {
+  const userId = getUserFromRequest(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  const rows = await db.select().from(teamsTable).where(eq(teamsTable.userId, userId));
   const result = rows.map((t) => ({
     ...t,
     players: t.players.map((p) => parseInt(p, 10)),
@@ -25,6 +32,12 @@ router.get("/teams", async (_req, res): Promise<void> => {
 });
 
 router.post("/teams", async (req, res): Promise<void> => {
+  const userId = getUserFromRequest(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
   const parsed = CreateTeamBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -32,6 +45,7 @@ router.post("/teams", async (req, res): Promise<void> => {
   }
 
   const [team] = await db.insert(teamsTable).values({
+    userId,
     name: parsed.data.name,
     matchId: parsed.data.matchId,
     captain: parsed.data.captain,
@@ -48,6 +62,12 @@ router.post("/teams", async (req, res): Promise<void> => {
 });
 
 router.get("/teams/:teamId", async (req, res): Promise<void> => {
+  const userId = getUserFromRequest(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
   const raw = Array.isArray(req.params.teamId) ? req.params.teamId[0] : req.params.teamId;
   const params = GetTeamParams.safeParse({ teamId: parseInt(raw, 10) });
   if (!params.success) {
@@ -55,7 +75,9 @@ router.get("/teams/:teamId", async (req, res): Promise<void> => {
     return;
   }
 
-  const [team] = await db.select().from(teamsTable).where(eq(teamsTable.id, params.data.teamId));
+  const [team] = await db.select().from(teamsTable).where(
+    and(eq(teamsTable.id, params.data.teamId), eq(teamsTable.userId, userId))
+  );
   if (!team) {
     res.status(404).json({ error: "Team not found" });
     return;
@@ -69,6 +91,12 @@ router.get("/teams/:teamId", async (req, res): Promise<void> => {
 });
 
 router.put("/teams/:teamId", async (req, res): Promise<void> => {
+  const userId = getUserFromRequest(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
   const raw = Array.isArray(req.params.teamId) ? req.params.teamId[0] : req.params.teamId;
   const params = UpdateTeamParams.safeParse({ teamId: parseInt(raw, 10) });
   if (!params.success) {
@@ -82,6 +110,14 @@ router.put("/teams/:teamId", async (req, res): Promise<void> => {
     return;
   }
 
+  const existing = await db.select({ id: teamsTable.id }).from(teamsTable).where(
+    and(eq(teamsTable.id, params.data.teamId), eq(teamsTable.userId, userId))
+  );
+  if (existing.length === 0) {
+    res.status(404).json({ error: "Team not found" });
+    return;
+  }
+
   const [team] = await db
     .update(teamsTable)
     .set({
@@ -90,7 +126,7 @@ router.put("/teams/:teamId", async (req, res): Promise<void> => {
       viceCaptain: parsed.data.viceCaptain,
       players: parsed.data.players.map(String),
     })
-    .where(eq(teamsTable.id, params.data.teamId))
+    .where(and(eq(teamsTable.id, params.data.teamId), eq(teamsTable.userId, userId)))
     .returning();
 
   if (!team) {
@@ -106,6 +142,12 @@ router.put("/teams/:teamId", async (req, res): Promise<void> => {
 });
 
 router.delete("/teams/:teamId", async (req, res): Promise<void> => {
+  const userId = getUserFromRequest(req);
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
   const raw = Array.isArray(req.params.teamId) ? req.params.teamId[0] : req.params.teamId;
   const params = DeleteTeamParams.safeParse({ teamId: parseInt(raw, 10) });
   if (!params.success) {
@@ -113,7 +155,10 @@ router.delete("/teams/:teamId", async (req, res): Promise<void> => {
     return;
   }
 
-  const [team] = await db.delete(teamsTable).where(eq(teamsTable.id, params.data.teamId)).returning();
+  const [team] = await db
+    .delete(teamsTable)
+    .where(and(eq(teamsTable.id, params.data.teamId), eq(teamsTable.userId, userId)))
+    .returning();
   if (!team) {
     res.status(404).json({ error: "Team not found" });
     return;

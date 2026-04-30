@@ -24,6 +24,7 @@ export type Player = typeof playersTable.$inferSelect;
 
 export const teamsTable = pgTable("teams", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id"),
   name: text("name").notNull(),
   matchId: integer("match_id").notNull(),
   captain: text("captain").notNull(),
