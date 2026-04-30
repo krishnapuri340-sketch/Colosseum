@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Radio, Zap, TrendingUp, RefreshCw, Star, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { TEAM_COLOR, TEAM_LOGO, TEAM_FULL_NAME, ROLE_LABEL } from "@/lib/ipl-constants";
 import { apiFetch } from "@/lib/api";
+import { useApp } from "@/context/AppContext";
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface LiveEvent {
@@ -63,11 +64,7 @@ const MOCK_EVENTS: LiveEvent[] = [
   { id:"e10", player:"Suryakumar Yadav",  team:"MI",  event:"Catch",          pts:8,  over:"15.0", timestamp:Date.now()-3000   },
 ];
 
-const MY_SQUAD_NAMES = new Set([
-  "Jasprit Bumrah","Rohit Sharma","Virat Kohli","Rashid Khan","Travis Head",
-  "Rishabh Pant","Tilak Varma","Arshdeep Singh","Varun Chakravarthy",
-  "Yashasvi Jaiswal","KL Rahul"
-]);
+// MY_SQUAD_NAMES derived from AppContext myTeams in component
 
 const MOCK_PLAYERS: LivePlayerScore[] = [
   { name:"Virat Kohli",      team:"RCB", role:"BAT", runs:102, balls:63, fantasyPts:142, isActive:true,  events:MOCK_EVENTS.filter(e=>e.player==="Virat Kohli") },
@@ -255,6 +252,8 @@ function PlayerScoreCard({ player, isMySquad }: { player:LivePlayerScore; isMySq
 
 // ── Main page ─────────────────────────────────────────────────────────
 export default function LiveScore() {
+  const { myTeams } = useApp();
+  const MY_SQUAD_NAMES = new Set(myTeams.flatMap(t => t.players));
   const [liveMatches, setLiveMatches] = useState<LiveMatch[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
   const [events, setEvents] = useState<LiveEvent[]>(MOCK_EVENTS);

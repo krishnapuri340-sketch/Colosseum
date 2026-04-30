@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { Plus, Users, Star, ChevronRight, Pencil, Trash2, X, Search, CheckCircle } from "lucide-react";
 import { TEAM_COLOR } from "@/lib/ipl-constants";
+import { useApp } from "@/context/AppContext";
 import { ALL_IPL_2026_PLAYERS } from "@/lib/ipl-players-2026";
 
 const ROLE_LIMITS = { BAT: [3,6], BWL: [3,6], AR: [1,4], WK: [1,4] };
@@ -17,11 +18,7 @@ const ROLE_COLOR_MAP: Record<string,string> = {
   WK:"text-yellow-400 bg-yellow-400/10 border-yellow-400/20",
 };
 
-const mockTeams = [
-  { id:1, name:"Bumrah Leads",  match:"MI vs RCB — Wankhede",          captain:"Jasprit Bumrah",  vc:"Rohit Sharma",   players:11, credits:99.0, points:487,  status:"live",      teams:["MI","RCB"] },
-  { id:2, name:"Gill Power",    match:"GT vs CSK — Narendra Modi",      captain:"Shubman Gill",    vc:"Rashid Khan",    players:11, credits:98.5, points:null, status:"upcoming",  teams:["GT","CSK"] },
-  { id:3, name:"Pant Effect",   match:"LSG vs KKR — Ekana Stadium",     captain:"Rishabh Pant",    vc:"Andre Russell",  players:11, credits:97.5, points:412,  status:"completed", teams:["LSG","KKR"] },
-];
+// Teams come from AppContext
 
 const statusStyle = (s:string) => ({
   live:      "bg-green-500/20 text-green-400 border-green-500/30",
@@ -32,6 +29,7 @@ const statusStyle = (s:string) => ({
 type SortKey = "credits"|"role"|"team";
 
 export default function MyTeams() {
+  const { myTeams: contextTeams, addTeam, removeTeam, updateTeamCVC } = useApp();
   const [showBuilder, setShowBuilder] = useState(false);
   const [selected, setSelected]       = useState<typeof ALL_IPL_2026_PLAYERS>([]);
   const [captain, setCaptain]         = useState<string|null>(null);
@@ -119,7 +117,7 @@ export default function MyTeams() {
 
         {/* Teams */}
         <div className="space-y-3">
-          {mockTeams.map((team, i) => {
+          {contextTeams.map((team, i) => {
             const c1 = TEAM_COLOR[team.teams[0]] ?? "#818cf8";
             const c2 = TEAM_COLOR[team.teams[1]] ?? "#818cf8";
             return (

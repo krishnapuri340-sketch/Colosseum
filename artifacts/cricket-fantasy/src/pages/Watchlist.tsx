@@ -8,6 +8,7 @@ import { useState, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Search, Trash2, Gavel, TrendingUp, Plus, X } from "lucide-react";
+import { useApp } from "@/context/AppContext";
 import { ALL_IPL_2026_PLAYERS, getPlayerTier, getTierBasePrice, TIER_CONFIG, type PlayerTier } from "@/lib/ipl-players-2026";
 import { TEAM_COLOR, TEAM_LOGO, ROLE_LABEL, ROLE_COLOR, ALL_TEAMS, TEAM_FULL_NAME } from "@/lib/ipl-constants";
 
@@ -28,28 +29,7 @@ const LEAGUE_WATCHERS: Record<string, string[]> = {
   "Tilak Varma":       ["Priya"],
 };
 
-const STORAGE_KEY = "colosseum_watchlist";
-
-function loadWatchlist(): string[] {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); }
-  catch { return []; }
-}
-function saveWatchlist(names: string[]) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(names)); } catch {}
-}
-
-export function useWatchlist() {
-  const [watchlist, setWatchlist] = useState<string[]>(loadWatchlist);
-  const toggle = (name: string) => {
-    setWatchlist(prev => {
-      const next = prev.includes(name) ? prev.filter(n=>n!==name) : [...prev, name];
-      saveWatchlist(next);
-      return next;
-    });
-  };
-  const isWatched = (name: string) => watchlist.includes(name);
-  return { watchlist, toggle, isWatched };
-}
+// Watchlist state managed by AppContext
 
 // ── Add player overlay ─────────────────────────────────────────────────
 function AddPlayerOverlay({ watchlist, onToggle, onClose }:
@@ -170,7 +150,7 @@ function AddPlayerOverlay({ watchlist, onToggle, onClose }:
 
 // ── Main page ─────────────────────────────────────────────────────────
 export default function Watchlist() {
-  const { watchlist, toggle, isWatched } = useWatchlist();
+  const { watchlist, toggleWatch: toggle, isWatched } = useApp();
   const [showAdd, setShowAdd] = useState(false);
   const [sortBy, setSort]     = useState<"tier"|"credits"|"name">("tier");
 

@@ -10,6 +10,7 @@ import { Link, useLocation } from "wouter";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { TEAM_COLOR, TEAM_LOGO, TEAM_FULL_NAME } from "@/lib/ipl-constants";
 import { apiFetch } from "@/lib/api";
+import { useApp } from "@/context/AppContext";
 
 interface IplMatch {
   iplId: string; matchNumber: number;
@@ -71,6 +72,7 @@ function TeamLogo({ code, size=44 }: { code:string; size?:number }) {
 export default function Dashboard() {
   const [matches, setMatches] = useState<IplMatch[]>([]);
   const [loading, setLoading] = useState(true);
+  const { profile, totalPts, currentRank, myTeams, predAccuracy, notifications } = useApp();
 
   useEffect(() => {
     apiFetch("/ipl/matches")
@@ -163,9 +165,9 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               </div>
               <div className="flex items-baseline gap-1.5 mt-1">
-                <span className="text-2xl font-black text-white">2,529</span>
+                <span className="text-2xl font-black text-white">{totalPts.toLocaleString()}</span>
                 <span className="text-xs text-white/40">pts · Rank</span>
-                <span className="text-lg font-bold text-yellow-400">#7</span>
+                <span className="text-lg font-bold text-yellow-400">#{currentRank}</span>
               </div>
             </div>
           </div>
@@ -175,10 +177,10 @@ export default function Dashboard() {
         <motion.div variants={fade}
           className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label:"Total Points",  value:"2,529",  sub:"Season total",    color:"#818cf8", icon:<Zap className="w-5 h-5" /> },
-            { label:"Current Rank",  value:"#7",     sub:"↑ 2 from last wk",color:"#f59e0b", icon:<Trophy className="w-5 h-5" /> },
-            { label:"Teams Active",  value:"3",      sub:"Across 3 contests",color:"#34d399", icon:<Users className="w-5 h-5" /> },
-            { label:"Predictions",   value:"19/28",  sub:"68% accuracy",    color:"#f87171", icon:<Target className="w-5 h-5" /> },
+            { label:"Total Points",  value:totalPts.toLocaleString(), sub:"Season total",       color:"#818cf8", icon:<Zap className="w-5 h-5" /> },
+            { label:"Current Rank",  value:`#${currentRank}`,            sub:"Fantasy league",     color:"#f59e0b", icon:<Trophy className="w-5 h-5" /> },
+            { label:"Teams Active",  value:myTeams.length,               sub:`${myTeams.filter(t=>t.status==="live").length} live now`, color:"#34d399", icon:<Users className="w-5 h-5" /> },
+            { label:"Predictions",   value:`${predAccuracy}%`,           sub:"Accuracy this season",color:"#f87171", icon:<Target className="w-5 h-5" /> },
           ].map(s => (
             <div key={s.label} className="rounded-2xl p-4 flex items-center gap-3.5"
               style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)" }}>
