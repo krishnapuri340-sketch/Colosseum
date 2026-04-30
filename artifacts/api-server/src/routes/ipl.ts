@@ -117,21 +117,34 @@ router.get("/ipl/matches", async (_req, res): Promise<void> => {
           : (m.SecondBattingTeamCode ?? null);
       }
 
+      // Derive actual home/away codes from HomeTeamID vs batting order
+      const homeId  = String(m.HomeTeamID ?? "");
+      const firstId2 = String(m.FirstBattingTeamID ?? "");
+      const homeBatsFirst = homeId !== "" && homeId === firstId2;
+      const homeTeamCode = homeBatsFirst
+        ? (m.FirstBattingTeamCode  ?? m.HomeTeamCode ?? "")
+        : (m.SecondBattingTeamCode ?? m.HomeTeamCode ?? m.FirstBattingTeamCode ?? "");
+      const awayTeamCode = homeBatsFirst
+        ? (m.SecondBattingTeamCode ?? m.AwayTeamCode ?? "")
+        : (m.FirstBattingTeamCode  ?? m.AwayTeamCode ?? m.SecondBattingTeamCode ?? "");
+      const homeScore = homeBatsFirst ? (m["1Summary"] ?? null) : (m["2Summary"] ?? null);
+      const awayScore = homeBatsFirst ? (m["2Summary"] ?? null) : (m["1Summary"] ?? null);
+
       return {
         iplId: String(m.MatchID ?? ""),
         matchNumber: matchNum,
         name: m.MatchName ?? m.MatchDesc ?? "",
-        homeTeam: m.FirstBattingTeamCode ?? m.HomeTeamCode ?? "",
-        awayTeam: m.SecondBattingTeamCode ?? m.AwayTeamCode ?? "",
-        homeTeamFull: m.FirstBattingTeamName ?? m.HomeTeamName ?? "",
-        awayTeamFull: m.SecondBattingTeamName ?? m.AwayTeamName ?? "",
+        homeTeam: homeTeamCode,
+        awayTeam: awayTeamCode,
+        homeTeamFull: String(m.HomeTeamName ?? m.FirstBattingTeamName ?? ""),
+        awayTeamFull: String(m.AwayTeamName ?? m.SecondBattingTeamName ?? ""),
         venue: m.GroundName ?? "",
         city: m.city ?? m.GroundCity ?? "",
         matchDate: m.MatchDate ?? "",
         matchTime: m.MatchTime ?? "",
         status: rawStatus,
-        firstInningsScore: m["1Summary"] ?? null,
-        secondInningsScore: m["2Summary"] ?? null,
+        firstInningsScore: homeScore,
+        secondInningsScore: awayScore,
         result: m.Commentss ? String(m.Commentss).trim() : null,
         winningTeamCode,
         mom: m.MOM ?? null,
@@ -166,14 +179,14 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
 
     interface TeamRow {
       code: string; full: string;
-      played: number; won: number; lost: number; tied: number;
+      played: number; won: number; lost: number; noResult: number;
       points: number;
       runsFor: number; ballsFor: number;
       runsAgainst: number; ballsAgainst: number;
     }
     const table: Record<string, TeamRow> = {};
     for (const { code, full } of Object.values(teamMap)) {
-      table[code] = { code, full, played: 0, won: 0, lost: 0, tied: 0, points: 0, runsFor: 0, ballsFor: 0, runsAgainst: 0, ballsAgainst: 0 };
+      table[code] = { code, full, played: 0, won: 0, lost: 0, noResult: 0, points: 0, runsFor: 0, ballsFor: 0, runsAgainst: 0, ballsAgainst: 0 };
     }
 
     function parseScore(summary: string | null): { runs: number; balls: number } {
@@ -212,12 +225,17 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
         table[code2].runsAgainst += s1.runs; table[code2].ballsAgainst += s1.balls;
       }
 
-      // Super-over or tied
+      // Determine result type from comment text
       const commentss = String(m.Commentss ?? "").toLowerCase();
-      if (commentss.includes("super over") || commentss.includes("tied") || commentss.includes("no result")) {
-        if (table[winCode]) { table[winCode].won++; table[winCode].points += 2; }
-        if (table[loseCode]) { table[loseCode].lost++; }
-      } else {
+      const isNoResult = commentss.includes("no result") || commentss.includes("abandon");
+      const hasSuperOver = commentss.includes("super over");
+
+      if (isNoResult) {
+        // Both teams get 1 point, no win/loss recorded
+        if (table[code1]) { table[code1].noResult++; table[code1].points += 1; }
+        if (table[code2]) { table[code2].noResult++; table[code2].points += 1; }
+      } else if (winId && (table[winCode] || hasSuperOver)) {
+        // Normal win (including super-over): winner gets 2 pts, loser 0
         if (table[winCode]) { table[winCode].won++; table[winCode].points += 2; }
         if (table[loseCode]) { table[loseCode].lost++; }
       }
@@ -228,7 +246,7 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
         const nrr = t.ballsFor > 0 && t.ballsAgainst > 0
           ? (t.runsFor / t.ballsFor) * 6 - (t.runsAgainst / t.ballsAgainst) * 6
           : 0;
-        return { team: t.code, teamFull: t.full, played: t.played, won: t.won, lost: t.lost, tied: t.tied, points: t.points, nrr: Math.round(nrr * 1000) / 1000 };
+        return { team: t.code, teamFull: t.full, played: t.played, won: t.won, lost: t.lost, noResult: t.noResult, points: t.points, nrr: Math.round(nrr * 1000) / 1000 };
       })
       .sort((a, b) => b.points - a.points || b.nrr - a.nrr)
       .map((t, i) => ({ ...t, position: i + 1 }));

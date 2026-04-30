@@ -13,7 +13,7 @@ interface StandingRow {
   played: number;
   won: number;
   lost: number;
-  tied: number;
+  noResult: number;
   nrr: number;
   points: number;
   position: number;
@@ -76,10 +76,10 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
     ? [...standings].sort((a, b) => a.position - b.position)
     : ALL_TEAMS.map((t, i) => ({
         team: t, teamFull: TEAM_FULL_NAME[t] ?? t,
-        played: 0, won: 0, lost: 0, tied: 0, nrr: 0, points: 0, position: i + 1,
+        played: 0, won: 0, lost: 0, noResult: 0, nrr: 0, points: 0, position: i + 1,
       }));
 
-  const cols = ["#", "Team", "P", "W", "L", "T", "NRR", "Pts"];
+  const cols = ["#", "Team", "P", "W", "L", "NR", "NRR", "Pts"];
 
   return (
     <div style={{
@@ -166,7 +166,7 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
                           </div>
                         </div>
                       </td>
-                      {[row.played, row.won, row.lost, row.tied].map((v, ci) => (
+                      {[row.played, row.won, row.lost, row.noResult].map((v, ci) => (
                         <td key={ci} style={{ padding: "9px 14px", textAlign: "center", color: v === 0 ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.7)", fontVariantNumeric: "tabular-nums" }}>
                           {v}
                         </td>

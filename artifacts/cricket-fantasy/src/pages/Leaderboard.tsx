@@ -32,7 +32,7 @@ import { apiFetch } from "@/lib/api";
 interface Standing {
   team: string; teamFull: string;
   played: number; won: number; lost: number;
-  tied: number; points: number; nrr: number; position: number;
+  noResult: number; points: number; nrr: number; position: number;
 }
 
 interface SquadPlayer {
@@ -874,7 +874,7 @@ export default function Leaderboard() {
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${DIV}` }}>
-                      {["#","Team","P","W","L","T","NRR","Pts"].map(h => (
+                      {["#","Team","P","W","L","NR","NRR","Pts"].map(h => (
                         <th key={h} style={{ padding: "8px 12px",
                           textAlign: h === "Team" ? "left" : "center",
                           fontSize: "0.65rem", fontWeight: 700, color: COL,
@@ -932,7 +932,7 @@ export default function Leaderboard() {
                                   </div>
                                 </div>
                               </td>
-                              {[row.played, row.won, row.lost, row.tied].map((v, ci) => (
+                              {[row.played, row.won, row.lost, row.noResult].map((v, ci) => (
                                 <td key={ci} style={{ padding: "10px 12px", textAlign: "center",
                                   fontSize: "0.82rem", fontVariantNumeric: "tabular-nums",
                                   color: v === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.75)" }}>
