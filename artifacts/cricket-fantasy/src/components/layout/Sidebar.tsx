@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Swords, Users, UsersRound, Gavel,
   BookOpen, LogOut, Settings, ChevronLeft, ChevronRight,
-  Target, Trophy, Menu, X, BarChart2, Radio, Star,
+  Target, Trophy, Menu, X, BarChart2, Radio, Star, UserCircle,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebar } from "@/context/SidebarContext";
