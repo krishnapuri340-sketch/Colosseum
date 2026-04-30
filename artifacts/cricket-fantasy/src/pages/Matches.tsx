@@ -171,7 +171,7 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
                           {v}
                         </td>
                       ))}
-                      <td style={{ padding: "9px 14px", textAlign: "center", fontVariantNumeric: "tabular-nums", color: row.nrr > 0 ? "#34d399" : row.nrr < 0 ? "#f87171" : "rgba(255,255,255,0.35)" }}>
+                      <td style={{ padding: "9px 14px", textAlign: "center", fontVariantNumeric: "tabular-nums", color: parseFloat(String(row.nrr)) > 0 ? "#34d399" : parseFloat(String(row.nrr)) < 0 ? "#f87171" : "rgba(255,255,255,0.35)" }}>
                         {row.played > 0 ? (() => { const n = parseFloat(String(row.nrr)); return (isNaN(n) ? "—" : (n >= 0 ? "+" : "") + n.toFixed(3)); })() : "—"}
                       </td>
                       <td style={{ padding: "9px 14px", textAlign: "center", fontWeight: 800, fontSize: "0.88rem", color: isTop4 ? color : "rgba(255,255,255,0.75)", fontVariantNumeric: "tabular-nums" }}>
