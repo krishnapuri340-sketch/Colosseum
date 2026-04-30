@@ -104,7 +104,7 @@ export default function MyTeams() {
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label:"Teams",      value:mockTeams.length, color:"text-white" },
+            { label:"Teams",      value:contextTeams.length, color:"text-white" },
             { label:"Avg Points", value:450,              color:"text-cyan-400" },
             { label:"Best Rank",  value:"#2",             color:"text-yellow-400" },
           ].map(s => (
