@@ -4,7 +4,7 @@ import { RightPanel } from "./RightPanel";
 import { useLocation } from "wouter";
 import { useSidebar } from "@/context/SidebarContext";
 import { Link } from "wouter";
-import { LayoutDashboard, Swords, Gavel, Target, BarChart2 } from "lucide-react";
+import { LayoutDashboard, Swords, Gavel, Target, Radio } from "lucide-react";
 
 // Bottom nav items for mobile (5 most-used)
 const BOTTOM_NAV = [
@@ -12,7 +12,7 @@ const BOTTOM_NAV = [
   { href:"/matches",     label:"Matches", icon:Swords },
   { href:"/auction",     label:"Auction", icon:Gavel },
   { href:"/predictions", label:"Predict", icon:Target },
-  { href:"/leaderboard", label:"Ranks",   icon:BarChart2 },
+  { href:"/live",        label:"Live",    icon:Radio },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

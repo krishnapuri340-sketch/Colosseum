@@ -13,6 +13,8 @@ const PAGE_LABELS: Record<string, string> = {
   "/auction/room":   "Auction Room",
   "/predictions":    "Predictions",
   "/guide":          "Guide",
+  "/live":           "Live Score",
+  "/watchlist":      "Watchlist",
   "/leaderboard":    "Leaderboard",
   "/auction/join":   "Join Auction",
 };
