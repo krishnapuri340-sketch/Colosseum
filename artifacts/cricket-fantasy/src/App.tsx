@@ -17,7 +17,9 @@ import Leaderboard from "@/pages/Leaderboard";
 import LiveScore from "@/pages/LiveScore";
 import Watchlist from "@/pages/Watchlist";
 import AuthPages from "@/pages/Auth";
+import Profile from "@/pages/Profile";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { AppProvider } from "@/context/AppContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 
 const queryClient = new QueryClient();
@@ -70,6 +72,7 @@ function AppRoutes() {
       <Route path="/leaderboard"    component={() => <ProtectedRoute component={Leaderboard} />} />
       <Route path="/live"           component={() => <ProtectedRoute component={LiveScore} />} />
       <Route path="/watchlist"      component={() => <ProtectedRoute component={Watchlist} />} />
+      <Route path="/profile"       component={() => <ProtectedRoute component={Profile} />} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -81,9 +84,11 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
+            <AppProvider>
             <SidebarProvider>
               <AppRoutes />
             </SidebarProvider>
+            </AppProvider>
           </AuthProvider>
         </WouterRouter>
         <Toaster />
