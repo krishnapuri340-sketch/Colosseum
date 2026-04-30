@@ -244,9 +244,8 @@ export default function CreateAuction() {
               </div>
             ))}
           </Card>
-        </div>
 
-        {/* Season Rules */}
+          {/* Season Rules */}
           <Card style={{ display:"flex", flexDirection:"column", gap:"0.85rem" }}>
             <Label>Season Rules</Label>
             {([
@@ -263,6 +262,7 @@ export default function CreateAuction() {
               </div>
             ))}
           </Card>
+        </div>
 
         {/* Footer */}
         <div style={{ display:"flex", justifyContent:"flex-end", gap:"0.6rem", paddingTop:"0.25rem" }}>
