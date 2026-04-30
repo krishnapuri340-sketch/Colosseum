@@ -11,12 +11,23 @@ function stripJsonp(text: string): string {
 
 const MATCH_ID_RE = /^\d+$/;
 
-async function fetchS3(path: string): Promise<any> {
+// Simple in-memory cache with TTL — avoids hammering S3 on every request
+interface CacheEntry { data: any; expiresAt: number; }
+const s3Cache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 60_000; // 60 seconds
+
+async function fetchS3(path: string, ttlMs = CACHE_TTL_MS): Promise<any> {
+  const now = Date.now();
+  const hit = s3Cache.get(path);
+  if (hit && hit.expiresAt > now) return hit.data;
+
   const url = `${S3_BASE}/${path}`;
   const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
   if (!res.ok) throw new Error(`S3 fetch failed with status ${res.status}`);
   const text = await res.text();
-  return JSON.parse(stripJsonp(text));
+  const data = JSON.parse(stripJsonp(text));
+  s3Cache.set(path, { data, expiresAt: now + ttlMs });
+  return data;
 }
 
 interface PlayerStats {
