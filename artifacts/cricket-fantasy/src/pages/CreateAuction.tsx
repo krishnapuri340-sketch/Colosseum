@@ -76,6 +76,8 @@ export default function CreateAuction() {
   const [budget, setBudget]         = useState(100);
   const [topScoring, setTopScoring] = useState(false);
   const [captainVC, setCaptainVC]   = useState(true);
+  const [tradeWindow, setTrade]      = useState(false);
+  const [captainChanges, setCapChg]  = useState(true);
   const [loading, setLoading]       = useState(false);
   const [code, setCode]             = useState("");
   const [copied, setCopied]         = useState(false);
@@ -243,6 +245,24 @@ export default function CreateAuction() {
             ))}
           </Card>
         </div>
+
+        {/* Season Rules */}
+          <Card style={{ display:"flex", flexDirection:"column", gap:"0.85rem" }}>
+            <Label>Season Rules</Label>
+            {([
+              ["tradeWindow",    tradeWindow,    ()=>setTrade((v:boolean)=>!v),   "Mid-Season Trade Window",  "Opens after every team completes 7 matches. Teams can propose optional player swaps."],
+              ["captainChanges", captainChanges, ()=>setCapChg((v:boolean)=>!v),  "Captain & VC Changes",     "Allow managers to update their Captain and Vice-Captain before each match deadline."],
+            ] as [string,boolean,()=>void,string,string][]).map(([_k, val, fn, title, sub])=>(
+              <div key={title} style={{ display:"flex", alignItems:"flex-start",
+                justifyContent:"space-between", gap:"1rem" }}>
+                <div>
+                  <div style={{ fontSize:"0.88rem", fontWeight:600, color:"#fff" }}>{title}</div>
+                  <div style={{ fontSize:"0.72rem", color:LABEL_CLR, marginTop:"0.15rem", maxWidth:280, lineHeight:1.5 }}>{sub}</div>
+                </div>
+                <Toggle on={val} onToggle={fn} />
+              </div>
+            ))}
+          </Card>
 
         {/* Footer */}
         <div style={{ display:"flex", justifyContent:"flex-end", gap:"0.6rem", paddingTop:"0.25rem" }}>
