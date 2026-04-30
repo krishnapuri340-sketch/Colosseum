@@ -9,10 +9,12 @@ function stripJsonp(text: string): string {
   return text.replace(/^[A-Za-z_$][A-Za-z0-9_$]*\(/, "").replace(/\)\s*;?\s*$/, "");
 }
 
+const MATCH_ID_RE = /^\d+$/;
+
 async function fetchS3(path: string): Promise<any> {
   const url = `${S3_BASE}/${path}`;
   const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-  if (!res.ok) throw new Error(`S3 fetch failed: ${res.status} ${url}`);
+  if (!res.ok) throw new Error(`S3 fetch failed with status ${res.status}`);
   const text = await res.text();
   return JSON.parse(stripJsonp(text));
 }
@@ -286,16 +288,24 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
 
 router.get("/ipl/scorecard/:matchId", async (req, res): Promise<void> => {
   const { matchId } = req.params;
+  if (!MATCH_ID_RE.test(matchId)) {
+    res.status(400).json({ error: "Invalid match ID" });
+    return;
+  }
   try {
     const data = await fetchS3(`${COMP_ID}-${matchId}-matchscorecard.js`);
     res.json(data);
-  } catch (err: any) {
-    res.status(502).json({ error: "Failed to fetch scorecard", detail: err?.message });
+  } catch {
+    res.status(502).json({ error: "Failed to fetch scorecard" });
   }
 });
 
 router.get("/ipl/points/:matchId", async (req, res): Promise<void> => {
   const { matchId } = req.params;
+  if (!MATCH_ID_RE.test(matchId)) {
+    res.status(400).json({ error: "Invalid match ID" });
+    return;
+  }
   try {
     const data = await fetchS3(`${COMP_ID}-${matchId}-matchscorecard.js`);
     const innings: any[] = data?.Innings ?? data?.innings ?? [];
@@ -336,8 +346,8 @@ router.get("/ipl/points/:matchId", async (req, res): Promise<void> => {
     }
 
     res.json({ matchId, playerPoints, playerStats });
-  } catch (err: any) {
-    res.status(502).json({ error: "Failed to calculate points", detail: err?.message });
+  } catch {
+    res.status(502).json({ error: "Failed to calculate points" });
   }
 });
 
