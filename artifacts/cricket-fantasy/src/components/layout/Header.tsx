@@ -70,7 +70,7 @@ export function Header() {
 
       {/* Left: hamburger + breadcrumb */}
       <div className="flex items-center gap-3 min-w-0">
-        <button className="md:hidden flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl"
+        <button className="lg:hidden flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl"
           style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)" }}
           onClick={openMobile}>
           <Menu className="w-4 h-4 text-white/70" />

@@ -34,7 +34,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       }}
     >
       {/* ── DESKTOP layout: sidebar + content side by side ── */}
-      <div className="hidden md:flex flex-1 overflow-hidden">
+      <div className="hidden lg:flex flex-1 overflow-hidden">
         <Sidebar />
         <div
           className={`flex-1 flex flex-col min-w-0 ${showRightPanel ? "xl:mr-80" : ""}`}
@@ -54,7 +54,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* ── MOBILE layout: header + scrollable content + bottom nav ── */}
-      <div className="md:hidden flex flex-col flex-1 overflow-hidden">
+      <div className="lg:hidden flex flex-col flex-1 overflow-hidden">
         <Sidebar /> {/* renders mobile drawer when open */}
         <Header />
         <main

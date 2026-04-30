@@ -168,7 +168,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden md:block"
+      <aside className="hidden lg:block"
         style={{ width:collapsed?64:256, minWidth:collapsed?64:256,
           height:"100vh", position:"fixed", left:0, top:0,
           transition:"width 0.22s ease, min-width 0.22s ease",
@@ -180,7 +180,7 @@ export function Sidebar() {
 
       {/* Mobile drawer */}
       {mobileOpen && (
-        <div className="md:hidden" style={{ position:"fixed", inset:0, zIndex:100 }}>
+        <div className="lg:hidden" style={{ position:"fixed", inset:0, zIndex:100 }}>
           <div onClick={closeMobile}
             style={{ position:"absolute", inset:0,
               background:"rgba(0,0,0,0.65)", backdropFilter:"blur(3px)" }} />
