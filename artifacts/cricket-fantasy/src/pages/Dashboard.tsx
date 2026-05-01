@@ -103,7 +103,7 @@ export default function Dashboard() {
               )}
 
               <h1 className="text-3xl md:text-4xl font-black text-white mb-1 tracking-tight">
-                {`Good ${new Date().getHours()<12?"morning":new Date().getHours()<17?"afternoon":"evening"}, ${profile.displayName}`}
+                {`Welcome back, ${profile.displayName}`}
               </h1>
               <p className="text-white/50 text-base mb-5">
                 {loading ? "Loading IPL 2026…" : (
