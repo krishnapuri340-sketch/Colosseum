@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { apiJson, apiFetch } from "../lib/api";
+import { apiJson, apiFetch, storeAuthToken, clearAuthToken } from "../lib/api";
 
 interface AuthUser {
   id: number;
@@ -37,22 +37,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const login = useCallback(async (email: string, password: string, rememberMe = true) => {
-    const me = await apiJson<AuthUser>("/auth/login", {
+    const me = await apiJson<AuthUser & { token?: string }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password, rememberMe }),
     });
-    setUser(me);
+    // Store token in localStorage for iOS (Safari clears cookies aggressively)
+    if (rememberMe && me.token) {
+      storeAuthToken(me.token);
+    } else {
+      clearAuthToken();
+    }
+    const { token: _t, ...user } = me;
+    setUser(user);
   }, []);
 
   const signup = useCallback(async (name: string, email: string, password: string) => {
-    const me = await apiJson<AuthUser>("/auth/signup", {
+    const me = await apiJson<AuthUser & { token?: string }>("/auth/signup", {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
     });
-    setUser(me);
+    // Always remember after signup
+    if (me.token) storeAuthToken(me.token);
+    const { token: _t, ...user } = me;
+    setUser(user);
   }, []);
 
   const logout = useCallback(async () => {
+    clearAuthToken();
     await apiFetch("/auth/logout", { method: "POST" });
     setUser(null);
   }, []);

@@ -21,7 +21,10 @@ function signToken(userId: number) {
 }
 
 export function getUserFromRequest(req: any): number | null {
-  const token = req.cookies?.[COOKIE_NAME];
+  // Check Authorization: Bearer header first (iOS localStorage fallback)
+  const authHeader: string | undefined = req.headers?.["authorization"];
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const token = bearerToken || req.cookies?.[COOKIE_NAME];
   if (!token) return null;
   try {
     const payload = jwt.verify(token, JWT_SECRET) as unknown as { sub: number };
@@ -55,7 +58,7 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
   }).returning();
   const token = signToken(user.id);
   res.cookie(COOKIE_NAME, token, COOKIE_OPTS);
-  res.status(201).json({ id: user.id, email: user.email, name: user.name });
+  res.status(201).json({ id: user.id, email: user.email, name: user.name, token });
 });
 
 router.post("/auth/login", async (req, res): Promise<void> => {
@@ -79,7 +82,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   const token = signToken(user.id);
   const opts = keep ? COOKIE_OPTS : { ...COOKIE_OPTS, maxAge: undefined };
   res.cookie(COOKIE_NAME, token, opts);
-  res.json({ id: user.id, email: user.email, name: user.name });
+  // Return token in body when remember=true so iOS can store it in localStorage
+  res.json({ id: user.id, email: user.email, name: user.name, ...(keep ? { token } : {}) });
 });
 
 router.post("/auth/logout", (_req, res): void => {

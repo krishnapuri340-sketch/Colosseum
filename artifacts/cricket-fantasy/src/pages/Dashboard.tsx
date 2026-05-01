@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import {
   ArrowRight, Trophy, Flame, TrendingUp, Gavel,
   Target, Users, Zap, ChevronRight, Star, Radio,
@@ -36,7 +36,7 @@ const QUICK_ACTIONS = [
 
 
 
-const fade = {
+const fade: Variants = {
   hidden:  { opacity:0, y:16 },
   visible: { opacity:1, y:0, transition:{ type:"spring", stiffness:280, damping:24 } },
 };
