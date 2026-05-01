@@ -5,6 +5,7 @@
  */
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "./AuthContext";
+import { apiJson } from "../lib/api";
 
 // ── Types ──────────────────────────────────────────────────────────────
 export interface UserProfile {
@@ -131,18 +132,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [myAuctions, setMyAuctions]     = useState<AuctionRoom[]>(() => ls("colosseum_auctions", DEFAULT_AUCTIONS));
   const [notifications, setNotifs]      = useState<Notification[]>(() => ls("colosseum_notifs", DEFAULT_NOTIFICATIONS));
 
-  // Sync email from auth
+  // When user logs in, fetch their saved profile from the server
   useEffect(() => {
-    if (user) {
-      setProfileState(p => ({ ...p,
-        email:       p.email || user.email,
-        displayName: p.displayName === "Strategist" ? user.name : p.displayName,
-      }));
-    }
-  }, [user]);
+    if (!user) return;
+    apiJson<Partial<UserProfile>>("/profile")
+      .then(serverProfile => {
+        setProfileState(p => {
+          const next = {
+            ...p,
+            displayName: p.displayName === "Strategist" ? (serverProfile.displayName ?? user.name) : (serverProfile.displayName ?? p.displayName),
+            ...serverProfile,
+            // email always comes from auth, never from stored profile
+            email: user.email,
+          };
+          lsSet("colosseum_profile", next);
+          return next;
+        });
+      })
+      .catch(() => {
+        // If fetch fails, at least sync email/name from auth
+        setProfileState(p => ({ ...p,
+          email:       user.email,
+          displayName: p.displayName === "Strategist" ? user.name : p.displayName,
+        }));
+      });
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateProfile = useCallback((patch: Partial<UserProfile>) => {
-    setProfileState(p => { const next = { ...p, ...patch }; lsSet("colosseum_profile", next); return next; });
+    setProfileState(p => {
+      const next = { ...p, ...patch };
+      lsSet("colosseum_profile", next);
+      return next;
+    });
+    // Persist to server (best-effort — don't block UI)
+    apiJson("/profile", {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }).catch(() => {});
   }, []);
 
   const toggleWatch = useCallback((name: string) => {

@@ -10,11 +10,13 @@ import dashboardRouter from "./dashboard";
 import iplRouter from "./ipl";
 import predictionsRouter from "./predictions";
 import auctionRoomsRouter from "./auction-rooms";
+import profileRouter from "./profile";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(profileRouter);
 router.use(matchesRouter);
 router.use(playersRouter);
 router.use(contestsRouter);
