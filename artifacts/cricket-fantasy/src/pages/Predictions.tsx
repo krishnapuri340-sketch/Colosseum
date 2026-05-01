@@ -1,77 +1,102 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Target, Trophy, Zap, TrendingUp, CheckCircle,
   Clock, Lock, Award, ChevronDown, ChevronUp,
-  Flame, Users, ChevronRight, Star,
+  Flame, Users, ChevronRight, Star, Loader2, RefreshCw,
 } from "lucide-react";
 import { TEAM_COLOR, TEAM_FULL_NAME, TEAM_LOGO } from "@/lib/ipl-constants";
 import { ALL_IPL_2026_PLAYERS } from "@/lib/ipl-players-2026";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-type PredStatus = "open" | "settled";
+type PredStatus = "open" | "live" | "settled";
 
-interface FriendPick {
-  name: string;        // friend's display name
-  initials: string;   // 2-char avatar initials
-  color: string;       // avatar bg colour
-  league: string;      // which league they're in
-  winner?: string;
-  mom?: string;
-  sixes?: string;
+interface OtherPick {
+  userId: number;
+  name:     string;
+  initials: string;
+  color:    string;
+  winner?:  string;
+  mom?:     string;
+  sixes?:   string;
 }
 
-interface MatchPred {
-  id: string;
-  matchNo: number;
-  team1: string;
-  team2: string;
-  venue: string;
-  date: string;
-  time: string;
-  status: PredStatus;
-  result?: { winner: string; mom: string; sixes: number };
-  community: { t1: number; t2: number };        // global % picking each winner
-  momOptions?: string[];                          // overrides; otherwise pulls from player DB
-  deadlineMins: number;
-  friendPicks: FriendPick[];                     // per-match friend picks
+interface ApiMatch {
+  matchId:          string;
+  matchNumber:      number;
+  team1:            string;
+  team2:            string;
+  venue:            string;
+  date:             string;
+  time:             string;
+  status:           PredStatus;
+  result:           { winner: string; mom: string; sixes: number } | null;
+  community:        { t1: number; t2: number };
+  allPicks:         OtherPick[];
+  totalPickers:     number;
+  myPick:           { winner: string | null; mom: string | null; sixes: string | null } | null;
+  alreadySubmitted: boolean;
+}
+
+interface MyStats {
+  total:    number;
+  correct:  number;
+  streak:   number;
+  pts:      number;
+  accuracy: number;
 }
 
 interface Pick {
   winner?: string;
-  mom?: string;
-  sixes?: string;
+  mom?:    string;
+  sixes?:  string;
 }
 
-// ── Mock leagues the user is in ───────────────────────────────────────────────
-const MY_LEAGUES: {id:string;name:string;color:string}[] = [];
-
-// ── Match data ─────────────────────────────────────────────────────────────────
-// friendPicks deliberately covers multiple leagues so the filter works
-const MATCHES: MatchPred[] = [];
-
 const SIXES_BANDS = ["< 10", "10–14", "15–19", "20+"];
-const MY_STATS = { total: 0, correct: 0, streak: 0, pts: 0, accuracy: 0 };
-
-type PredLeader = { rank:number; name:string; pts:number; correct:number; isMe?:boolean; };
-const PRED_LEADERS: PredLeader[] = [];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+function computeDeadlineMins(date: string, time: string): number {
+  try {
+    const dt = new Date(`${date}T${time.replace(".", ":")}:00+05:30`);
+    return Math.max(0, Math.round((dt.getTime() - Date.now()) / 60_000));
+  } catch {
+    return 0;
+  }
+}
+
 function fmtDeadline(mins: number): string {
-  if (mins < 60)   return `${mins}m`;
-  if (mins < 1440) return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+  if (mins <= 0)    return "started";
+  if (mins < 60)    return `${mins}m`;
+  if (mins < 1440)  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   return `${Math.floor(mins / 1440)}d`;
 }
 
-function avatarColor(name: string): string {
-  const palette = ["#c0392b","#3b82f6","#a855f7","#f59e0b","#34d399","#818cf8","#f472b6","#60a5fa","#fb923c"];
-  const seed    = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  return palette[seed % palette.length];
+// ── API fetchers ───────────────────────────────────────────────────────────────
+async function fetchPredMatches(): Promise<{ matches: ApiMatch[]; myStats: MyStats }> {
+  const r = await fetch("/api/predictions/matches", { credentials: "include" });
+  if (!r.ok) throw new Error(`${r.status}`);
+  return r.json();
+}
+
+async function submitPrediction(matchId: string, pick: Pick): Promise<void> {
+  const r = await fetch("/api/predictions", {
+    method:      "POST",
+    credentials: "include",
+    headers:     { "Content-Type": "application/json" },
+    body:        JSON.stringify({ matchId, ...pick }),
+  });
+  if (!r.ok) throw new Error(`${r.status}`);
+}
+
+async function fetchLeaderboard(): Promise<any[]> {
+  const r = await fetch("/api/predictions/leaderboard", { credentials: "include" });
+  if (!r.ok) throw new Error(`${r.status}`);
+  const d = await r.json();
+  return d.leaderboard ?? [];
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
-
 function TeamLogo({ code, size = 32 }: { code: string; size?: number }) {
   const logo  = TEAM_LOGO[code];
   const color = TEAM_COLOR[code] ?? "#aaa";
@@ -124,20 +149,19 @@ function Avatar({ name, initials, color, size = 28, tooltip }:
   );
 }
 
-// ── Stacked avatar row showing who picked what ────────────────────────────────
-function FriendPickRow({
-  label, picks, field, value, settled, correct,
+// Stacked avatar row showing who picked what
+function PickRow({
+  label, picks, field, myValue, settled, correct,
 }: {
-  label: string;
-  picks: FriendPick[];
-  field: keyof Pick | "winner" | "mom" | "sixes";
-  value?: string;          // the user's own pick for this field
-  settled: boolean;
-  correct?: boolean;       // whether user's pick was correct
+  label:    string;
+  picks:    OtherPick[];
+  field:    "winner" | "mom" | "sixes";
+  myValue?: string;
+  settled:  boolean;
+  correct?: boolean;
 }) {
-  // Group friend picks by what they picked
-  const groups = picks.reduce<Record<string, FriendPick[]>>((acc, fp) => {
-    const v = fp[field as keyof FriendPick] as string | undefined;
+  const groups = picks.reduce<Record<string, OtherPick[]>>((acc, fp) => {
+    const v = fp[field];
     if (!v) return acc;
     if (!acc[v]) acc[v] = [];
     acc[v].push(fp);
@@ -150,12 +174,12 @@ function FriendPickRow({
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em",
         color: "rgba(255,255,255,0.25)", textTransform: "uppercase" }}>
-        Friends picked — {label}
+        Others picked — {label}
       </div>
       {Object.entries(groups).map(([choice, friends]) => {
-        const isMine     = value === choice;
-        const isWrong    = settled && isMine && !correct;
-        const isRight    = settled && isMine && correct;
+        const isMine  = myValue === choice;
+        const isWrong = settled && isMine && !correct;
+        const isRight = settled && isMine &&  correct;
         const choiceColor = isRight ? "#22c55e" : isWrong ? "#ef4444" : "rgba(255,255,255,0.5)";
         return (
           <div key={choice} style={{
@@ -168,16 +192,16 @@ function FriendPickRow({
               ? isRight ? "rgba(34,197,94,0.2)" : isWrong ? "rgba(239,68,68,0.2)" : "rgba(129,140,248,0.15)"
               : "rgba(255,255,255,0.05)"}`,
           }}>
-            {/* Stacked avatars */}
             <div style={{ display: "flex", marginRight: 2 }}>
               {friends.map((f, fi) => (
                 <div key={fi} style={{ marginLeft: fi === 0 ? 0 : -8, zIndex: friends.length - fi }}>
                   <Avatar name={f.name} initials={f.initials} color={f.color}
-                    size={24} tooltip={`${f.name} · ${f.league}`} />
+                    size={24} tooltip={f.name} />
                 </div>
               ))}
             </div>
-            <span style={{ fontSize: "0.75rem", fontWeight: isMine ? 700 : 500, color: choiceColor, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: isMine ? 700 : 500, color: choiceColor,
+              flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {choice}
               {isMine && <span style={{ fontSize: "0.62rem", marginLeft: 5, opacity: 0.6 }}>(You)</span>}
             </span>
@@ -192,7 +216,7 @@ function FriendPickRow({
   );
 }
 
-// ── MOM dropdown ──────────────────────────────────────────────────────────────
+// MOM dropdown
 function MomDropdown({
   team1, team2, value, onChange, disabled,
 }: {
@@ -203,7 +227,6 @@ function MomDropdown({
   const [open, setOpen] = useState(false);
   const [q, setQ]       = useState("");
 
-  // Pull real squad for both teams from player DB, sorted by credits desc
   const players = useMemo(() =>
     ALL_IPL_2026_PLAYERS
       .filter(p => p.team === team1 || p.team === team2)
@@ -217,12 +240,10 @@ function MomDropdown({
 
   const c1 = TEAM_COLOR[team1] ?? "#aaa";
   const c2 = TEAM_COLOR[team2] ?? "#aaa";
-
-  const roleIcon: Record<string, string> = { BAT:"🏏", BWL:"🎯", AR:"⚡", WK:"🧤" };
+  const roleIcon: Record<string, string> = { BAT: "🏏", BWL: "🎯", AR: "⚡", WK: "🧤" };
 
   return (
     <div style={{ position: "relative" }}>
-      {/* Trigger */}
       <button
         onClick={() => !disabled && setOpen(o => !o)}
         disabled={disabled}
@@ -244,7 +265,6 @@ function MomDropdown({
           transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
       </button>
 
-      {/* Dropdown panel */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -259,7 +279,6 @@ function MomDropdown({
               boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
             }}
           >
-            {/* Search */}
             <div style={{ padding: "0.55rem 0.75rem", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
               <input
                 autoFocus
@@ -273,8 +292,6 @@ function MomDropdown({
                 }}
               />
             </div>
-
-            {/* Team headers + player list */}
             <div style={{ maxHeight: 300, overflowY: "auto" }}>
               {[team1, team2].map(team => {
                 const tc   = team === team1 ? c1 : c2;
@@ -282,7 +299,6 @@ function MomDropdown({
                 if (list.length === 0) return null;
                 return (
                   <div key={team}>
-                    {/* Team header */}
                     <div style={{
                       padding: "0.45rem 0.85rem",
                       background: `${tc}0f`,
@@ -295,7 +311,6 @@ function MomDropdown({
                         {team} — {TEAM_FULL_NAME[team]}
                       </span>
                     </div>
-                    {/* Players */}
                     {list.map(p => {
                       const selected = value === p.name;
                       return (
@@ -311,7 +326,6 @@ function MomDropdown({
                           onMouseEnter={e => { if (!selected) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)"; }}
                           onMouseLeave={e => { if (!selected) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
                         >
-                          {/* Role icon */}
                           <span style={{ fontSize: "0.9rem", width: 18, textAlign: "center", flexShrink: 0 }}>
                             {roleIcon[p.role] ?? "🏏"}
                           </span>
@@ -347,7 +361,6 @@ function MomDropdown({
         )}
       </AnimatePresence>
 
-      {/* Backdrop */}
       {open && (
         <div style={{ position: "fixed", inset: 0, zIndex: 99 }}
           onClick={() => { setOpen(false); setQ(""); }} />
@@ -357,42 +370,62 @@ function MomDropdown({
 }
 
 // ── Match card ─────────────────────────────────────────────────────────────────
-function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: string }) {
-  const [picks, setPicks]   = useState<Pick>({});
-  const [submitted, setSub] = useState(match.status === "settled");
-  const [open, setOpen]     = useState(match.status === "open");
-  const [showFriends, setShowFriends] = useState(true);
+function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () => void }) {
+  const initialPick: Pick = {
+    winner: match.myPick?.winner ?? undefined,
+    mom:    match.myPick?.mom    ?? undefined,
+    sixes:  match.myPick?.sixes  ?? undefined,
+  };
+
+  const [picks, setPicks]     = useState<Pick>(initialPick);
+  const [submitted, setSub]   = useState(match.alreadySubmitted);
+  const [submitting, setSubm] = useState(false);
+  const [open, setOpen]       = useState(match.status !== "settled");
+  const [error, setError]     = useState<string | null>(null);
 
   const c1 = TEAM_COLOR[match.team1] ?? "#aaa";
   const c2 = TEAM_COLOR[match.team2] ?? "#aaa";
-  const isOpen    = match.status === "open" && !submitted;
-  const isSettled = match.status === "settled";
 
-  // Score calculation
+  const isOpen    = match.status !== "settled" && !submitted;
+  const isSettled = match.status === "settled";
+  const isLive    = match.status === "live";
+
+  const deadlineMins = computeDeadlineMins(match.date, match.time);
+
   const pts = isSettled && match.result
     ? (picks.winner === match.result.winner ? 50 : 0) +
       (picks.mom    === match.result.mom    ? 30 : 0)
     : null;
 
-  // Filter friends by selected league
-  const visibleFriends = leagueFilter === "all"
-    ? match.friendPicks
-    : match.friendPicks.filter(f => f.league === leagueFilter);
-
-  // Community % for friends' winner picks
   const friendWinnerPct = useMemo(() => {
-    if (visibleFriends.length === 0) return null;
-    const t1 = visibleFriends.filter(f => f.winner === match.team1).length;
-    return Math.round((t1 / visibleFriends.length) * 100);
-  }, [visibleFriends, match.team1]);
+    const picks2 = match.allPicks;
+    if (picks2.length === 0) return null;
+    const t1 = picks2.filter(f => f.winner === match.team1).length;
+    return Math.round((t1 / picks2.length) * 100);
+  }, [match.allPicks, match.team1]);
 
   const canSubmit = !!picks.winner && !!picks.mom;
+
+  async function handleLockPicks() {
+    if (!canSubmit || submitting) return;
+    setSubm(true);
+    setError(null);
+    try {
+      await submitPrediction(match.matchId, picks);
+      setSub(true);
+      onPickSaved?.();
+    } catch {
+      setError("Failed to save — please try again.");
+    } finally {
+      setSubm(false);
+    }
+  }
 
   return (
     <div className="rounded-2xl overflow-hidden"
       style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
 
-      {/* ── Card header ── */}
+      {/* Header */}
       <div
         onClick={() => setOpen(o => !o)}
         style={{
@@ -402,13 +435,11 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
           display: "flex", alignItems: "center", gap: 10,
         }}
       >
-        {/* Match badge */}
         <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(255,255,255,0.3)",
           background: "rgba(255,255,255,0.07)", padding: "2px 7px", borderRadius: 6, flexShrink: 0 }}>
-          M{match.matchNo}
+          M{match.matchNumber}
         </span>
 
-        {/* Teams */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
           <TeamLogo code={match.team1} size={24} />
           <span style={{ fontWeight: 700, fontSize: "0.88rem", color: c1 }}>{match.team1}</span>
@@ -422,28 +453,25 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
           </span>
         </div>
 
-        {/* Right status */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          {/* Friend avatars preview */}
-          {visibleFriends.length > 0 && (
+          {match.allPicks.length > 0 && (
             <div style={{ display: "flex", alignItems: "center" }}>
-              {visibleFriends.slice(0, 4).map((f, fi) => (
+              {match.allPicks.slice(0, 4).map((f, fi) => (
                 <div key={fi} style={{ marginLeft: fi === 0 ? 0 : -7, zIndex: 4 - fi }}>
                   <Avatar name={f.name} initials={f.initials} color={f.color} size={22} />
                 </div>
               ))}
-              {visibleFriends.length > 4 && (
+              {match.allPicks.length > 4 && (
                 <div style={{ width: 22, height: 22, borderRadius: "50%", marginLeft: -7, zIndex: 0,
                   background: "rgba(255,255,255,0.1)", border: "2px solid rgba(255,255,255,0.15)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "0.58rem", fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>
-                  +{visibleFriends.length - 4}
+                  +{match.allPicks.length - 4}
                 </div>
               )}
             </div>
           )}
 
-          {/* Points earned */}
           {isSettled && pts !== null && (
             <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "0.82rem",
               color: pts > 0 ? "#22c55e" : "rgba(255,255,255,0.2)" }}>
@@ -451,23 +479,29 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
             </span>
           )}
 
-          {/* Deadline */}
-          {match.status === "open" && !submitted && (
+          {isLive && !submitted && (
+            <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#ef4444",
+              display: "flex", alignItems: "center", gap: 3 }}>
+              🔴 LIVE
+            </span>
+          )}
+
+          {match.status === "open" && !submitted && deadlineMins > 0 && (
             <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#f59e0b",
               display: "flex", alignItems: "center", gap: 3 }}>
-              <Clock size={11} /> {fmtDeadline(match.deadlineMins)}
+              <Clock size={11} /> {fmtDeadline(deadlineMins)}
             </span>
           )}
 
           {submitted && !isSettled && <CheckCircle size={14} style={{ color: "#22c55e" }} />}
           {isSettled && <Lock size={13} style={{ color: "rgba(255,255,255,0.2)" }} />}
           {open
-            ? <ChevronUp  size={14} style={{ color: "rgba(255,255,255,0.25)" }} />
+            ? <ChevronUp   size={14} style={{ color: "rgba(255,255,255,0.25)" }} />
             : <ChevronDown size={14} style={{ color: "rgba(255,255,255,0.25)" }} />}
         </div>
       </div>
 
-      {/* ── Expanded body ── */}
+      {/* Expanded body */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -488,12 +522,11 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                     color: TEAM_COLOR[match.result.winner] ?? "#34d399" }}>
                     🏆 {match.result.winner} won
                   </span>
-                  <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)" }}>
-                    MOM: <b style={{ color: "#fff" }}>{match.result.mom}</b>
-                  </span>
-                  <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)" }}>
-                    Sixes: <b style={{ color: "#fff" }}>{match.result.sixes}</b>
-                  </span>
+                  {match.result.mom && (
+                    <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)" }}>
+                      MOM: <b style={{ color: "#fff" }}>{match.result.mom}</b>
+                    </span>
+                  )}
                   {pts !== null && pts > 0 && (
                     <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#22c55e",
                       marginLeft: "auto", fontFamily: "monospace" }}>
@@ -503,10 +536,9 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                 </div>
               )}
 
-              {/* ── Community + Friends bars ── */}
+              {/* Community + Others bars */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
-
-                {/* Global community */}
+                {/* Global community % */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
                     <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c1 }}>
@@ -514,20 +546,25 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                     </span>
                     <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.25)",
                       display: "flex", alignItems: "center", gap: 4 }}>
-                      <Users size={10} /> Global picks
+                      <Users size={10} /> All predictors ({match.totalPickers})
                     </span>
                     <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c2 }}>
                       {match.community.t2}% {match.team2}
                     </span>
                   </div>
-                  <div style={{ height: 6, borderRadius: 3, overflow: "hidden", display: "flex" }}>
-                    <div style={{ width: `${match.community.t1}%`, background: c1, transition: "width 0.4s" }} />
-                    <div style={{ flex: 1, background: c2 }} />
+                  <div style={{ height: 6, borderRadius: 3, overflow: "hidden", display: "flex",
+                    background: "rgba(255,255,255,0.05)" }}>
+                    <div style={{ width: `${match.community.t1}%`,
+                      background: `linear-gradient(90deg, ${c1}, ${c1}90)`,
+                      transition: "width 0.4s", borderRadius: 3 }} />
+                    <div style={{ flex: 1,
+                      background: `linear-gradient(90deg, ${c2}90, ${c2})`,
+                      borderRadius: 3 }} />
                   </div>
                 </div>
 
-                {/* Friends in league */}
-                {visibleFriends.length > 0 && friendWinnerPct !== null && (
+                {/* League / others picker bar */}
+                {match.allPicks.length > 0 && friendWinnerPct !== null && (
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
                       <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c1 }}>
@@ -535,12 +572,7 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                       </span>
                       <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.25)",
                         display: "flex", alignItems: "center", gap: 4 }}>
-                        <Star size={10} /> Your league
-                        {leagueFilter !== "all" && (
-                          <span style={{ color: MY_LEAGUES.find(l => l.id === leagueFilter)?.color ?? "#aaa" }}>
-                            {" "}· {MY_LEAGUES.find(l => l.id === leagueFilter)?.name}
-                          </span>
-                        )}
+                        <Star size={10} /> Others in the app
                       </span>
                       <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c2 }}>
                         {100 - friendWinnerPct}% {match.team2}
@@ -555,23 +587,19 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                         background: `linear-gradient(90deg, ${c2}90, ${c2})`,
                         borderRadius: 3 }} />
                     </div>
-
-                    {/* Avatar row */}
                     <div style={{ marginTop: 7, display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={{ display: "flex", gap: 3 }}>
-                        {/* Team1 pickers */}
-                        {visibleFriends.filter(f => f.winner === match.team1).map((f, fi) => (
+                        {match.allPicks.filter(f => f.winner === match.team1).map((f, fi) => (
                           <Avatar key={fi} name={f.name} initials={f.initials} color={f.color}
                             size={26} tooltip={`${f.name} → ${f.winner}`} />
                         ))}
                       </div>
-                      {visibleFriends.filter(f => f.winner === match.team1).length > 0 &&
-                       visibleFriends.filter(f => f.winner === match.team2).length > 0 && (
+                      {match.allPicks.filter(f => f.winner === match.team1).length > 0 &&
+                       match.allPicks.filter(f => f.winner === match.team2).length > 0 && (
                         <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
                       )}
                       <div style={{ display: "flex", gap: 3 }}>
-                        {/* Team2 pickers */}
-                        {visibleFriends.filter(f => f.winner === match.team2).map((f, fi) => (
+                        {match.allPicks.filter(f => f.winner === match.team2).map((f, fi) => (
                           <Avatar key={fi} name={f.name} initials={f.initials} color={f.color}
                             size={26} tooltip={`${f.name} → ${f.winner}`} />
                         ))}
@@ -581,7 +609,7 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                 )}
               </div>
 
-              {/* ── Prediction inputs ── */}
+              {/* Prediction inputs */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.95rem" }}>
 
                 {/* Winner */}
@@ -592,8 +620,8 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     {[match.team1, match.team2].map(t => {
-                      const tc   = TEAM_COLOR[t] ?? "#aaa";
-                      const sel  = picks.winner === t;
+                      const tc  = TEAM_COLOR[t] ?? "#aaa";
+                      const sel = picks.winner === t;
                       return (
                         <button key={t}
                           onClick={() => !submitted && setPicks(p => ({ ...p, winner: t }))}
@@ -602,8 +630,7 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                             padding: "0.7rem 1rem", borderRadius: 11, cursor: submitted ? "default" : "pointer",
                             background: sel ? `${tc}20` : "rgba(255,255,255,0.04)",
                             border: `2px solid ${sel ? tc : "rgba(255,255,255,0.09)"}`,
-                            display: "flex", alignItems: "center", gap: 8,
-                            transition: "all 0.15s",
+                            display: "flex", alignItems: "center", gap: 8, transition: "all 0.15s",
                           }}
                         >
                           <TeamLogo code={t} size={28} />
@@ -618,18 +645,16 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                       );
                     })}
                   </div>
-
-                  {/* Winner friend picks breakdown */}
-                  {visibleFriends.length > 0 && (
+                  {match.allPicks.length > 0 && (
                     <div style={{ marginTop: 8 }}>
-                      <FriendPickRow label="winner" picks={visibleFriends} field="winner"
-                        value={picks.winner} settled={isSettled}
+                      <PickRow label="winner" picks={match.allPicks} field="winner"
+                        myValue={picks.winner} settled={isSettled}
                         correct={isSettled && picks.winner === match.result?.winner} />
                     </div>
                   )}
                 </div>
 
-                {/* MOM — searchable dropdown */}
+                {/* MOM */}
                 <div>
                   <div style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.1em",
                     color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>
@@ -641,17 +666,11 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                     onChange={v => !submitted && setPicks(p => ({ ...p, mom: v }))}
                     disabled={submitted}
                   />
-                  {visibleFriends.length > 0 && picks.mom && (
+                  {match.allPicks.length > 0 && (
                     <div style={{ marginTop: 8 }}>
-                      <FriendPickRow label="MOM" picks={visibleFriends} field="mom"
-                        value={picks.mom} settled={isSettled}
+                      <PickRow label="MOM" picks={match.allPicks} field="mom"
+                        myValue={picks.mom} settled={isSettled}
                         correct={isSettled && picks.mom === match.result?.mom} />
-                    </div>
-                  )}
-                  {visibleFriends.length > 0 && !picks.mom && (
-                    <div style={{ marginTop: 8 }}>
-                      <FriendPickRow label="MOM" picks={visibleFriends} field="mom"
-                        settled={isSettled} />
                     </div>
                   )}
                 </div>
@@ -684,10 +703,10 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                       );
                     })}
                   </div>
-                  {visibleFriends.length > 0 && (
+                  {match.allPicks.length > 0 && (
                     <div style={{ marginTop: 8 }}>
-                      <FriendPickRow label="sixes" picks={visibleFriends} field="sixes"
-                        value={picks.sixes} settled={isSettled}
+                      <PickRow label="sixes" picks={match.allPicks} field="sixes"
+                        myValue={picks.sixes} settled={isSettled}
                         correct={isSettled && match.result
                           ? picks.sixes === (match.result.sixes < 10 ? "< 10"
                             : match.result.sixes <= 14 ? "10–14"
@@ -699,40 +718,48 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
                 </div>
               </div>
 
-              {/* ── Venue + submit ── */}
+              {/* Venue + submit */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
                 flexWrap: "wrap", gap: 8 }}>
                 <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.25)" }}>
                   📍 {match.venue}
                 </span>
 
-                {isOpen && (
-                  <button
-                    onClick={() => canSubmit && setSub(true)}
-                    disabled={!canSubmit}
-                    style={{
-                      padding: "0.65rem 1.6rem", borderRadius: 11, border: "none",
-                      background: canSubmit ? "#c0192c" : "rgba(192,25,44,0.15)",
-                      color: canSubmit ? "#fff" : "rgba(255,255,255,0.2)",
-                      fontWeight: 800, fontSize: "0.85rem",
-                      cursor: canSubmit ? "pointer" : "default",
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    ⚡ Lock Picks
-                  </button>
-                )}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                  {error && (
+                    <span style={{ fontSize: "0.72rem", color: "#ef4444" }}>{error}</span>
+                  )}
+                  {isOpen && (
+                    <button
+                      onClick={handleLockPicks}
+                      disabled={!canSubmit || submitting}
+                      style={{
+                        padding: "0.65rem 1.6rem", borderRadius: 11, border: "none",
+                        background: canSubmit ? "#c0192c" : "rgba(192,25,44,0.15)",
+                        color: canSubmit ? "#fff" : "rgba(255,255,255,0.2)",
+                        fontWeight: 800, fontSize: "0.85rem",
+                        cursor: canSubmit && !submitting ? "pointer" : "default",
+                        transition: "all 0.15s",
+                        display: "flex", alignItems: "center", gap: 6,
+                      }}
+                    >
+                      {submitting
+                        ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Saving…</>
+                        : "⚡ Lock Picks"}
+                    </button>
+                  )}
 
-                {submitted && !isSettled && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6,
-                    padding: "0.5rem 0.85rem", background: "rgba(34,197,94,0.08)",
-                    border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10 }}>
-                    <CheckCircle size={13} style={{ color: "#22c55e" }} />
-                    <span style={{ fontSize: "0.76rem", color: "#22c55e", fontWeight: 600 }}>
-                      Picks locked — good luck!
-                    </span>
-                  </div>
-                )}
+                  {submitted && !isSettled && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6,
+                      padding: "0.5rem 0.85rem", background: "rgba(34,197,94,0.08)",
+                      border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10 }}>
+                      <CheckCircle size={13} style={{ color: "#22c55e" }} />
+                      <span style={{ fontSize: "0.76rem", color: "#22c55e", fontWeight: 600 }}>
+                        Picks locked — good luck!
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -744,8 +771,38 @@ function MatchCard({ match, leagueFilter }: { match: MatchPred; leagueFilter: st
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function Predictions() {
-  const [tab, setTab]           = useState<"predict" | "leaderboard">("predict");
-  const [leagueFilter, setLeague] = useState("all");
+  const [tab, setTab]       = useState<"predict" | "leaderboard">("predict");
+  const [matches, setMatches]   = useState<ApiMatch[]>([]);
+  const [myStats, setMyStats]   = useState<MyStats>({ total: 0, correct: 0, streak: 0, pts: 0, accuracy: 0 });
+  const [leaders, setLeaders]   = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
+    else setRefreshing(true);
+    setError(null);
+    try {
+      const [predData, lbData] = await Promise.all([
+        fetchPredMatches(),
+        fetchLeaderboard(),
+      ]);
+      setMatches(predData.matches);
+      setMyStats(predData.myStats);
+      setLeaders(lbData);
+    } catch (e: any) {
+      setError("Failed to load predictions. Please try again.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const openMatches    = matches.filter(m => m.status === "open" || m.status === "live");
+  const settledMatches = matches.filter(m => m.status === "settled");
 
   return (
     <Layout>
@@ -755,39 +812,53 @@ export default function Predictions() {
         transition={{ duration: 0.3 }}
         className="space-y-5"
       >
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-black text-white">Predictions</h1>
             <p className="text-sm text-white/40 mt-0.5">
-              Pick winners · name the MOM · see what your leagues think
+              Pick winners · name the MOM · see what others think
             </p>
           </div>
-          <div className="flex gap-1.5 shrink-0">
-            {(["predict", "leaderboard"] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)}
-                style={{
-                  padding: "0.45rem 1rem", borderRadius: 10,
-                  background: tab === t ? "rgba(129,140,248,0.15)" : "rgba(255,255,255,0.05)",
-                  border: `1px solid ${tab === t ? "rgba(129,140,248,0.35)" : "rgba(255,255,255,0.08)"}`,
-                  color: tab === t ? "#818cf8" : "rgba(255,255,255,0.45)",
-                  fontSize: "0.82rem", fontWeight: 600, cursor: "pointer",
-                  textTransform: "capitalize",
-                }}>
-                {t}
-              </button>
-            ))}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={() => loadData(true)}
+              disabled={refreshing}
+              style={{
+                width: 34, height: 34, borderRadius: 9,
+                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", color: "rgba(255,255,255,0.4)",
+              }}
+            >
+              <RefreshCw size={14} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
+            </button>
+            <div className="flex gap-1.5 shrink-0">
+              {(["predict", "leaderboard"] as const).map(t => (
+                <button key={t} onClick={() => setTab(t)}
+                  style={{
+                    padding: "0.45rem 1rem", borderRadius: 10,
+                    background: tab === t ? "rgba(129,140,248,0.15)" : "rgba(255,255,255,0.05)",
+                    border: `1px solid ${tab === t ? "rgba(129,140,248,0.35)" : "rgba(255,255,255,0.08)"}`,
+                    color: tab === t ? "#818cf8" : "rgba(255,255,255,0.45)",
+                    fontSize: "0.82rem", fontWeight: 600, cursor: "pointer",
+                    textTransform: "capitalize",
+                  }}>
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* ── My stats ── */}
+        {/* My stats */}
         <div className="grid grid-cols-5 gap-2.5">
           {[
-            { label: "Made",     value: MY_STATS.total,                       color: "#fff",    icon: <Target size={13} /> },
-            { label: "Correct",  value: MY_STATS.correct,                     color: "#22c55e", icon: <CheckCircle size={13} /> },
-            { label: "Accuracy", value: `${MY_STATS.accuracy}%`,              color: "#60a5fa", icon: <TrendingUp size={13} /> },
-            { label: "Streak",   value: `${MY_STATS.streak}🔥`,              color: "#f59e0b", icon: <Zap size={13} /> },
-            { label: "Pts",      value: MY_STATS.pts.toLocaleString(),        color: "#a78bfa", icon: <Award size={13} /> },
+            { label: "Made",     value: myStats.total,                     color: "#fff",    icon: <Target size={13} /> },
+            { label: "Correct",  value: myStats.correct,                   color: "#22c55e", icon: <CheckCircle size={13} /> },
+            { label: "Accuracy", value: `${myStats.accuracy}%`,            color: "#60a5fa", icon: <TrendingUp size={13} /> },
+            { label: "Streak",   value: `${myStats.streak}🔥`,            color: "#f59e0b", icon: <Zap size={13} /> },
+            { label: "Pts",      value: myStats.pts.toLocaleString(),      color: "#a78bfa", icon: <Award size={13} /> },
           ].map(s => (
             <div key={s.label}
               style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
@@ -802,82 +873,74 @@ export default function Predictions() {
           ))}
         </div>
 
-        {tab === "predict" && (
+        {/* Loading / error */}
+        {loading && (
+          <div style={{ textAlign: "center", padding: "4rem 2rem",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <Loader2 size={28} style={{ color: "rgba(255,255,255,0.2)", animation: "spin 1s linear infinite" }} />
+            <span style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.25)" }}>Loading matches…</span>
+          </div>
+        )}
+
+        {error && !loading && (
+          <div style={{ textAlign: "center", padding: "2rem",
+            background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)",
+            borderRadius: 16, color: "#ef4444", fontSize: "0.85rem" }}>
+            {error}
+          </div>
+        )}
+
+        {/* Predict tab */}
+        {!loading && !error && tab === "predict" && (
           <>
-            {MATCHES.length === 0 && (
-              <div style={{ textAlign:"center", padding:"4rem 2rem",
-                background:"rgba(255,255,255,0.02)", border:"1px dashed rgba(255,255,255,0.08)",
-                borderRadius:20, marginBottom:"1rem" }}>
-                <div style={{ fontSize:"2.5rem", marginBottom:"0.75rem" }}>🎯</div>
-                <div style={{ fontSize:"1.1rem", fontWeight:700, color:"rgba(255,255,255,0.4)" }}>
-                  No matches to predict yet
+            {/* Open matches */}
+            {openMatches.length > 0 && (
+              <div className="space-y-2.5">
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+                  <Flame size={15} style={{ color: "#fb923c" }} />
+                  <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "rgba(255,255,255,0.55)" }}>
+                    Open for predictions
+                  </span>
                 </div>
-                <div style={{ fontSize:"0.85rem", color:"rgba(255,255,255,0.25)", marginTop:6 }}>
-                  Match predictions will appear here as fixtures are scheduled
+                {openMatches.map(m => (
+                  <MatchCard key={m.matchId} match={m} onPickSaved={() => loadData(true)} />
+                ))}
+              </div>
+            )}
+
+            {openMatches.length === 0 && (
+              <div style={{ textAlign: "center", padding: "3rem 2rem",
+                background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.08)",
+                borderRadius: 20 }}>
+                <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🎯</div>
+                <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>
+                  No open matches right now
+                </div>
+                <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.25)", marginTop: 6 }}>
+                  Check back when the next fixture is scheduled
                 </div>
               </div>
             )}
-            {/* ── League filter ── */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.1em",
-                color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>
-                League view
-              </span>
-              {/* All */}
-              <button
-                onClick={() => setLeague("all")}
-                style={{
-                  padding: "0.3rem 0.8rem", borderRadius: 20, fontSize: "0.75rem", fontWeight: 600,
-                  cursor: "pointer", transition: "all 0.15s",
-                  background: leagueFilter === "all" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${leagueFilter === "all" ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.08)"}`,
-                  color: leagueFilter === "all" ? "#fff" : "rgba(255,255,255,0.4)",
-                }}>
-                All Leagues
-              </button>
-              {MY_LEAGUES.map(l => (
-                <button key={l.id} onClick={() => setLeague(l.id)}
-                  style={{
-                    padding: "0.3rem 0.8rem", borderRadius: 20, fontSize: "0.75rem", fontWeight: 600,
-                    cursor: "pointer", transition: "all 0.15s",
-                    background: leagueFilter === l.id ? `${l.color}20` : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${leagueFilter === l.id ? `${l.color}50` : "rgba(255,255,255,0.08)"}`,
-                    color: leagueFilter === l.id ? l.color : "rgba(255,255,255,0.4)",
-                    display: "flex", alignItems: "center", gap: 5,
-                  }}>
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: l.color }} />
-                  {l.name}
-                </button>
-              ))}
-            </div>
 
-            {/* ── Match lists ── */}
-            <div className="space-y-2.5">
-              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
-                <Flame size={15} style={{ color: "#fb923c" }} />
-                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "rgba(255,255,255,0.55)" }}>
-                  Open for predictions
-                </span>
+            {/* Settled matches */}
+            {settledMatches.length > 0 && (
+              <div className="space-y-2.5">
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 8, marginBottom: 4 }}>
+                  <Lock size={13} style={{ color: "rgba(255,255,255,0.2)" }} />
+                  <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>
+                    Settled results
+                  </span>
+                </div>
+                {settledMatches.map(m => (
+                  <MatchCard key={m.matchId} match={m} />
+                ))}
               </div>
-              {MATCHES.filter(m => m.status === "open").map(m => (
-                <MatchCard key={m.id} match={m} leagueFilter={leagueFilter} />
-              ))}
-
-              <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 16, marginBottom: 4 }}>
-                <Lock size={13} style={{ color: "rgba(255,255,255,0.2)" }} />
-                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>
-                  Settled
-                </span>
-              </div>
-              {MATCHES.filter(m => m.status === "settled").map(m => (
-                <MatchCard key={m.id} match={m} leagueFilter={leagueFilter} />
-              ))}
-            </div>
+            )}
           </>
         )}
 
-        {/* ── Leaderboard tab ── */}
-        {tab === "leaderboard" && (
+        {/* Leaderboard tab */}
+        {!loading && !error && tab === "leaderboard" && (
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 18, overflow: "hidden" }}>
             <div style={{ padding: "0.85rem 1.2rem", borderBottom: "1px solid rgba(255,255,255,0.06)",
@@ -886,22 +949,28 @@ export default function Predictions() {
               <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fff" }}>
                 Prediction Leaderboard
               </span>
+              <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.3)", marginLeft: "auto" }}>
+                {leaders.length} predictor{leaders.length !== 1 ? "s" : ""}
+              </span>
             </div>
-            {PRED_LEADERS.length === 0 && (
-              <div style={{ padding:"3rem 2rem", textAlign:"center",
-                color:"rgba(255,255,255,0.25)", fontSize:"0.85rem" }}>
-                <div style={{ fontSize:"2rem", marginBottom:"0.5rem" }}>🏆</div>
-                Leaderboard builds once predictions are submitted
+
+            {leaders.length === 0 && (
+              <div style={{ padding: "3rem 2rem", textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🏆</div>
+                <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.25)" }}>
+                  Leaderboard builds once predictions are submitted and settled
+                </div>
               </div>
             )}
-            {PRED_LEADERS.map((e, i) => (
-              <div key={e.rank}
+
+            {leaders.map((e, i) => (
+              <div key={e.userId}
                 style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "0.8rem 1.2rem",
-                  borderBottom: i < PRED_LEADERS.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                  background: (e as any).isMe ? "rgba(129,140,248,0.06)" : "transparent",
-                  borderLeft: (e as any).isMe ? "2px solid #818cf8" : "2px solid transparent",
+                  borderBottom: i < leaders.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                  background: e.isMe ? "rgba(129,140,248,0.06)" : "transparent",
+                  borderLeft: e.isMe ? "2px solid #818cf8" : "2px solid transparent",
                 }}
               >
                 <span style={{ fontWeight: 800, minWidth: 24, textAlign: "center",
@@ -910,28 +979,32 @@ export default function Predictions() {
                   {i < 3 ? ["🥇", "🥈", "🥉"][i] : `#${e.rank}`}
                 </span>
                 <div style={{ width: 30, height: 30, borderRadius: "50%",
-                  background: (e as any).isMe ? "rgba(129,140,248,0.2)" : "rgba(255,255,255,0.08)",
-                  border: `1px solid ${(e as any).isMe ? "rgba(129,140,248,0.35)" : "rgba(255,255,255,0.12)"}`,
+                  background: e.isMe ? "rgba(129,140,248,0.2)" : `${e.color}20`,
+                  border: `1px solid ${e.isMe ? "rgba(129,140,248,0.35)" : e.color}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "0.68rem", fontWeight: 700,
-                  color: (e as any).isMe ? "#818cf8" : "rgba(255,255,255,0.6)", flexShrink: 0 }}>
-                  {e.name.slice(0, 2).toUpperCase()}
+                  color: e.isMe ? "#818cf8" : "#fff", flexShrink: 0 }}>
+                  {e.initials}
                 </div>
-                <span style={{ flex: 1, fontWeight: (e as any).isMe ? 700 : 500,
-                  color: (e as any).isMe ? "#818cf8" : "#fff", fontSize: "0.85rem" }}>
-                  {e.name}{(e as any).isMe && " (You)"}
+                <span style={{ flex: 1, fontWeight: e.isMe ? 700 : 500,
+                  color: e.isMe ? "#818cf8" : "#fff", fontSize: "0.85rem" }}>
+                  {e.name}{e.isMe && " (You)"}
                 </span>
                 <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.3)", marginRight: 6 }}>
-                  {e.correct} correct
+                  {e.correct}/{e.total} correct
                 </span>
                 <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#a78bfa", fontSize: "0.88rem" }}>
-                  {e.pts.toLocaleString()}
+                  {Number(e.pts).toLocaleString()} pts
                 </span>
               </div>
             ))}
           </div>
         )}
       </motion.div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </Layout>
   );
 }

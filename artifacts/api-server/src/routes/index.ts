@@ -8,6 +8,7 @@ import teamsRouter from "./teams";
 import leaderboardRouter from "./leaderboard";
 import dashboardRouter from "./dashboard";
 import iplRouter from "./ipl";
+import predictionsRouter from "./predictions";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(teamsRouter);
 router.use(leaderboardRouter);
 router.use(dashboardRouter);
 router.use(iplRouter);
+router.use(predictionsRouter);
 
 export default router;
