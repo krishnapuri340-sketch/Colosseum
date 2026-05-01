@@ -25,7 +25,7 @@ import { Layout } from "@/components/layout/Layout";
 import {
   ArrowLeft, Gavel, CheckCircle, XCircle, Crown, Search,
   ChevronDown, ChevronUp, RotateCcw, Plus, Minus,
-  Copy, TriangleAlert, Star, Clock, Users, Play,
+  Copy, TriangleAlert, Star, Users, Play,
   SkipForward, BookOpen, ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,6 +37,7 @@ import {
   TEAM_COLOR, TEAM_FULL_NAME, ROLE_LABEL, ROLE_ICON, ROLE_COLOR
 } from "@/lib/ipl-constants";
 import { apiFetch } from "@/lib/api";
+import { useApp } from "@/context/AppContext";
 
 // ── Types ────────────────────────────────────────────────────────────
 interface Player {
@@ -327,19 +328,8 @@ function WatchlistPanel({ onClose }: { onClose: () => void }) {
 function PrepStage({ mode, onStart, onSkip, canStart, teamCount }: {
   mode: AuctionMode; onStart: () => void; onSkip: () => void; canStart: boolean; teamCount: number;
 }) {
-  const [showWL, setShowWL]     = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 min
-  const [running, setRunning]   = useState(false);
+  const [showWL, setShowWL] = useState(false);
   const wl = loadWL();
-
-  useEffect(() => {
-    if (!running || timeLeft <= 0) return;
-    const t = setInterval(() => setTimeLeft(v => v - 1), 1000);
-    return () => clearInterval(t);
-  }, [running, timeLeft]);
-
-  const mm = String(Math.floor(timeLeft / 60)).padStart(2, "0");
-  const ss = String(timeLeft % 60).padStart(2, "0");
 
   const tierCounts = useMemo(() => {
     const counts: Record<PlayerTier, number> = { T1: 0, T2: 0, T3: 0, T4: 0 };
@@ -411,24 +401,6 @@ function PrepStage({ mode, onStart, onSkip, canStart, teamCount }: {
         <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.25)" }}>
           Star players you want to target
         </span>
-      </div>
-
-      {/* Optional countdown */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-        {running ? (
-          <div style={{ fontFamily: "monospace", fontSize: "2rem", fontWeight: 900,
-            color: timeLeft < 60 ? "#f87171" : "#818cf8" }}>
-            {mm}:{ss}
-          </div>
-        ) : (
-          <button onClick={() => setRunning(true)}
-            style={{ display: "flex", alignItems: "center", gap: 6,
-              padding: "0.45rem 0.9rem", background: "rgba(129,140,248,0.1)",
-              border: "1px solid rgba(129,140,248,0.25)", borderRadius: 9,
-              color: "#818cf8", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>
-            <Clock size={13} /> Start 5-min prep timer
-          </button>
-        )}
       </div>
 
       {/* Mode pill */}
@@ -596,6 +568,7 @@ function BidInput({
 // ── Main component ───────────────────────────────────────────────────
 export default function AuctionRoom() {
   const [, navigate]   = useLocation();
+  const { myAuctions, addAuction } = useApp();
 
   // Load settings saved by CreateAuction (or JoinAuction)
   const config = useMemo(() => loadAuctionConfig(), []);
@@ -628,6 +601,31 @@ export default function AuctionRoom() {
 
   const leadTeam  = teams.find(t => t.id === leadId) ?? null;
   const remaining = queueRef.current.length - queueIdx.current;
+
+  // ── Register this league in Profile on first mount ───────────────
+  useEffect(() => {
+    if (!config.roomCode) return;
+    const alreadyAdded = myAuctions.some(a => a.code === config.roomCode);
+    if (alreadyAdded) return;
+    const isHost = !!localStorage.getItem("colosseum_is_host_" + config.roomCode);
+    addAuction({
+      id:             config.roomCode,
+      name:           config.name || "Auction Room",
+      code:           config.roomCode,
+      format:         config.format ?? "classic",
+      budget:         config.budget,
+      squadSize:      config.maxPlayers,
+      captainVC:      config.captainVC,
+      tradeWindow:    false,
+      captainChanges: false,
+      status:         "lobby",
+      role:           isHost ? "host" : "member",
+      participants:   0,
+      playersLeft:    ALL_IPL_2026_PLAYERS.length,
+      createdAt:      new Date().toISOString(),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Fetch registered teams from API ──────────────────────────────
   useEffect(() => {

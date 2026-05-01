@@ -230,6 +230,11 @@ export default function Profile() {
 
             <Section title="My Auctions">
               <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                {myAuctions.length === 0 && (
+                  <p style={{ margin:0, fontSize:"0.82rem", color:DIM, fontStyle:"italic" }}>
+                    No auctions yet — create or join one from the Auction page.
+                  </p>
+                )}
                 {myAuctions.map(a=>(
                   <div key={a.id} style={{ display:"flex", alignItems:"center", gap:10,
                     padding:"0.7rem 0.9rem", background:"rgba(255,255,255,0.03)",

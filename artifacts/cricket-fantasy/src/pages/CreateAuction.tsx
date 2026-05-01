@@ -138,6 +138,7 @@ export default function CreateAuction() {
         topScoring, topScoringCount, captainVC,
         roomCode: code,
       }));
+      localStorage.setItem("colosseum_is_host_" + code, "1");
     } catch {}
     setEnterLoading(false);
     navigate("/auction/room");
