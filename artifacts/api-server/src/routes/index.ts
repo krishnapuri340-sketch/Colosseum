@@ -9,6 +9,7 @@ import leaderboardRouter from "./leaderboard";
 import dashboardRouter from "./dashboard";
 import iplRouter from "./ipl";
 import predictionsRouter from "./predictions";
+import auctionRoomsRouter from "./auction-rooms";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(leaderboardRouter);
 router.use(dashboardRouter);
 router.use(iplRouter);
 router.use(predictionsRouter);
+router.use(auctionRoomsRouter);
 
 export default router;

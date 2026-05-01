@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { ArrowLeft, ChevronRight, Copy, Users } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 const ACCENT    = "#c0192c";
 const CARD      = "rgba(255,255,255,0.032)";
@@ -92,9 +93,23 @@ export default function CreateAuction() {
     e.preventDefault();
     if (!name.trim()) return;
     setLoading(true);
-    await new Promise(r=>setTimeout(r,600));
+    const generatedCode = genCode(name);
+    try {
+      await apiFetch("/auction/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: generatedCode,
+          name: name.trim(),
+          budget, maxPlayers, format,
+          topScoring, topScoringCount, captainVC,
+        }),
+      });
+    } catch {
+      // Non-fatal — room still usable locally
+    }
     setLoading(false);
-    setCode(genCode(name));
+    setCode(generatedCode);
   }
 
   function copyCode() {
