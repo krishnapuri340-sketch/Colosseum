@@ -385,9 +385,9 @@ export default function Matches() {
           </div>
         )}
 
-        <Tabs defaultValue="all" className="w-full">
+        <Tabs defaultValue="live" className="w-full">
           <TabsList className="bg-white/5 border border-white/10 p-1 mb-6">
-            {["all", "live", "upcoming", "completed"].map(t => (
+            {["live", "upcoming", "completed", "all"].map(t => (
               <TabsTrigger
                 key={t}
                 value={t}
@@ -400,7 +400,7 @@ export default function Matches() {
             ))}
           </TabsList>
 
-          {["all", "live", "upcoming", "completed"].map(tab => (
+          {["live", "upcoming", "completed", "all"].map(tab => (
             <TabsContent key={tab} value={tab} className="mt-0 outline-none">
               {loading ? (
                 <div className="space-y-4">
