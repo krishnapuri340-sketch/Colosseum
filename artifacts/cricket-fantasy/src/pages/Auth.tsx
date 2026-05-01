@@ -271,18 +271,19 @@ export default function AuthPages({ mode }: { mode: "login" | "register" }) {
       fontFamily: "'Inter', sans-serif",
     }}>
       {/* Card */}
-      <div style={{
+      <div
+        className="p-7 sm:p-11"
+        style={{
         position: "relative",
         zIndex: 2,
         width: "100%",
         maxWidth: 480,
-        margin: "1rem",
+        margin: "0.75rem",
         /* Premium glass layers */
         background: "linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.04) 100%)",
         border: "1px solid rgba(255,255,255,0.14)",
         borderTop: "1px solid rgba(255,255,255,0.22)",
         borderRadius: 22,
-        padding: "2.75rem",
         backdropFilter: "blur(32px) saturate(160%)",
         WebkitBackdropFilter: "blur(32px) saturate(160%)",
         boxShadow: "0 8px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.3) inset",
@@ -290,7 +291,7 @@ export default function AuthPages({ mode }: { mode: "login" | "register" }) {
         opacity: animating ? 0 : 1,
       }}>
         {/* Logo */}
-        <div style={{ marginBottom: "2.1rem" }}>
+        <div className="mb-6 sm:mb-9" style={{ marginBottom: undefined }}>
           <div style={{ fontWeight: 900, fontSize: "1.05rem", color: "#fff", letterSpacing: "-0.01em", lineHeight: 1 }}>Colosseum</div>
           <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.14em", textTransform: "uppercase" }}>IPL Fantasy</div>
         </div>
