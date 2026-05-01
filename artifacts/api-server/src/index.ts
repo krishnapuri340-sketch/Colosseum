@@ -1,5 +1,38 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { pool } from "@workspace/db";
+
+const TEST_EMAILS = [
+  "test@example.com",
+  "test_ipl_1777385983472@cricstrat.com",
+  "test_ipl2_1777386145841@cricstrat.com",
+  "demo_snap@cricstrat.com",
+  "demo@colosseum.app",
+];
+
+async function purgeTestAccounts(): Promise<void> {
+  try {
+    const placeholders = TEST_EMAILS.map((_, i) => `$${i + 1}`).join(", ");
+    const res = await pool.query<{ id: number }>(
+      `SELECT id FROM users WHERE email IN (${placeholders})`,
+      TEST_EMAILS,
+    );
+    const ids = res.rows.map((r) => r.id);
+    if (ids.length === 0) return;
+    const idPlaceholders = ids.map((_, i) => `$${i + 1}`).join(", ");
+    await pool.query(
+      `DELETE FROM predictions WHERE user_id IN (${idPlaceholders})`,
+      ids,
+    );
+    await pool.query(
+      `DELETE FROM users WHERE id IN (${idPlaceholders})`,
+      ids,
+    );
+    logger.info({ count: ids.length }, "Purged test/demo accounts");
+  } catch (err) {
+    logger.warn({ err }, "Could not purge test accounts (non-fatal)");
+  }
+}
 
 if (!process.env["SESSION_SECRET"]) {
   throw new Error(
@@ -21,11 +54,13 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
+purgeTestAccounts().then(() => {
+  app.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
 
-  logger.info({ port }, "Server listening");
+    logger.info({ port }, "Server listening");
+  });
 });
