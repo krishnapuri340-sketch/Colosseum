@@ -57,7 +57,7 @@ function Field({ label, value, onChange, type="text", placeholder, maxLength, te
 
 export default function Profile() {
   const { user, logout } = useAuth();
-  const { profile, updateProfile, myTeams, myAuctions, totalPts, currentRank, predAccuracy } = useApp();
+  const { profile, updateProfile, myTeams, totalPts, currentRank, predAccuracy } = useApp();
   const [, navigate] = useLocation();
 
   const [displayName, setDisplayName] = useState(profile.displayName);
@@ -225,34 +225,6 @@ export default function Profile() {
                     </button>
                   );
                 })}
-              </div>
-            </Section>
-
-            <Section title="My Auctions">
-              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                {myAuctions.length === 0 && (
-                  <p style={{ margin:0, fontSize:"0.82rem", color:DIM, fontStyle:"italic" }}>
-                    No auctions yet — create or join one from the Auction page.
-                  </p>
-                )}
-                {myAuctions.map(a=>(
-                  <div key={a.id} style={{ display:"flex", alignItems:"center", gap:10,
-                    padding:"0.7rem 0.9rem", background:"rgba(255,255,255,0.03)",
-                    border:`1px solid ${BORDER}`, borderRadius:10 }}>
-                    <div>
-                      <div style={{ fontWeight:600, fontSize:"0.85rem", color:"#fff" }}>{a.name}</div>
-                      <div style={{ fontSize:"0.68rem", color:DIM, marginTop:1 }}>
-                        {a.format==="tier"?"Tier":"Classic"} · ₹{a.budget}Cr · {a.participants} teams · {a.role}
-                      </div>
-                    </div>
-                    <span style={{ marginLeft:"auto", fontSize:"0.65rem", fontWeight:700,
-                      color: a.status==="live"?"#22c55e":a.status==="lobby"?"#f59e0b":"rgba(255,255,255,0.3)",
-                      background: a.status==="live"?"rgba(34,197,94,0.1)":a.status==="lobby"?"rgba(245,158,11,0.1)":"rgba(255,255,255,0.06)",
-                      padding:"2px 8px", borderRadius:20 }}>
-                      {a.status.toUpperCase()}
-                    </span>
-                  </div>
-                ))}
               </div>
             </Section>
 

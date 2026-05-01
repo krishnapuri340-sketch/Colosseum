@@ -1,7 +1,8 @@
 import { Layout } from "@/components/layout/Layout";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { Plus, Users, Star, ChevronRight, Pencil, Trash2, X, Search, CheckCircle } from "lucide-react";
+import { useLocation } from "wouter";
+import { Plus, Users, Star, ChevronRight, Pencil, Trash2, X, Search, CheckCircle, Gavel } from "lucide-react";
 import { TEAM_COLOR } from "@/lib/ipl-constants";
 import { useApp } from "@/context/AppContext";
 import { ALL_IPL_2026_PLAYERS } from "@/lib/ipl-players-2026";
@@ -28,7 +29,8 @@ const statusStyle = (s:string) => ({
 type SortKey = "credits"|"role"|"team";
 
 export default function MyTeams() {
-  const { myTeams: contextTeams, addTeam, removeTeam, updateTeamCVC } = useApp();
+  const { myTeams: contextTeams, addTeam, removeTeam, updateTeamCVC, myAuctions } = useApp();
+  const [, navigate] = useLocation();
   const [showBuilder, setShowBuilder] = useState(false);
   const [selected, setSelected]       = useState<typeof ALL_IPL_2026_PLAYERS>([]);
   const [captain, setCaptain]         = useState<string|null>(null);
@@ -177,6 +179,50 @@ export default function MyTeams() {
               </motion.div>
             );
           })}
+        </div>
+
+        {/* My Leagues */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-white/60 uppercase tracking-widest">My Leagues</h2>
+            <button onClick={() => navigate("/auction")}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
+              <Plus size={12} /> New
+            </button>
+          </div>
+          {myAuctions.length === 0 ? (
+            <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 text-center">
+              <Gavel size={22} className="text-white/20 mx-auto mb-2" />
+              <p className="text-sm text-white/30">No leagues yet</p>
+              <p className="text-xs text-white/20 mt-1">Create or join an auction to get started</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {myAuctions.map(a => (
+                <div key={a.id}
+                  onClick={() => navigate("/auction/room")}
+                  className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 flex items-center gap-3 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer group">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <Gavel size={15} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white truncate">{a.name}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {a.format === "tier" ? "Tier" : "Classic"} · ₹{a.budget}Cr · {a.role}
+                    </div>
+                  </div>
+                  <span style={{
+                    fontSize: "0.62rem", fontWeight: 700, padding: "2px 8px", borderRadius: 20,
+                    color: a.status === "live" ? "#22c55e" : a.status === "lobby" ? "#f59e0b" : "rgba(255,255,255,0.3)",
+                    background: a.status === "live" ? "rgba(34,197,94,0.1)" : a.status === "lobby" ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.06)",
+                  }}>
+                    {a.status === "lobby" ? "LOBBY" : a.status === "live" ? "LIVE" : "DONE"}
+                  </span>
+                  <ChevronRight size={13} className="text-white/20 group-hover:text-white/50 transition-colors shrink-0" />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Build Team Modal */}
