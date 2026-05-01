@@ -579,17 +579,19 @@ export default function Leaderboard() {
             </div>
 
             {/* Active league card */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeLeague}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-              >
-                <LeagueCard league={selectedLeague} />
-              </motion.div>
-            </AnimatePresence>
+            {selectedLeague && (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeLeague}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <LeagueCard league={selectedLeague} />
+                </motion.div>
+              </AnimatePresence>
+            )}
 
             {/* Info note */}
             <div style={{ display: "flex", alignItems: "center", gap: 8,
@@ -599,7 +601,7 @@ export default function Leaderboard() {
               <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
                 Points are calculated from real IPL 2026 match performances of each player in your squad,
                 using the scoring rules configured for this league. Captain earns 2×, Vice-Captain 1.5×
-                {!selectedLeague.captainVC && " (C/VC disabled for this league)"}.
+                {selectedLeague && !selectedLeague.captainVC && " (C/VC disabled for this league)"}.
               </span>
             </div>
           </>
