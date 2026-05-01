@@ -104,8 +104,8 @@ export default function MyTeams() {
         <div className="grid grid-cols-3 gap-3">
           {[
             { label:"Teams",      value:contextTeams.length, color:"text-white" },
-            { label:"Avg Points", value:450,              color:"text-cyan-400" },
-            { label:"Best Rank",  value:"#2",             color:"text-yellow-400" },
+            { label:"Avg Points", value:"—",               color:"text-white/30" },
+            { label:"Best Rank",  value:"—",               color:"text-white/30" },
           ].map(s => (
             <div key={s.label} className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
