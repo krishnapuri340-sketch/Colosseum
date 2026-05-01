@@ -12,7 +12,6 @@ const CARD   = "rgba(255,255,255,0.04)";
 const BORDER = "rgba(255,255,255,0.08)";
 const DIM    = "rgba(255,255,255,0.4)";
 
-const AVATAR_OPTIONS = ["⚡","🏏","🎯","👑","🔥","⭐","🦁","🐯","🦅","🏆","💫","🎪"];
 const COLOR_OPTIONS  = ["#c0192c","#3b82f6","#a855f7","#f59e0b","#34d399","#818cf8","#f472b6","#fb923c","#22c55e","#60a5fa"];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -158,8 +157,8 @@ export default function Profile() {
               <div style={{ width:72, height:72, borderRadius:"50%", flexShrink:0,
                 background:`${avatarColor}25`, border:`3px solid ${avatarColor}60`,
                 display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:"1.8rem" }}>
-                {avatar}
+                fontSize:"1.6rem", fontWeight:900, color:"#fff", letterSpacing:"-0.02em" }}>
+                {(displayName || "S").charAt(0).toUpperCase()}
               </div>
               <div>
                 <div style={{ fontSize:"1.25rem", fontWeight:900, color:"#fff" }}>
@@ -174,23 +173,14 @@ export default function Profile() {
               </div>
             </div>
 
-            <Section title="Choose Avatar">
-              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:"1rem" }}>
-                {AVATAR_OPTIONS.map(em=>(
-                  <button key={em} onClick={()=>setAvatar(em)}
-                    style={{ width:44, height:44, borderRadius:11, fontSize:"1.35rem",
-                      background:avatar===em?`${avatarColor}25`:"rgba(255,255,255,0.05)",
-                      border:`2px solid ${avatar===em?avatarColor:BORDER}`,
-                      cursor:"pointer", display:"flex", alignItems:"center",
-                      justifyContent:"center", transition:"all 0.15s" }}>
-                    {em}
-                  </button>
-                ))}
-              </div>
+            <Section title="Avatar Colour">
+              <p style={{ fontSize:"0.75rem", color:DIM, marginBottom:"0.85rem" }}>
+                Your avatar displays your name initial — pick a colour to personalise it.
+              </p>
               <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                 {COLOR_OPTIONS.map(c=>(
                   <button key={c} onClick={()=>setColor(c)}
-                    style={{ width:28, height:28, borderRadius:7, background:c,
+                    style={{ width:32, height:32, borderRadius:8, background:c,
                       border:`2px solid ${avatarColor===c?"#fff":BORDER}`,
                       cursor:"pointer", transition:"all 0.15s" }} />
                 ))}

@@ -6,7 +6,7 @@ import {
   Clock, Lock, Award, ChevronDown, ChevronUp,
   Flame, Users, ChevronRight, Star, Loader2, RefreshCw,
 } from "lucide-react";
-import { TEAM_COLOR, TEAM_FULL_NAME, TEAM_LOGO } from "@/lib/ipl-constants";
+import { TEAM_COLOR, TEAM_FULL_NAME, TEAM_LOGO, ROLE_COLOR } from "@/lib/ipl-constants";
 import { ALL_IPL_2026_PLAYERS } from "@/lib/ipl-players-2026";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -240,7 +240,7 @@ function MomDropdown({
 
   const c1 = TEAM_COLOR[team1] ?? "#aaa";
   const c2 = TEAM_COLOR[team2] ?? "#aaa";
-  const roleIcon: Record<string, string> = { BAT: "🏏", BWL: "🎯", AR: "⚡", WK: "🧤" };
+  const roleIcon: Record<string, string> = { BAT: "BAT", BWL: "BWL", AR: "AR", WK: "WK" };
 
   return (
     <div style={{ position: "relative" }}>
@@ -326,8 +326,10 @@ function MomDropdown({
                           onMouseEnter={e => { if (!selected) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)"; }}
                           onMouseLeave={e => { if (!selected) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
                         >
-                          <span style={{ fontSize: "0.9rem", width: 18, textAlign: "center", flexShrink: 0 }}>
-                            {roleIcon[p.role] ?? "🏏"}
+                          <span style={{ fontSize: "0.58rem", fontWeight: 800, letterSpacing: "0.04em",
+                            width: 24, textAlign: "center", flexShrink: 0,
+                            color: ROLE_COLOR[p.role] ?? "#aaa" }}>
+                            {roleIcon[p.role] ?? "BAT"}
                           </span>
                           <span style={{ flex: 1, fontSize: "0.82rem", fontWeight: selected ? 700 : 500,
                             color: selected ? tc : "rgba(255,255,255,0.75)",
@@ -520,7 +522,7 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                   display: "flex", gap: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
                   <span style={{ fontSize: "0.8rem", fontWeight: 700,
                     color: TEAM_COLOR[match.result.winner] ?? "#34d399" }}>
-                    🏆 {match.result.winner} won
+                    {match.result.winner} won
                   </span>
                   {match.result.mom && (
                     <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)" }}>
@@ -745,7 +747,7 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                     >
                       {submitting
                         ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Saving…</>
-                        : "⚡ Lock Picks"}
+                        : "Lock Picks"}
                     </button>
                   )}
 
@@ -857,7 +859,7 @@ export default function Predictions() {
             { label: "Made",     value: myStats.total,                     color: "#fff",    icon: <Target size={13} /> },
             { label: "Correct",  value: myStats.correct,                   color: "#22c55e", icon: <CheckCircle size={13} /> },
             { label: "Accuracy", value: `${myStats.accuracy}%`,            color: "#60a5fa", icon: <TrendingUp size={13} /> },
-            { label: "Streak",   value: `${myStats.streak}🔥`,            color: "#f59e0b", icon: <Zap size={13} /> },
+            { label: "Streak",   value: `${myStats.streak}`,               color: "#f59e0b", icon: <Zap size={13} /> },
             { label: "Pts",      value: myStats.pts.toLocaleString(),      color: "#a78bfa", icon: <Award size={13} /> },
           ].map(s => (
             <div key={s.label}
@@ -912,7 +914,6 @@ export default function Predictions() {
               <div style={{ textAlign: "center", padding: "3rem 2rem",
                 background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.08)",
                 borderRadius: 20 }}>
-                <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🎯</div>
                 <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>
                   No open matches right now
                 </div>
@@ -956,7 +957,6 @@ export default function Predictions() {
 
             {leaders.length === 0 && (
               <div style={{ padding: "3rem 2rem", textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🏆</div>
                 <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.25)" }}>
                   Leaderboard builds once predictions are submitted and settled
                 </div>
@@ -976,7 +976,7 @@ export default function Predictions() {
                 <span style={{ fontWeight: 800, minWidth: 24, textAlign: "center",
                   color: i === 0 ? "#f59e0b" : i === 1 ? "#9ca3af" : i === 2 ? "#d97706" : "rgba(255,255,255,0.3)",
                   fontSize: i < 3 ? "1.1rem" : "0.85rem" }}>
-                  {i < 3 ? ["🥇", "🥈", "🥉"][i] : `#${e.rank}`}
+                  {i < 3 ? ["#1", "#2", "#3"][i] : `#${e.rank}`}
                 </span>
                 <div style={{ width: 30, height: 30, borderRadius: "50%",
                   background: e.isMe ? "rgba(129,140,248,0.2)" : `${e.color}20`,

@@ -192,17 +192,16 @@ export default function JoinAuction() {
             {/* Config chips */}
             <div style={{ display:"flex", flexWrap:"wrap", gap:"0.5rem", marginBottom:"1.25rem" }}>
               {[
-                [`${room.squadSize} players/team`, "👥"],
-                [`₹${room.budget}Cr budget`, "💰"],
-                [room.format, "🔀"],
-                [room.captainVC ? "C/VC enabled" : "No C/VC", "🏆"],
-                [`${room.playerPool} in pool`, "🏏"],
-              ].map(([label, em]) => (
+                `${room.squadSize} players/team`,
+                `₹${room.budget}Cr budget`,
+                room.format,
+                room.captainVC ? "C/VC enabled" : "No C/VC",
+                `${room.playerPool} in pool`,
+              ].map((label) => (
                 <div key={label} style={{ padding:"0.3rem 0.75rem",
                   background:"rgba(255,255,255,0.05)", border:`1px solid ${C.border}`,
-                  borderRadius:20, fontSize:"0.75rem", color:"rgba(255,255,255,0.6)",
-                  display:"flex", alignItems:"center", gap:"0.35rem" }}>
-                  <span>{em}</span> {label}
+                  borderRadius:20, fontSize:"0.75rem", color:"rgba(255,255,255,0.6)" }}>
+                  {label}
                 </div>
               ))}
             </div>
@@ -382,15 +381,13 @@ export default function JoinAuction() {
           {/* Auction config recap */}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.65rem" }}>
             {[
-              { label:"Format",  value:room.format,            icon:"🔀" },
-              { label:"Squad",   value:`${room.squadSize} players`, icon:"👥" },
-              { label:"Budget",  value:`₹${room.budget}Cr`,   icon:"💰" },
-              { label:"Pool",    value:`${room.playerPool} players`, icon:"🏏" },
+              { label:"Format",  value:room.format            },
+              { label:"Squad",   value:`${room.squadSize} players` },
+              { label:"Budget",  value:`₹${room.budget}Cr`   },
+              { label:"Pool",    value:`${room.playerPool} players` },
             ].map(s => (
               <div key={s.label} style={{ background:C.card, border:`1px solid ${C.border}`,
-                borderRadius:12, padding:"0.85rem 1rem",
-                display:"flex", alignItems:"center", gap:"0.65rem" }}>
-                <span style={{ fontSize:"1.1rem" }}>{s.icon}</span>
+                borderRadius:12, padding:"0.85rem 1rem" }}>
                 <div>
                   <div style={{ fontSize:"0.62rem", color:C.dim,
                     textTransform:"uppercase", letterSpacing:"0.08em", fontWeight:700 }}>

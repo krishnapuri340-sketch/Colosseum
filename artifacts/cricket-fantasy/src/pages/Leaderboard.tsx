@@ -74,16 +74,16 @@ const LEAGUES: League[] = [];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const ROLE_ICON: Record<string, string> = { BAT: "🏏", BWL: "🎯", AR: "⚡", WK: "🧤" };
+const ROLE_ICON: Record<string, string> = { BAT: "BAT", BWL: "BWL", AR: "AR", WK: "WK" };
 const ROLE_COLOR: Record<string, string> = { BAT: "#60a5fa", BWL: "#f472b6", AR: "#34d399", WK: "#fbbf24" };
 const COL = "rgba(255,255,255,0.35)";
 const DIV = "rgba(255,255,255,0.07)";
 
 function rankMedal(rank: number) {
-  if (rank === 1) return { emoji: "🥇", color: "#f59e0b" };
-  if (rank === 2) return { emoji: "🥈", color: "#9ca3af" };
-  if (rank === 3) return { emoji: "🥉", color: "#d97706" };
-  return { emoji: `#${rank}`, color: "rgba(255,255,255,0.3)" };
+  if (rank === 1) return { label: "#1", color: "#f59e0b" };
+  if (rank === 2) return { label: "#2", color: "#9ca3af" };
+  if (rank === 3) return { label: "#3", color: "#d97706" };
+  return { label: `#${rank}`, color: "rgba(255,255,255,0.3)" };
 }
 
 function Avatar({ initials, color, size = 32 }: { initials: string; color: string; size?: number }) {
@@ -292,7 +292,7 @@ function LeagueCard({ league }: { league: League }) {
         {/* Config chips */}
         <div style={{ display: "flex", gap: 5, flexWrap: "wrap", justifyContent: "flex-end" }}>
           {[
-            `${league.format === "tier" ? "🏆 Tier" : "🔀 Classic"}`,
+            `${league.format === "tier" ? "Tier" : "Classic"}`,
             `₹${league.budget}Cr`,
             `${league.squadSize}p`,
             league.captainVC ? "C/VC" : null,
@@ -380,7 +380,7 @@ function LeagueCard({ league }: { league: League }) {
                   fontWeight: 800, fontSize: member.rank <= 3 ? "1.1rem" : "0.85rem",
                   color: medal.color,
                 }}>
-                  {medal.emoji}
+                  {medal.label}
                 </span>
                 <RankDelta prev={member.prevRank} curr={member.rank} />
               </div>

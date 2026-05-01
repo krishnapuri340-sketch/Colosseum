@@ -392,7 +392,7 @@ export default function LiveScore() {
                       background:filter===f?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.04)",
                       border:`1px solid ${filter===f?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.08)"}`,
                       color:filter===f?"#fff":"rgba(255,255,255,0.4)" }}>
-                    {f==="mysquad"?"⭐ My Squad":"All Players"}
+                    {f==="mysquad"?"My Squad":"All Players"}
                   </button>
                 ))}
               </div>
@@ -402,7 +402,6 @@ export default function LiveScore() {
               <div style={{ textAlign:"center", padding:"3rem 1rem",
                 background:"rgba(255,255,255,0.02)", border:"1px dashed rgba(255,255,255,0.08)",
                 borderRadius:16 }}>
-                <div style={{ fontSize:"2rem", marginBottom:"0.5rem" }}>📡</div>
                 <div style={{ fontSize:"0.9rem", fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
                   No live match data yet
                 </div>

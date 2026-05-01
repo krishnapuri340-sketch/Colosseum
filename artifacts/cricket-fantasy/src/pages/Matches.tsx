@@ -304,7 +304,7 @@ function MatchCard({ match }: { match: IplMatch }) {
         )}
         {match.mom && (
           <div className="mt-2 text-center text-xs">
-            <span className="text-yellow-400">⭐ MOM:</span>{" "}
+            <span className="text-yellow-400">MOM:</span>{" "}
             <span className="text-white font-semibold">{match.mom}</span>
           </div>
         )}

@@ -13,10 +13,10 @@ import { ALL_IPL_2026_PLAYERS, getPlayerTier, getTierBasePrice, TIER_CONFIG, typ
 import { TEAM_COLOR, TEAM_LOGO, ROLE_LABEL, ROLE_COLOR, ALL_TEAMS, TEAM_FULL_NAME } from "@/lib/ipl-constants";
 
 const TIER_DISPLAY = {
-  T1:{ emoji:"👑", label:"Marquee",   color:"#e8a020" },
-  T2:{ emoji:"⭐", label:"Premium",   color:"#818cf8" },
-  T3:{ emoji:"🏏", label:"Mid-Level", color:"#34d399" },
-  T4:{ emoji:"🌱", label:"Rookie",    color:"#94a3b8" },
+  T1:{ label:"Marquee",   color:"#e8a020" },
+  T2:{ label:"Premium",   color:"#818cf8" },
+  T3:{ label:"Mid-Level", color:"#34d399" },
+  T4:{ label:"Rookie",    color:"#94a3b8" },
 };
 
 // Simulate others in your leagues who have same players on watchlist
@@ -135,7 +135,7 @@ function AddPlayerOverlay({ watchlist, onToggle, onClose }:
                 </div>
                 <span style={{ fontSize:"0.65rem", fontWeight:700, color:td.color,
                   background:`${td.color}18`, padding:"1px 6px", borderRadius:4 }}>
-                  {td.emoji}{tier}
+                  {td.label}
                 </span>
                 <span style={{ fontSize:"0.72rem", fontFamily:"monospace",
                   color:"rgba(255,255,255,0.5)" }}>{p.credits}cr</span>
@@ -239,7 +239,7 @@ export default function Watchlist() {
                 <div key={tier}>
                   {/* Tier header */}
                   <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                    <span style={{ fontSize:"1.1rem" }}>{td.emoji}</span>
+                    <div style={{ width:6, height:6, borderRadius:"50%", background:td.color, flexShrink:0 }} />
                     <span style={{ fontWeight:700, fontSize:"0.88rem", color:td.color }}>{td.label}</span>
                     <span style={{ fontSize:"0.72rem", color:"rgba(255,255,255,0.35)" }}>
                       Base {cfg.basePrice < 1 ? `₹${cfg.basePrice*100}L` : `₹${cfg.basePrice}Cr`}

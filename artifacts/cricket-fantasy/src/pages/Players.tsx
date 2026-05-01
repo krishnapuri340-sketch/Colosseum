@@ -6,9 +6,9 @@ import { ALL_IPL_2026_PLAYERS, getPlayerTier, TIER_CONFIG, type PlayerTier } fro
 import { TEAM_COLOR, TEAM_LOGO, ROLE_LABEL, ROLE_COLOR, ALL_TEAMS, TEAM_FULL_NAME } from "@/lib/ipl-constants";
 
 const TIERS: PlayerTier[] = ["T1","T2","T3","T4"];
-const TIER_LABELS: Record<PlayerTier,string> = { T1:"👑 Marquee", T2:"⭐ Premium", T3:"🏏 Mid-Level", T4:"🌱 Rookie" };
+const TIER_LABELS: Record<PlayerTier,string> = { T1:"Marquee", T2:"Premium", T3:"Mid-Level", T4:"Rookie" };
 const TIER_COLORS: Record<PlayerTier,string> = { T1:"#e8a020", T2:"#818cf8", T3:"#34d399", T4:"#94a3b8" };
-const ROLE_ICON: Record<string,string> = { BAT:"🏏", BWL:"🎯", AR:"⚡", WK:"🧤" };
+const ROLE_ICON: Record<string,string> = { BAT:"BAT", BWL:"BWL", AR:"AR", WK:"WK" };
 
 type SortKey   = "credits"|"name"|"role";
 type ViewMode  = "teams"|"all";

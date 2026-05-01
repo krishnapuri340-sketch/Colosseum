@@ -255,7 +255,6 @@ export default function Dashboard() {
               </div>
               <div className="rounded-2xl p-6 text-center"
                 style={{ background:"rgba(255,255,255,0.02)", border:"1px dashed rgba(255,255,255,0.08)" }}>
-                <div className="text-2xl mb-2">📊</div>
                 <div className="text-sm font-semibold text-white/40">Differentials update during live matches</div>
                 <div className="text-xs text-white/25 mt-1">Players performing above average ownership will appear here</div>
               </div>
@@ -268,7 +267,6 @@ export default function Dashboard() {
             {myTeams.length === 0 && (
               <div className="rounded-2xl p-5 text-center"
                 style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)" }}>
-                <div className="text-2xl mb-2">⚡</div>
                 <div className="text-sm font-semibold text-white/40">No teams yet</div>
                 <div className="text-xs text-white/25 mt-1">Build a team or join an auction to see your points</div>
               </div>
@@ -280,7 +278,6 @@ export default function Dashboard() {
               <div className="text-sm font-bold text-white/60 mb-4">Recent Activity</div>
               {notifications.length === 0 ? (
                 <div className="text-center py-4">
-                  <div className="text-2xl mb-2">🔔</div>
                   <div className="text-sm text-white/30">No activity yet</div>
                   <div className="text-xs text-white/20 mt-1">Auction and match events will appear here</div>
                 </div>

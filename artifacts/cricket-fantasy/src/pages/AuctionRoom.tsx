@@ -65,10 +65,10 @@ const REVEAL_MS = 1800;
 
 const TIER_ORDER: PlayerTier[] = ["T1", "T2", "T3", "T4"];
 const TD = {
-  T1: { emoji: "👑", label: "Marquee",   color: "#e8a020", glow: "rgba(232,160,32,0.18)"  },
-  T2: { emoji: "⭐", label: "Premium",   color: "#818cf8", glow: "rgba(129,140,248,0.14)" },
-  T3: { emoji: "🏏", label: "Mid-Level", color: "#34d399", glow: "rgba(52,211,153,0.11)"  },
-  T4: { emoji: "🌱", label: "Rookie",    color: "#94a3b8", glow: "rgba(148,163,184,0.09)" },
+  T1: { label: "Marquee",   color: "#e8a020", glow: "rgba(232,160,32,0.18)"  },
+  T2: { label: "Premium",   color: "#818cf8", glow: "rgba(129,140,248,0.14)" },
+  T3: { label: "Mid-Level", color: "#34d399", glow: "rgba(52,211,153,0.11)"  },
+  T4: { label: "Rookie",    color: "#94a3b8", glow: "rgba(148,163,184,0.09)" },
 };
 
 const INIT_TEAMS: AucTeam[] = [
@@ -276,8 +276,10 @@ function WatchlistPanel({ onClose }: { onClose: () => void }) {
                   <Star size={14} style={{ color: starred ? "#f59e0b" : "rgba(255,255,255,0.2)",
                     fill: starred ? "#f59e0b" : "none", transition: "all 0.15s" }} />
                 </button>
-                <span style={{ fontSize: "0.88rem", width: 20, textAlign: "center", flexShrink: 0 }}>
-                  {ROLE_ICON[p.role] ?? "🏏"}
+                <span style={{ fontSize: "0.58rem", fontWeight: 800, letterSpacing: "0.04em",
+                  color: ROLE_COLOR[p.role] ?? "#aaa", flexShrink: 0,
+                  width: 24, textAlign: "center" }}>
+                  {ROLE_ICON[p.role] ?? "BAT"}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#fff",
@@ -419,7 +421,7 @@ function PrepStage({ mode, onStart, onSkip }: {
       <div style={{ display: "flex", alignItems: "center", gap: 6,
         padding: "0.35rem 0.85rem", background: CARD, border: `1px solid ${BDR}`,
         borderRadius: 20, fontSize: "0.75rem", color: DIM }}>
-        {mode === "tier" ? "🏆 Tier-based order · T1 → T2 → T3 → T4" : "🔀 Classic · random order"}
+        {mode === "tier" ? "Tier-based order · T1 → T2 → T3 → T4" : "Classic · random order"}
       </div>
 
       {/* CTA buttons */}
@@ -690,7 +692,6 @@ export default function AuctionRoom() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center", gap: "1rem",
           textAlign: "center", padding: "2rem" }}>
-          <div style={{ fontSize: "3rem" }}>{done ? "🏆" : "🏏"}</div>
           <h2 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 900, color: "#fff" }}>
             {done ? "Auction Complete!" : "Loading next player…"}
           </h2>
@@ -737,8 +738,12 @@ export default function AuctionRoom() {
               letterSpacing: "0.1em", marginBottom: "0.4rem" }}>
               {nominated.team} · {TEAM_FULL_NAME[nominated.team]}
             </div>
-            <div style={{ fontSize: "3.5rem", marginBottom: "0.4rem" }}>
-              {ROLE_ICON[nominated.role] ?? "🏏"}
+            <div style={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.12em",
+              color: ROLE_COLOR[nominated.role] ?? "#aaa",
+              background: `${ROLE_COLOR[nominated.role] ?? "#aaa"}18`,
+              border: `1px solid ${ROLE_COLOR[nominated.role] ?? "#aaa"}40`,
+              borderRadius: 6, padding: "3px 10px", display: "inline-block", marginBottom: "0.6rem" }}>
+              {ROLE_LABEL[nominated.role] ?? nominated.role}
             </div>
             <h1 style={{ margin: 0, fontSize: "2.4rem", fontWeight: 900, color: "#fff",
               letterSpacing: "-0.04em", lineHeight: 1 }}>
@@ -812,8 +817,10 @@ export default function AuctionRoom() {
             <div style={{ width: 48, height: 48, borderRadius: "50%",
               background: `${tc}20`, border: `2px solid ${tc}40`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "1.3rem", marginBottom: "0.5rem", marginTop: "0.9rem" }}>
-              {ROLE_ICON[nominated.role] ?? "🏏"}
+              fontSize: "0.65rem", fontWeight: 800, letterSpacing: "0.04em",
+              color: ROLE_COLOR[nominated.role] ?? "#aaa",
+              marginBottom: "0.5rem", marginTop: "0.9rem" }}>
+              {ROLE_ICON[nominated.role] ?? "BAT"}
             </div>
             <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, color: "#fff",
               textAlign: "center", lineHeight: 1.1 }}>{nominated.name}</p>
@@ -1032,7 +1039,7 @@ export default function AuctionRoom() {
                   background: mode === "tier" ? "rgba(232,160,32,0.12)" : "rgba(255,255,255,0.06)",
                   border: `1px solid ${mode === "tier" ? "rgba(232,160,32,0.25)" : BDR}`,
                   padding: "1px 7px", borderRadius: 20 }}>
-                  {mode === "tier" ? "🏆 Tier" : "🔀 Classic"}
+                  {mode === "tier" ? "Tier" : "Classic"}
                 </span>
                 {roomStage === "prep" && (
                   <span style={{ fontSize: "0.62rem", fontWeight: 700,

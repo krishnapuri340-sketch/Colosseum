@@ -23,11 +23,11 @@ const PAGE_LABELS: Record<string, string> = {
   "/profile":        "Profile",
 };
 
-const NOTIF_ICONS: Record<string, string> = {
-  auction:    "🏏",
-  score:      "⚡",
-  prediction: "🎯",
-  system:     "🔔",
+const NOTIF_TYPE_LABEL: Record<string, string> = {
+  auction:    "Auction",
+  score:      "Score",
+  prediction: "Prediction",
+  system:     "System",
 };
 
 export function Header() {
@@ -156,9 +156,14 @@ export function Header() {
                         onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background="rgba(255,255,255,0.04)"}
                         onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=n.read?"transparent":"rgba(192,25,44,0.04)"}>
                         <div style={{ display:"flex", alignItems:"flex-start", gap:8 }}>
-                          <span style={{ fontSize:"1rem", flexShrink:0, marginTop:1 }}>
-                            {NOTIF_ICONS[n.type]}
-                          </span>
+                          <div style={{ width:28, height:28, borderRadius:8, flexShrink:0, marginTop:1,
+                            background:"rgba(192,25,44,0.12)", border:"1px solid rgba(192,25,44,0.2)",
+                            display:"flex", alignItems:"center", justifyContent:"center" }}>
+                            <span style={{ fontSize:"0.55rem", fontWeight:800, letterSpacing:"0.04em",
+                              color:"#f87171", textTransform:"uppercase" }}>
+                              {(NOTIF_TYPE_LABEL[n.type] ?? "info").slice(0,3)}
+                            </span>
+                          </div>
                           <div style={{ flex:1, minWidth:0 }}>
                             <div style={{ fontSize:"0.78rem", fontWeight:600,
                               color:"#fff", marginBottom:1 }}>{n.title}</div>
@@ -186,8 +191,8 @@ export function Header() {
               background:`${profile.avatarColor}30`,
               border:`2px solid ${profile.avatarColor}70`,
               display:"flex", alignItems:"center", justifyContent:"center",
-              fontSize:"1rem" }}>
-            {profile.avatar}
+              fontSize:"0.95rem", fontWeight:900, color:"#fff" }}>
+            {(profile.displayName || "U").charAt(0).toUpperCase()}
           </button>
 
           <AnimatePresence>
@@ -207,8 +212,8 @@ export function Header() {
                     background:`${profile.avatarColor}30`,
                     border:`2px solid ${profile.avatarColor}70`,
                     display:"flex", alignItems:"center", justifyContent:"center",
-                    fontSize:"1.1rem", flexShrink:0 }}>
-                    {profile.avatar}
+                    fontSize:"1rem", fontWeight:900, color:"#fff", flexShrink:0 }}>
+                    {(profile.displayName || "U").charAt(0).toUpperCase()}
                   </div>
                   <div style={{ minWidth:0 }}>
                     <div style={{ fontWeight:700, fontSize:"0.85rem", color:"#fff",

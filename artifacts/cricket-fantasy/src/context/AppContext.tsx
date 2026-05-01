@@ -95,7 +95,7 @@ const DEFAULT_PROFILE: UserProfile = {
   displayName: "Strategist",
   username:    "strategist",
   email:       "",
-  avatar:      "⚡",
+  avatar:      "S",
   avatarColor: "#c0192c",
   favoriteTeam: "MI",
   bio:         "IPL fantasy enthusiast",

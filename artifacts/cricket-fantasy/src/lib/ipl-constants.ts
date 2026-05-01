@@ -47,10 +47,10 @@ export const ROLE_LABEL: Record<string, string> = {
 };
 
 export const ROLE_ICON: Record<string, string> = {
-  BAT: "🏏",
-  BWL: "🎯",
-  AR:  "⚡",
-  WK:  "🧤",
+  BAT: "BAT",
+  BWL: "BWL",
+  AR:  "AR",
+  WK:  "WK",
 };
 
 export const ROLE_COLOR: Record<string, string> = {

@@ -6,8 +6,7 @@ export default function NotFound() {
   return (
     <Layout>
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="text-8xl font-black text-white/5 select-none mb-2" style={{ fontSize:"8rem", lineHeight:1 }}>404</div>
-        <div className="text-5xl mb-4">🏏</div>
+        <div className="font-black text-white/5 select-none mb-6" style={{ fontSize:"8rem", lineHeight:1 }}>404</div>
         <h1 className="text-2xl font-black text-white mb-2">Page not found</h1>
         <p className="text-white/40 text-base mb-8 max-w-sm">
           This page got bowled out. Head back to the dashboard or start an auction.
