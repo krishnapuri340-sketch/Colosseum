@@ -324,8 +324,8 @@ function WatchlistPanel({ onClose }: { onClose: () => void }) {
 }
 
 // ── Prep Stage ───────────────────────────────────────────────────────
-function PrepStage({ mode, onStart, onSkip, canStart }: {
-  mode: AuctionMode; onStart: () => void; onSkip: () => void; canStart: boolean;
+function PrepStage({ mode, onStart, onSkip, canStart, teamCount }: {
+  mode: AuctionMode; onStart: () => void; onSkip: () => void; canStart: boolean; teamCount: number;
 }) {
   const [showWL, setShowWL]     = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 min
@@ -455,7 +455,7 @@ function PrepStage({ mode, onStart, onSkip, canStart }: {
           <Play size={18} />
           {canStart
             ? "Start Auction"
-            : teams.length === 1
+            : teamCount === 1
               ? "Need 1 more team…"
               : "Waiting for teams…"
           }
@@ -729,7 +729,7 @@ export default function AuctionRoom() {
 
     if (roomStage === "prep") {
       return (
-        <PrepStage mode={mode} onStart={startAuction} onSkip={startAuction} canStart={teams.length >= 2} />
+        <PrepStage mode={mode} onStart={startAuction} onSkip={startAuction} canStart={teams.length >= 2} teamCount={teams.length} />
       );
     }
 
