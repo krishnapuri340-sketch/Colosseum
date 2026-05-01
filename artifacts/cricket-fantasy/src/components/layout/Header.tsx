@@ -10,7 +10,6 @@ const PAGE_LABELS: Record<string, string> = {
   "/":               "Dashboard",
   "/matches":        "Matches",
   "/players":        "Players",
-  "/my-teams":       "My Teams",
   "/auction":        "Auction",
   "/auction/create": "Create Auction",
   "/auction/join":   "Join Auction",
@@ -228,7 +227,6 @@ export function Header() {
                 </div>
                 {[
                   { label:"Profile & Settings", href:"/profile" },
-                  { label:"My Teams",            href:"/my-teams" },
                   { label:"Watchlist",           href:"/watchlist" },
                   { label:"Leaderboard",         href:"/leaderboard" },
                 ].map(item=>(

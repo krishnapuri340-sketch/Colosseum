@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import {
-  LayoutDashboard, Swords, Users, UsersRound, Gavel,
+  LayoutDashboard, Swords, Users, Gavel,
   BookOpen, LogOut, Settings, ChevronLeft, ChevronRight,
   Target, Trophy, Menu, X, BarChart2, Radio, Star, UserCircle,
 } from "lucide-react";
@@ -11,7 +11,6 @@ const NAV = [
   { href:"/",            label:"Dashboard",   icon:LayoutDashboard },
   { href:"/matches",     label:"Matches",     icon:Swords },
   { href:"/players",     label:"Players",     icon:Users },
-  { href:"/my-teams",    label:"My Teams",    icon:UsersRound },
   { href:"/auction",     label:"Auction",     icon:Gavel },
   { href:"/predictions", label:"Predictions", icon:Target },
   { href:"/leaderboard", label:"Leaderboard", icon:BarChart2 },
