@@ -102,23 +102,11 @@ const DEFAULT_PROFILE: UserProfile = {
   joinedAt:    "April 2026",
 };
 
-const DEFAULT_NOTIFICATIONS: Notification[] = [
-  { id:"n1", type:"auction",    title:"Friday Night Draft",   body:"Auction starts in 30 minutes. All 4 teams ready.",          time:Date.now()-120000,  read:false, href:"/auction/room" },
-  { id:"n2", type:"score",      title:"Jasprit Bumrah",       body:"Just took a wicket vs DC — +30 pts added to your squad.",   time:Date.now()-3600000, read:false, href:"/live" },
-  { id:"n3", type:"prediction", title:"MI vs RCB prediction", body:"Match starts in 47 minutes. Lock your picks now.",          time:Date.now()-7200000, read:true,  href:"/predictions" },
-  { id:"n4", type:"system",     title:"Trade Window open",    body:"Office League S2 trade window is now open.",                time:Date.now()-86400000,read:true,  href:"/leaderboard" },
-];
+const DEFAULT_NOTIFICATIONS: Notification[] = [];
 
-const DEFAULT_TEAMS: MyTeam[] = [
-  { id:"t1", name:"Bumrah Leads",  captain:"Jasprit Bumrah", vc:"Rohit Sharma",   players:["Jasprit Bumrah","Rohit Sharma","Virat Kohli","Rashid Khan","Travis Head","Rishabh Pant","Tilak Varma","Arshdeep Singh","Varun Chakravarthy","Yashasvi Jaiswal","KL Rahul"], matchId:"m1", points:487,  status:"live",      teams:["MI","RCB"], credits:99.0 },
-  { id:"t2", name:"Gill Power",    captain:"Shubman Gill",   vc:"Rashid Khan",    players:["Shubman Gill","Rashid Khan","Sai Sudharsan","Jos Buttler","Kagiso Rabada","Ruturaj Gaikwad","MS Dhoni","Hardik Pandya","Ishan Kishan","Avesh Khan","Mayank Yadav"],              matchId:"m2", points:null, status:"upcoming",  teams:["GT","CSK"], credits:98.5 },
-  { id:"t3", name:"Pant Effect",   captain:"Rishabh Pant",   vc:"Andre Russell",  players:["Rishabh Pant","Andre Russell","Mohammed Shami","Sunil Narine","Varun Chakravarthy","Nicholas Pooran","Mitchell Marsh","Rinku Singh","Arshdeep Singh","Harshal Patel","Kamindu Mendis"], matchId:"m3", points:412,  status:"completed", teams:["LSG","KKR"], credits:97.5 },
-];
+const DEFAULT_TEAMS: MyTeam[] = [];
 
-const DEFAULT_AUCTIONS: AuctionRoom[] = [
-  { id:"a1", name:"Friday Night Draft", code:"FND2026", format:"classic", budget:100, squadSize:11, captainVC:true, tradeWindow:false, captainChanges:true, status:"live",     role:"host",   participants:4, playersLeft:28, createdAt:"2026-04-18" },
-  { id:"a2", name:"Office League S2",   code:"OLS2026", format:"tier",    budget:100, squadSize:11, captainVC:true, tradeWindow:true,  captainChanges:true, status:"complete", role:"member", participants:6, playersLeft:0,  createdAt:"2026-04-20" },
-];
+const DEFAULT_AUCTIONS: AuctionRoom[] = [];
 
 // ── localStorage helpers ───────────────────────────────────────────────
 function ls<T>(key: string, fallback: T): T {
@@ -196,9 +184,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const unreadCount = notifications.filter(n => !n.read).length;
-  const totalPts    = 2529;    // → wire to API /fantasy/stats
-  const currentRank = 7;
-  const predAccuracy = 68;
+  const totalPts    = 0;
+  const currentRank = 0;
+  const predAccuracy = 0;
 
   return (
     <AppContext.Provider value={{
