@@ -574,6 +574,11 @@ export default function AuctionRoom() {
   const config = useMemo(() => loadAuctionConfig(), []);
   const startBudget = config.budget;
 
+  // Host vs member determination
+  const isHost = config.roomCode
+    ? !!localStorage.getItem("colosseum_is_host_" + config.roomCode)
+    : true; // No room code = solo session, acts as host
+
   const savedMode = (typeof sessionStorage !== "undefined"
     ? sessionStorage.getItem("auction_mode") : null) as AuctionMode | null;
   const [mode] = useState<AuctionMode>(savedMode ?? config.format ?? "classic");
@@ -599,8 +604,17 @@ export default function AuctionRoom() {
   const [showWL, setShowWL]        = useState(false);
   const [teamsLoaded, setTeamsLoaded] = useState(!config.roomCode); // true immediately if no roomCode
 
+  // Real-time: WebSocket for live sync
+  const wsRef           = useRef<WebSocket | null>(null);
+  const reconnectRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [wsConnected, setWsConnected]     = useState(false);
+  const [memberCount,  setMemberCount]    = useState(0);
+  const [memberRemaining, setMemberRemaining] = useState(0);
+
   const leadTeam  = teams.find(t => t.id === leadId) ?? null;
-  const remaining = queueRef.current.length - queueIdx.current;
+  const remaining = isHost
+    ? queueRef.current.length - queueIdx.current
+    : memberRemaining;
 
   // ── Register this league in Profile on first mount ───────────────
   useEffect(() => {
@@ -641,6 +655,74 @@ export default function AuctionRoom() {
       .catch(() => { /* keep empty */ })
       .finally(() => setTeamsLoaded(true));
   }, [config.roomCode, startBudget]);
+
+  // ── WebSocket: connect and maintain live sync ─────────────────────
+  useEffect(() => {
+    const roomCode = config.roomCode;
+    if (!roomCode) return;
+
+    function connect() {
+      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const url   = `${proto}//${window.location.host}/api/ws/auction?room=${roomCode}${isHost ? "&host=1" : ""}`;
+      const ws    = new WebSocket(url);
+      wsRef.current = ws;
+
+      ws.onopen  = () => setWsConnected(true);
+      ws.onclose = () => {
+        setWsConnected(false);
+        reconnectRef.current = setTimeout(connect, 3000);
+      };
+      ws.onerror = () => {};
+
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data as string) as { type: string; payload?: any; members?: number };
+          if (msg.type === "presence" && msg.members !== undefined) {
+            setMemberCount(msg.members);
+          }
+          if (!isHost && msg.type === "state" && msg.payload) {
+            const s = msg.payload;
+            if (s.roomStage !== undefined) setRoomStage(s.roomStage);
+            if (s.phase     !== undefined) setPhase(s.phase);
+            if (s.nominated !== undefined) setNominated(s.nominated);
+            if (s.bidValue  !== undefined) setBidValue(s.bidValue);
+            if (s.leadId    !== undefined) setLeadId(s.leadId);
+            if (s.teams     !== undefined) { setTeams(s.teams); setTeamsLoaded(true); }
+            if (s.log       !== undefined) setLog(s.log);
+            if (s.remaining !== undefined) setMemberRemaining(s.remaining);
+            if (s.queueIdx  !== undefined) { queueIdx.current = s.queueIdx; }
+          }
+        } catch { /* ignore */ }
+      };
+    }
+
+    connect();
+    return () => {
+      if (reconnectRef.current) clearTimeout(reconnectRef.current);
+      wsRef.current?.close();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.roomCode]);
+
+  // ── WebSocket: host broadcasts state on every relevant change ─────
+  useEffect(() => {
+    if (!isHost || !config.roomCode) return;
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    const snap = {
+      roomStage,
+      phase,
+      nominated,
+      bidValue,
+      leadId,
+      teams,
+      log: log.map(({ snapshot: _s, ...rest }) => rest),
+      queueIdx:  queueIdx.current,
+      remaining: queueRef.current.length - queueIdx.current,
+    };
+    ws.send(JSON.stringify({ type: "state", payload: snap }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomStage, phase, nominated, bidValue, leadId, teams, log]);
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────
   const handleKey = useCallback((e: KeyboardEvent) => {
@@ -728,6 +810,48 @@ export default function AuctionRoom() {
   function CentreStage() {
 
     if (roomStage === "prep") {
+      if (!isHost) {
+        return (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: "1rem",
+            textAlign: "center", padding: "2rem" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%",
+              background: "rgba(129,140,248,0.12)", border: "1px solid rgba(129,140,248,0.25)",
+              display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Users size={24} style={{ color: "#818cf8" }} />
+            </div>
+            <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, color: "#fff" }}>
+              Waiting for host to start
+            </h2>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: DIM, maxWidth: 300 }}>
+              You have joined the room. The auction will begin shortly when the host starts it.
+            </p>
+            {teams.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: "0.5rem" }}>
+                {teams.map(t => (
+                  <span key={t.id} style={{ padding: "3px 12px", borderRadius: 20,
+                    background: `${t.color}18`, border: `1px solid ${t.color}40`,
+                    fontSize: "0.75rem", fontWeight: 700, color: t.color }}>
+                    {t.name}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: "0.5rem",
+              padding: "0.5rem 1.2rem", borderRadius: 20,
+              background: wsConnected ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${wsConnected ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.1)"}` }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%",
+                background: wsConnected ? "#22c55e" : "#f59e0b",
+                animation: "livePulse 1.4s ease-in-out infinite" }} />
+              <span style={{ fontSize: "0.7rem", fontWeight: 700,
+                color: wsConnected ? "#22c55e" : "#f59e0b" }}>
+                {wsConnected ? "Connected — watching live" : "Connecting…"}
+              </span>
+            </div>
+          </div>
+        );
+      }
       return (
         <PrepStage mode={mode} onStart={startAuction} onSkip={startAuction} canStart={teams.length >= 2} teamCount={teams.length} />
       );
@@ -878,7 +1002,56 @@ export default function AuctionRoom() {
             </p>
           </motion.div>
 
-          {/* ── Bid input — clean, no glitch ── */}
+          {/* ── Bid controls (host) / live display (member) ── */}
+          {!isHost ? (
+            /* ── Member read-only view ── */
+            <div style={{ background: CARD, border: `1px solid ${BDR}`,
+              borderRadius: 12, padding: "0.85rem 0.9rem",
+              display: "flex", flexDirection: "column", gap: "0.65rem", flexShrink: 0 }}>
+              <div style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.12em",
+                color: DIM, textTransform: "uppercase" }}>Current Bid</div>
+              <div style={{ textAlign: "center", fontFamily: "monospace",
+                fontSize: "2.4rem", fontWeight: 900, color: bidColor,
+                padding: "0.25rem 0", letterSpacing: "-0.02em" }}>
+                {bidValue > 0 ? crFmt(bidValue) : crFmt(cfg.basePrice)}
+              </div>
+              <div>
+                <div style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em",
+                  color: DIM, textTransform: "uppercase", marginBottom: "0.4rem" }}>Teams</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.32rem" }}>
+                  {teams.map(team => {
+                    const isLead = leadId === team.id;
+                    return (
+                      <div key={team.id} style={{ padding: "0.4rem 0.65rem", borderRadius: 9,
+                        border: `1.5px solid ${isLead ? team.color : BDR}`,
+                        background: isLead ? `${team.color}20` : CARD,
+                        display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                        {isLead && <Crown size={9} style={{ color: team.color, flexShrink: 0 }} />}
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          fontSize: "0.75rem", fontWeight: isLead ? 800 : 500,
+                          color: isLead ? team.color : "#fff", flex: 1 }}>
+                          {team.name.split("'")[0]}
+                        </span>
+                        <span style={{ fontSize: "0.6rem", opacity: 0.5, fontFamily: "monospace" }}>
+                          {crFmt(team.budget)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                padding: "0.5rem", borderRadius: 9,
+                background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.18)" }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e",
+                  animation: "livePulse 1.4s ease-in-out infinite" }} />
+                <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#22c55e" }}>
+                  Watching live
+                </span>
+              </div>
+            </div>
+          ) : (
+          /* ── Host bid controls ── */
           <div style={{ background: CARD, border: `1px solid ${BDR}`,
             borderRadius: 12, padding: "0.85rem 0.9rem",
             display: "flex", flexDirection: "column", gap: "0.65rem", flexShrink: 0 }}>
@@ -954,6 +1127,7 @@ export default function AuctionRoom() {
               <kbd style={{ background: "rgba(255,255,255,0.08)", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" }}>Enter</kbd> confirm sold
             </p>
           </div>
+          )}
         </div>
       );
     }
@@ -989,13 +1163,24 @@ export default function AuctionRoom() {
               {crFmt(parseFloat((bidValue - TIER_CONFIG[tier].basePrice).toFixed(2)))} above base
             </p>
           )}
-          <button onClick={doNext}
-            style={{ marginTop: "0.5rem", padding: "0.8rem 2rem",
-              background: ACCENT, border: "none", borderRadius: 12,
-              color: "#fff", fontWeight: 800, fontSize: "0.9rem", cursor: "pointer",
-              display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            Next Player <ChevronRight size={15} />
-          </button>
+          {isHost && (
+            <button onClick={doNext}
+              style={{ marginTop: "0.5rem", padding: "0.8rem 2rem",
+                background: ACCENT, border: "none", borderRadius: 12,
+                color: "#fff", fontWeight: 800, fontSize: "0.9rem", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              Next Player <ChevronRight size={15} />
+            </button>
+          )}
+          {!isHost && (
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: "0.3rem",
+              padding: "0.45rem 1.2rem", borderRadius: 20,
+              background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+              <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e",
+                animation: "livePulse 1.4s ease-in-out infinite" }} />
+              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#22c55e" }}>Watching live</span>
+            </div>
+          )}
         </motion.div>
       );
     }
@@ -1014,12 +1199,23 @@ export default function AuctionRoom() {
           <p style={{ margin: "0.1rem 0 0", fontSize: "0.82rem", color: "rgba(255,255,255,0.3)" }}>
             Unsold — continues in pool
           </p>
-          <button onClick={doNext}
-            style={{ marginTop: "0.4rem", padding: "0.75rem 1.8rem",
-              background: ACCENT, border: "none", borderRadius: 12,
-              color: "#fff", fontWeight: 800, fontSize: "0.88rem", cursor: "pointer" }}>
-            Next Player
-          </button>
+          {isHost && (
+            <button onClick={doNext}
+              style={{ marginTop: "0.4rem", padding: "0.75rem 1.8rem",
+                background: ACCENT, border: "none", borderRadius: 12,
+                color: "#fff", fontWeight: 800, fontSize: "0.88rem", cursor: "pointer" }}>
+              Next Player
+            </button>
+          )}
+          {!isHost && (
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: "0.3rem",
+              padding: "0.45rem 1.2rem", borderRadius: 20,
+              background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+              <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e",
+                animation: "livePulse 1.4s ease-in-out infinite" }} />
+              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#22c55e" }}>Watching live</span>
+            </div>
+          )}
         </motion.div>
       );
     }
@@ -1122,8 +1318,36 @@ export default function AuctionRoom() {
               <span className="hidden sm:inline">Watchlist</span>
             </button>
 
-            {/* Undo */}
-            {log.length > 0 && roomStage === "auction" && (
+            {/* Member count (host) / connection status (member) */}
+            {config.roomCode && isHost && memberCount > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 5,
+                padding: "0.28rem 0.65rem",
+                background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.2)",
+                borderRadius: 20 }}>
+                <Users size={10} style={{ color: "#818cf8" }} />
+                <span style={{ fontSize: "0.63rem", fontWeight: 700, color: "#818cf8" }}>
+                  {memberCount} watching
+                </span>
+              </div>
+            )}
+            {config.roomCode && !isHost && (
+              <div style={{ display: "flex", alignItems: "center", gap: 5,
+                padding: "0.28rem 0.65rem",
+                background: wsConnected ? "rgba(34,197,94,0.1)" : "rgba(245,158,11,0.1)",
+                border: `1px solid ${wsConnected ? "rgba(34,197,94,0.2)" : "rgba(245,158,11,0.2)"}`,
+                borderRadius: 20 }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%",
+                  background: wsConnected ? "#22c55e" : "#f59e0b",
+                  animation: "livePulse 1.4s ease-in-out infinite" }} />
+                <span style={{ fontSize: "0.63rem", fontWeight: 700,
+                  color: wsConnected ? "#22c55e" : "#f59e0b" }}>
+                  {wsConnected ? "Live" : "Reconnecting…"}
+                </span>
+              </div>
+            )}
+
+            {/* Undo (host only) */}
+            {isHost && log.length > 0 && roomStage === "auction" && (
               <button onClick={doUndo}
                 style={{ display: "flex", alignItems: "center", gap: "0.28rem",
                   padding: "0.38rem 0.65rem", background: "rgba(255,255,255,0.05)",
@@ -1194,7 +1418,7 @@ export default function AuctionRoom() {
             )}
             {teams.map(team => {
               const isLead = leadId === team.id;
-              const ok     = phase === "bidding" && team.budget >= bidValue;
+              const ok     = isHost && phase === "bidding" && team.budget >= bidValue;
               return (
                 <div key={team.id}
                   onClick={() => ok && setLeadId(team.id)}
@@ -1202,7 +1426,7 @@ export default function AuctionRoom() {
                     border: `1.5px solid ${isLead ? team.color : BDR}`,
                     borderRadius: 12, padding: "0.7rem 0.8rem",
                     cursor: ok ? "pointer" : "default",
-                    opacity: phase === "bidding" && !ok ? 0.38 : 1,
+                    opacity: isHost && phase === "bidding" && !ok ? 0.38 : 1,
                     transition: "all 0.18s" }}>
                   <BudgetBar team={team} startBudget={startBudget} />
                   {ok && (
@@ -1354,14 +1578,14 @@ export default function AuctionRoom() {
                 )}
                 {teams.map(team => {
                   const isLead = leadId === team.id;
-                  const ok     = phase === "bidding" && team.budget >= bidValue;
+                  const ok     = isHost && phase === "bidding" && team.budget >= bidValue;
                   return (
                     <div key={team.id} onClick={() => ok && setLeadId(team.id)}
                       style={{ background: isLead ? `${team.color}12` : CARD,
                         border: `1.5px solid ${isLead ? team.color : BDR}`,
                         borderRadius: 12, padding: "0.85rem",
                         cursor: ok ? "pointer" : "default",
-                        opacity: phase === "bidding" && !ok ? 0.38 : 1 }}>
+                        opacity: isHost && phase === "bidding" && !ok ? 0.38 : 1 }}>
                       <BudgetBar team={team} startBudget={startBudget} />
                       {isLead && phase === "bidding" && (
                         <div style={{ marginTop: "0.38rem", fontSize: "0.68rem",
