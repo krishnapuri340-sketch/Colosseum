@@ -59,8 +59,7 @@ const ACCENT = "#c0192c";
 const BDR    = "rgba(255,255,255,0.08)";
 const CARD   = "rgba(255,255,255,0.04)";
 const DIM    = "rgba(255,255,255,0.35)";
-const WARN   = 10;
-const BUDGET = 100;
+const WARN_PCT = 0.1; // warn when < 10% budget left
 const REVEAL_MS = 1800;
 
 const TIER_ORDER: PlayerTier[] = ["T1", "T2", "T3", "T4"];
@@ -71,12 +70,23 @@ const TD = {
   T4: { label: "Rookie",    color: "#94a3b8", glow: "rgba(148,163,184,0.09)" },
 };
 
-const INIT_TEAMS: AucTeam[] = [
-  { id: "t1", name: "Rajveer's Army", color: "#c0392b", budget: BUDGET, squad: [] },
-  { id: "t2", name: "Karan's XI",     color: "#3b82f6", budget: BUDGET, squad: [] },
-  { id: "t3", name: "Arjun Plays",    color: "#a855f7", budget: BUDGET, squad: [] },
-  { id: "t4", name: "Sahil FC",       color: "#f59e0b", budget: BUDGET, squad: [] },
-];
+// ── Auction config (persisted from CreateAuction) ─────────────────────
+const AUCTION_CONFIG_KEY = "colosseum_auction_config";
+interface AuctionConfig { name:string; budget:number; maxPlayers:number; format:AuctionMode; topScoring:boolean; topScoringCount:number; captainVC:boolean; }
+const DEFAULT_CONFIG: AuctionConfig = { name:"Auction", budget:100, maxPlayers:11, format:"classic", topScoring:false, topScoringCount:11, captainVC:true };
+function loadAuctionConfig(): AuctionConfig {
+  try { const r = localStorage.getItem(AUCTION_CONFIG_KEY); if (r) return { ...DEFAULT_CONFIG, ...JSON.parse(r) }; } catch {}
+  return DEFAULT_CONFIG;
+}
+
+function makeInitTeams(startBudget: number): AucTeam[] {
+  return [
+    { id: "t1", name: "Rajveer's Army", color: "#c0392b", budget: startBudget, squad: [] },
+    { id: "t2", name: "Karan's XI",     color: "#3b82f6", budget: startBudget, squad: [] },
+    { id: "t3", name: "Arjun Plays",    color: "#a855f7", budget: startBudget, squad: [] },
+    { id: "t4", name: "Sahil FC",       color: "#f59e0b", budget: startBudget, squad: [] },
+  ];
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────
 function crFmt(n: number) {
@@ -103,9 +113,9 @@ function buildQueue(mode: AuctionMode): Player[] {
 
 // ── Sub-components ───────────────────────────────────────────────────
 
-function BudgetBar({ team, mini = false }: { team: AucTeam; mini?: boolean }) {
-  const pct = Math.max(0, (team.budget / BUDGET) * 100);
-  const low = team.budget <= WARN;
+function BudgetBar({ team, mini = false, startBudget = 100 }: { team: AucTeam; mini?: boolean; startBudget?: number }) {
+  const pct = Math.max(0, (team.budget / startBudget) * 100);
+  const low = team.budget <= startBudget * WARN_PCT;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -137,7 +147,7 @@ function TierBadge({ tier, size = "sm" }: { tier: PlayerTier; size?: "sm" | "lg"
       fontSize: size === "lg" ? "0.88rem" : "0.68rem", fontWeight: 700, color: td.color,
       background: `${td.color}18`, border: `1px solid ${td.color}35`,
       padding: size === "lg" ? "4px 12px" : "2px 8px", borderRadius: 20, whiteSpace: "nowrap" }}>
-      {td.emoji} {td.label}
+      {td.label}
       {size === "lg" && <span style={{ opacity: 0.7, fontSize: "0.75rem" }}>· Base {crFmt(cfg.basePrice)}</span>}
     </span>
   );
@@ -362,8 +372,8 @@ function PrepStage({ mode, onStart, onSkip }: {
           return (
             <div key={tier} style={{ background: CARD, border: `1px solid ${td.color}30`,
               borderRadius: 12, padding: "0.6rem 0.85rem", minWidth: 80 }}>
-              <div style={{ fontSize: "1.1rem" }}>{td.emoji}</div>
-              <div style={{ fontSize: "0.68rem", fontWeight: 700, color: td.color, marginTop: 2 }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: td.color, marginBottom: 4 }} />
+              <div style={{ fontSize: "0.68rem", fontWeight: 700, color: td.color }}>
                 {td.label}
               </div>
               <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#fff", marginTop: 1 }}>
@@ -568,9 +578,13 @@ function BidInput({
 export default function AuctionRoom() {
   const [, navigate]   = useLocation();
 
+  // Load settings saved by CreateAuction (or JoinAuction)
+  const config = useMemo(() => loadAuctionConfig(), []);
+  const startBudget = config.budget;
+
   const savedMode = (typeof sessionStorage !== "undefined"
     ? sessionStorage.getItem("auction_mode") : null) as AuctionMode | null;
-  const [mode] = useState<AuctionMode>(savedMode ?? "classic");
+  const [mode] = useState<AuctionMode>(savedMode ?? config.format ?? "classic");
 
   // Room stage: prep or auction
   const [roomStage, setRoomStage] = useState<RoomStage>("prep");
@@ -580,7 +594,7 @@ export default function AuctionRoom() {
   const queueIdx = useRef(0);
 
   // Auction state
-  const [teams, setTeams]       = useState<AucTeam[]>(INIT_TEAMS);
+  const [teams, setTeams]       = useState<AucTeam[]>(() => makeInitTeams(startBudget));
   const soldRef                  = useRef<Set<string>>(new Set());
 
   const [phase, setPhase]         = useState<AucPhase>("idle");
@@ -1007,7 +1021,7 @@ export default function AuctionRoom() {
             background: `${ROLE_COLOR[entry.player.role] ?? "#aaa"}15`,
             padding: "1px 4px", borderRadius: 3 }}>{ROLE_LABEL[entry.player.role]}</span>
           <span style={{ fontSize: "0.56rem", color: td.color, background: `${td.color}15`,
-            padding: "1px 4px", borderRadius: 3 }}>{td.emoji}{td.label}</span>
+            padding: "1px 4px", borderRadius: 3 }}>{td.label}</span>
         </div>
       </div>
     );
@@ -1041,19 +1055,25 @@ export default function AuctionRoom() {
                   padding: "1px 7px", borderRadius: 20 }}>
                   {mode === "tier" ? "Tier" : "Classic"}
                 </span>
+                <span style={{ fontSize: "0.62rem", fontWeight: 700,
+                  color: "#34d399", background: "rgba(52,211,153,0.1)",
+                  border: "1px solid rgba(52,211,153,0.22)",
+                  padding: "1px 7px", borderRadius: 20 }}>
+                  ₹{startBudget}Cr each
+                </span>
                 {roomStage === "prep" && (
                   <span style={{ fontSize: "0.62rem", fontWeight: 700,
                     color: "#818cf8", background: "rgba(129,140,248,0.12)",
                     border: "1px solid rgba(129,140,248,0.25)",
                     padding: "1px 7px", borderRadius: 20 }}>
-                    📋 Prep
+                    Prep
                   </span>
                 )}
               </div>
               <h1 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 900, color: "#fff",
                 letterSpacing: "-0.03em", lineHeight: 1,
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                Friday Night Draft
+                {config.name || "Auction Room"}
               </h1>
             </div>
           </div>
@@ -1134,7 +1154,7 @@ export default function AuctionRoom() {
                     cursor: ok ? "pointer" : "default",
                     opacity: phase === "bidding" && !ok ? 0.38 : 1,
                     transition: "all 0.18s" }}>
-                  <BudgetBar team={team} />
+                  <BudgetBar team={team} startBudget={startBudget} />
                   {ok && (
                     <div style={{ display: "flex", gap: "0.28rem", marginTop: "0.45rem" }}>
                       {[1, 2, 4, 8].map(mult => {
@@ -1235,7 +1255,7 @@ export default function AuctionRoom() {
               <p style={{ margin: "0 0 0.5rem", fontSize: "0.58rem", fontWeight: 700,
                 letterSpacing: "0.12em", color: DIM, textTransform: "uppercase" }}>Budgets</p>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
-                {teams.map(t => <BudgetBar key={t.id} team={t} mini />)}
+                {teams.map(t => <BudgetBar key={t.id} team={t} mini startBudget={startBudget} />)}
               </div>
             </div>
             <p style={{ margin: 0, fontSize: "0.58rem", fontWeight: 700,
@@ -1281,7 +1301,7 @@ export default function AuctionRoom() {
                         borderRadius: 12, padding: "0.85rem",
                         cursor: ok ? "pointer" : "default",
                         opacity: phase === "bidding" && !ok ? 0.38 : 1 }}>
-                      <BudgetBar team={team} />
+                      <BudgetBar team={team} startBudget={startBudget} />
                       {isLead && phase === "bidding" && (
                         <div style={{ marginTop: "0.38rem", fontSize: "0.68rem",
                           color: team.color, fontWeight: 700,

@@ -135,7 +135,15 @@ export default function CreateAuction() {
             </div>
           </Card>
           <div style={{ display:"flex", gap:"0.65rem", flexWrap:"wrap", justifyContent:"center" }}>
-            <button onClick={()=>navigate("/auction/room")}
+            <button onClick={()=>{
+              try {
+                localStorage.setItem("colosseum_auction_config", JSON.stringify({
+                  name, budget, maxPlayers, format,
+                  topScoring, topScoringCount, captainVC,
+                }));
+              } catch {}
+              navigate("/auction/room");
+            }}
               style={{ padding:"0.85rem 1.75rem", background:ACCENT, border:"none",
                 borderRadius:12, color:"#fff", fontWeight:800, fontSize:"0.9rem",
                 cursor:"pointer", display:"flex", alignItems:"center", gap:"0.4rem" }}>
