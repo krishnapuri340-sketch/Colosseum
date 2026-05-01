@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Swords, Users, Gavel,
   BookOpen, LogOut, Settings, ChevronLeft, ChevronRight,
-  Target, Trophy, Menu, X, BarChart2, Radio, Star, UserCircle,
+  Target, Trophy, Menu, X, BarChart2, Star, UserCircle,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebar } from "@/context/SidebarContext";
@@ -14,7 +14,6 @@ const NAV = [
   { href:"/auction",     label:"Auction",     icon:Gavel },
   { href:"/predictions", label:"Predictions", icon:Target },
   { href:"/leaderboard", label:"Leaderboard", icon:BarChart2 },
-  { href:"/live",        label:"Live Score",  icon:Radio },
   { href:"/watchlist",   label:"Watchlist",   icon:Star },
   { href:"/guide",       label:"Guide",       icon:BookOpen },
 ];
