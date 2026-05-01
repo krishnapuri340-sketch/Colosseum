@@ -460,12 +460,14 @@ function PrepStage({ mode, onStart, onSkip, canStart, teamCount }: {
               : "Waiting for teams…"
           }
         </button>
-        <button onClick={onSkip}
-          style={{ display: "flex", alignItems: "center", gap: 6,
-            padding: "0.9rem 1.4rem", background: CARD, border: `1px solid ${BDR}`,
-            borderRadius: 13, color: DIM, fontWeight: 600, fontSize: "0.88rem", cursor: "pointer" }}>
-          <SkipForward size={15} /> Skip Prep
-        </button>
+        {canStart && (
+          <button onClick={onSkip}
+            style={{ display: "flex", alignItems: "center", gap: 6,
+              padding: "0.9rem 1.4rem", background: CARD, border: `1px solid ${BDR}`,
+              borderRadius: 13, color: DIM, fontWeight: 600, fontSize: "0.88rem", cursor: "pointer" }}>
+            <SkipForward size={15} /> Skip Prep
+          </button>
+        )}
       </div>
 
       <AnimatePresence>
