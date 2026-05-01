@@ -441,7 +441,7 @@ function PrepStage({ mode, onStart, onSkip, canStart }: {
       {/* CTA buttons */}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
         <button onClick={canStart ? onStart : undefined} disabled={!canStart}
-          title={canStart ? undefined : "At least one team must join before starting"}
+          title={canStart ? undefined : "At least 2 teams must join before starting"}
           style={{ display: "flex", alignItems: "center", gap: 8,
             padding: "0.9rem 2rem",
             background: canStart ? ACCENT : "rgba(192,25,44,0.18)",
@@ -453,7 +453,12 @@ function PrepStage({ mode, onStart, onSkip, canStart }: {
             boxShadow: canStart ? `0 0 28px ${ACCENT}40` : "none",
             transition: "all 0.2s" }}>
           <Play size={18} />
-          {canStart ? "Start Auction" : "Waiting for teams…"}
+          {canStart
+            ? "Start Auction"
+            : teams.length === 1
+              ? "Need 1 more team…"
+              : "Waiting for teams…"
+          }
         </button>
         <button onClick={onSkip}
           style={{ display: "flex", alignItems: "center", gap: 6,
@@ -724,7 +729,7 @@ export default function AuctionRoom() {
 
     if (roomStage === "prep") {
       return (
-        <PrepStage mode={mode} onStart={startAuction} onSkip={startAuction} canStart={teams.length > 0} />
+        <PrepStage mode={mode} onStart={startAuction} onSkip={startAuction} canStart={teams.length >= 2} />
       );
     }
 
