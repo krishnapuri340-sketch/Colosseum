@@ -83,22 +83,13 @@ function loadAuctionConfig(): AuctionConfig {
 interface RegisteredTeam { id: number; roomCode: string; teamName: string; color: string; isHost: boolean; }
 
 function makeInitTeams(startBudget: number, registered: RegisteredTeam[]): AucTeam[] {
-  if (registered.length > 0) {
-    return registered.map((t, i) => ({
-      id:     `t${i + 1}`,
-      name:   t.teamName,
-      color:  t.color,
-      budget: startBudget,
-      squad:  [],
-    }));
-  }
-  // Fallback when no registered teams (direct navigation without creating first)
-  return [
-    { id: "t1", name: "Team 1", color: "#c0392b", budget: startBudget, squad: [] },
-    { id: "t2", name: "Team 2", color: "#3b82f6", budget: startBudget, squad: [] },
-    { id: "t3", name: "Team 3", color: "#a855f7", budget: startBudget, squad: [] },
-    { id: "t4", name: "Team 4", color: "#f59e0b", budget: startBudget, squad: [] },
-  ];
+  return registered.map((t, i) => ({
+    id:     `t${i + 1}`,
+    name:   t.teamName,
+    color:  t.color,
+    budget: startBudget,
+    squad:  [],
+  }));
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -333,8 +324,8 @@ function WatchlistPanel({ onClose }: { onClose: () => void }) {
 }
 
 // ── Prep Stage ───────────────────────────────────────────────────────
-function PrepStage({ mode, onStart, onSkip }: {
-  mode: AuctionMode; onStart: () => void; onSkip: () => void;
+function PrepStage({ mode, onStart, onSkip, canStart }: {
+  mode: AuctionMode; onStart: () => void; onSkip: () => void; canStart: boolean;
 }) {
   const [showWL, setShowWL]     = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 min
@@ -449,12 +440,20 @@ function PrepStage({ mode, onStart, onSkip }: {
 
       {/* CTA buttons */}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-        <button onClick={onStart}
+        <button onClick={canStart ? onStart : undefined} disabled={!canStart}
+          title={canStart ? undefined : "At least one team must join before starting"}
           style={{ display: "flex", alignItems: "center", gap: 8,
-            padding: "0.9rem 2rem", background: ACCENT, border: "none",
-            borderRadius: 13, color: "#fff", fontWeight: 800, fontSize: "1rem",
-            cursor: "pointer", boxShadow: `0 0 28px ${ACCENT}40` }}>
-          <Play size={18} /> Start Auction
+            padding: "0.9rem 2rem",
+            background: canStart ? ACCENT : "rgba(192,25,44,0.18)",
+            border: "none",
+            borderRadius: 13,
+            color: canStart ? "#fff" : "rgba(255,255,255,0.28)",
+            fontWeight: 800, fontSize: "1rem",
+            cursor: canStart ? "pointer" : "not-allowed",
+            boxShadow: canStart ? `0 0 28px ${ACCENT}40` : "none",
+            transition: "all 0.2s" }}>
+          <Play size={18} />
+          {canStart ? "Start Auction" : "Waiting for teams…"}
         </button>
         <button onClick={onSkip}
           style={{ display: "flex", alignItems: "center", gap: 6,
@@ -618,6 +617,7 @@ export default function AuctionRoom() {
   const [expandedTeam, setExpTeam] = useState<string | null>(null);
   const [mobileTab, setMobileTab]  = useState<MobileTab>("stage");
   const [showWL, setShowWL]        = useState(false);
+  const [teamsLoaded, setTeamsLoaded] = useState(!config.roomCode); // true immediately if no roomCode
 
   const leadTeam  = teams.find(t => t.id === leadId) ?? null;
   const remaining = queueRef.current.length - queueIdx.current;
@@ -629,11 +629,12 @@ export default function AuctionRoom() {
     apiFetch(`/auction/rooms/${roomCode}/teams`)
       .then(r => r.ok ? r.json() : null)
       .then((data: { teams: RegisteredTeam[] } | null) => {
-        if (data && data.teams.length > 0) {
+        if (data) {
           setTeams(makeInitTeams(startBudget, data.teams));
         }
       })
-      .catch(() => { /* keep fallback teams */ });
+      .catch(() => { /* keep empty */ })
+      .finally(() => setTeamsLoaded(true));
   }, [config.roomCode, startBudget]);
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────
@@ -723,7 +724,7 @@ export default function AuctionRoom() {
 
     if (roomStage === "prep") {
       return (
-        <PrepStage mode={mode} onStart={startAuction} onSkip={startAuction} />
+        <PrepStage mode={mode} onStart={startAuction} onSkip={startAuction} canStart={teams.length > 0} />
       );
     }
 
@@ -1169,6 +1170,23 @@ export default function AuctionRoom() {
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", overflowY: "auto" }}>
             <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700,
               letterSpacing: "0.12em", color: DIM, textTransform: "uppercase" }}>Teams</p>
+            {!teamsLoaded && (
+              <div style={{ padding: "1rem 0", textAlign: "center", color: DIM, fontSize: "0.75rem" }}>
+                Loading…
+              </div>
+            )}
+            {teamsLoaded && teams.length === 0 && (
+              <div style={{ background: CARD, border: `1px dashed ${BDR}`, borderRadius: 12,
+                padding: "1.25rem 0.85rem", textAlign: "center" }}>
+                <Users size={20} style={{ color: DIM, marginBottom: "0.5rem" }} />
+                <p style={{ margin: 0, fontSize: "0.78rem", color: DIM }}>
+                  Waiting for teams to join
+                </p>
+                <p style={{ margin: "0.3rem 0 0", fontSize: "0.68rem", color: "rgba(255,255,255,0.18)" }}>
+                  Share the room code so others can join
+                </p>
+              </div>
+            )}
             {teams.map(team => {
               const isLead = leadId === team.id;
               const ok     = phase === "bidding" && team.budget >= bidValue;
@@ -1277,14 +1295,16 @@ export default function AuctionRoom() {
 
           {/* Right: budgets + log */}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", overflowY: "auto" }}>
-            <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 11,
-              padding: "0.7rem 0.8rem", flexShrink: 0 }}>
-              <p style={{ margin: "0 0 0.5rem", fontSize: "0.58rem", fontWeight: 700,
-                letterSpacing: "0.12em", color: DIM, textTransform: "uppercase" }}>Budgets</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
-                {teams.map(t => <BudgetBar key={t.id} team={t} mini startBudget={startBudget} />)}
+            {teams.length > 0 && (
+              <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 11,
+                padding: "0.7rem 0.8rem", flexShrink: 0 }}>
+                <p style={{ margin: "0 0 0.5rem", fontSize: "0.58rem", fontWeight: 700,
+                  letterSpacing: "0.12em", color: DIM, textTransform: "uppercase" }}>Budgets</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+                  {teams.map(t => <BudgetBar key={t.id} team={t} mini startBudget={startBudget} />)}
+                </div>
               </div>
-            </div>
+            )}
             <p style={{ margin: 0, fontSize: "0.58rem", fontWeight: 700,
               letterSpacing: "0.12em", color: DIM, textTransform: "uppercase", flexShrink: 0 }}>
               Log ({log.length})
@@ -1318,6 +1338,15 @@ export default function AuctionRoom() {
             {mobileTab === "stage" && <CentreStage />}
             {mobileTab === "teams" && (
               <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {teamsLoaded && teams.length === 0 && (
+                  <div style={{ margin: "2rem auto", textAlign: "center" }}>
+                    <Users size={22} style={{ color: DIM, marginBottom: "0.5rem" }} />
+                    <p style={{ margin: 0, fontSize: "0.82rem", color: DIM }}>Waiting for teams to join</p>
+                    <p style={{ margin: "0.25rem 0 0", fontSize: "0.72rem", color: "rgba(255,255,255,0.2)" }}>
+                      Share the room code so others can join
+                    </p>
+                  </div>
+                )}
                 {teams.map(team => {
                   const isLead = leadId === team.id;
                   const ok     = phase === "bidding" && team.budget >= bidValue;
