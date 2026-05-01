@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { ArrowLeft, ChevronRight, Copy, Users } from "lucide-react";
@@ -74,13 +74,19 @@ export default function CreateAuction() {
   const [format, setFormat]         = useState<"classic"|"tier">("classic");
   const [maxPlayers, setMaxPlayers] = useState(11);
   const [budget, setBudget]         = useState(100);
-  const [topScoring, setTopScoring] = useState(false);
+  const [topScoring, setTopScoring]     = useState(false);
+  const [topScoringCount, setTopScoringCount] = useState(11);
   const [captainVC, setCaptainVC]   = useState(true);
   const [tradeWindow, setTrade]      = useState(false);
   const [captainChanges, setCapChg]  = useState(true);
   const [loading, setLoading]       = useState(false);
   const [code, setCode]             = useState("");
   const [copied, setCopied]         = useState(false);
+
+  // Keep topScoringCount within bounds when maxPlayers changes
+  useEffect(() => {
+    if (topScoringCount >= maxPlayers) setTopScoringCount(Math.max(1, maxPlayers - 1));
+  }, [maxPlayers]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -125,6 +131,7 @@ export default function CreateAuction() {
             </button>
             <div style={{ fontSize:"0.75rem", color:LABEL_CLR }}>
               {maxPlayers} players · ₹{budget}Cr · {format==="classic"?"Classic":"Tier-Based"}
+              {topScoring && ` · Top ${topScoringCount} count`}
             </div>
           </Card>
           <div style={{ display:"flex", gap:"0.65rem", flexWrap:"wrap", justifyContent:"center" }}>
@@ -230,19 +237,53 @@ export default function CreateAuction() {
           {/* Toggles */}
           <Card style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
             <Label>Options</Label>
-            {[
-              ["captainVC",   captainVC,   ()=>setCaptainVC(v=>!v),   "Captain & Vice-Captain", "2× and 1.5× multipliers"],
-              ["topScoring",  topScoring,  ()=>setTopScoring(v=>!v),  "Top Scoring Only",       "Limit which players count"],
-            ].map(([_k, val, fn, title, sub])=>(
-              <div key={String(title)} style={{ display:"flex", alignItems:"center",
+
+            {/* Captain & Vice-Captain */}
+            <div style={{ display:"flex", alignItems:"center",
+              justifyContent:"space-between", gap:"1rem" }}>
+              <div>
+                <div style={{ fontSize:"0.88rem", fontWeight:600, color:"#fff" }}>Captain &amp; Vice-Captain</div>
+                <div style={{ fontSize:"0.72rem", color:LABEL_CLR, marginTop:"0.1rem" }}>2× and 1.5× multipliers</div>
+              </div>
+              <Toggle on={captainVC} onToggle={()=>setCaptainVC(v=>!v)} />
+            </div>
+
+            {/* Top Scoring Only */}
+            <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
+              <div style={{ display:"flex", alignItems:"center",
                 justifyContent:"space-between", gap:"1rem" }}>
                 <div>
-                  <div style={{ fontSize:"0.88rem", fontWeight:600, color:"#fff" }}>{title as string}</div>
-                  <div style={{ fontSize:"0.72rem", color:LABEL_CLR, marginTop:"0.1rem" }}>{sub as string}</div>
+                  <div style={{ fontSize:"0.88rem", fontWeight:600, color:"#fff" }}>Top Scoring Only</div>
+                  <div style={{ fontSize:"0.72rem", color:LABEL_CLR, marginTop:"0.1rem" }}>
+                    Only top-ranked players count; the rest sit on the bench live
+                  </div>
                 </div>
-                <Toggle on={val as boolean} onToggle={fn as ()=>void} />
+                <Toggle on={topScoring} onToggle={()=>setTopScoring(v=>!v)} />
               </div>
-            ))}
+
+              {topScoring && (
+                <div style={{ background:"rgba(192,25,44,0.06)",
+                  border:"1px solid rgba(192,25,44,0.18)", borderRadius:12,
+                  padding:"1rem 1rem 0.85rem" }}>
+                  <div style={{ fontSize:"0.68rem", fontWeight:700, letterSpacing:"0.12em",
+                    textTransform:"uppercase", color:"rgba(192,25,44,0.7)", marginBottom:"0.75rem" }}>
+                    Players that count toward score
+                  </div>
+                  <Stepper
+                    value={topScoringCount}
+                    onChange={v => setTopScoringCount(Math.min(v, maxPlayers - 1))}
+                    min={1}
+                    max={maxPlayers - 1}
+                    suffix={`of ${maxPlayers} · bottom ${maxPlayers - topScoringCount} benched`}
+                  />
+                  <p style={{ margin:"0.65rem 0 0", fontSize:"0.7rem",
+                    color:"rgba(255,255,255,0.28)", lineHeight:1.5 }}>
+                    Rankings refresh live as match points update — the {topScoringCount} highest-scoring players
+                    automatically play, and anyone below that threshold moves to the bench.
+                  </p>
+                </div>
+              )}
+            </div>
           </Card>
 
           {/* Season Rules */}
