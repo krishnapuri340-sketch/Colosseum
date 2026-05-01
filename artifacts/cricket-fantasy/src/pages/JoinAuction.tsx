@@ -51,7 +51,9 @@ export default function JoinAuction() {
     await new Promise(r => setTimeout(r, 700));
     setLoading(false);
     // Simulate finding the room
-    setRoom({ ...MOCK_ROOM, code: code.toUpperCase() });
+    // TODO: replace with real API call: apiFetch(`/auction/rooms/${code.toUpperCase()}`)
+    //       then setRoom(data.room) or show error
+    setRoom(null); // Will show "room not found" until API is wired
     setStep("preview");
   }
 
@@ -118,19 +120,7 @@ export default function JoinAuction() {
                     transition:"border-color 0.2s" }}
                 />
               </div>
-              {/* Example codes */}
-              <div style={{ marginTop:"0.6rem", display:"flex", gap:"0.4rem", flexWrap:"wrap" }}>
-                <span style={{ fontSize:"0.7rem", color:"rgba(255,255,255,0.25)" }}>Try: </span>
-                {["FND2026","OLS2026"].map(c => (
-                  <button key={c} type="button" onClick={() => setCode(c)}
-                    style={{ fontSize:"0.7rem", color:"rgba(129,140,248,0.7)",
-                      background:"rgba(129,140,248,0.1)", border:"1px solid rgba(129,140,248,0.2)",
-                      borderRadius:6, padding:"2px 8px", cursor:"pointer",
-                      fontFamily:"monospace", fontWeight:600 }}>
-                    {c}
-                  </button>
-                ))}
-              </div>
+
             </div>
 
             <button type="submit" disabled={code.length < 4 || loading}

@@ -70,224 +70,7 @@ interface League {
 // ── Mock data ─────────────────────────────────────────────────────────────────
 // Points are per-player season fantasy totals — based on their role/credits
 
-const LEAGUES: League[] = [
-  {
-    id: "l1",
-    name: "Friday Night Draft",
-    color: "#c0392b",
-    format: "classic",
-    squadSize: 11,
-    budget: 100,
-    captainVC: true,
-    auctionDate: "18 Apr 2026",
-    members: [
-      {
-        id: "u1", username: "Rajveer", initials: "RJ", color: "#c0392b", isMe: true,
-        teamName: "Rajveer's Army", rank: 1, prevRank: 2, budgetSpent: 96.5,
-        totalPts: 3842,
-        squad: [
-          { name: "Jasprit Bumrah",    team: "MI",   role: "BWL", purchasePrice: 14.5, fantasyPts: 487 },
-          { name: "Rohit Sharma",      team: "MI",   role: "BAT", purchasePrice: 12.0, fantasyPts: 412 },
-          { name: "Virat Kohli",       team: "RCB",  role: "BAT", purchasePrice: 11.5, fantasyPts: 398 },
-          { name: "Rashid Khan",       team: "GT",   role: "AR",  purchasePrice: 9.5,  fantasyPts: 376 },
-          { name: "Travis Head",       team: "SRH",  role: "BAT", purchasePrice: 8.5,  fantasyPts: 354 },
-          { name: "Rishabh Pant",      team: "LSG",  role: "WK",  purchasePrice: 8.0,  fantasyPts: 341 },
-          { name: "Tilak Varma",       team: "MI",   role: "AR",  purchasePrice: 7.5,  fantasyPts: 318 },
-          { name: "Arshdeep Singh",    team: "PBKS", role: "BWL", purchasePrice: 7.0,  fantasyPts: 302 },
-          { name: "Varun Chakravarthy",team: "KKR",  role: "BWL", purchasePrice: 6.5,  fantasyPts: 287 },
-          { name: "Yashasvi Jaiswal",  team: "RR",   role: "BAT", purchasePrice: 6.5,  fantasyPts: 274 },
-          { name: "KL Rahul",          team: "DC",   role: "WK",  purchasePrice: 5.0,  fantasyPts: 293 },
-        ],
-      },
-      {
-        id: "u2", username: "Karan", initials: "KA", color: "#3b82f6",
-        teamName: "Karan's XI", rank: 2, prevRank: 1, budgetSpent: 98.0,
-        totalPts: 3601,
-        squad: [
-          { name: "Hardik Pandya",    team: "MI",   role: "AR",  purchasePrice: 13.0, fantasyPts: 458 },
-          { name: "Pat Cummins",      team: "SRH",  role: "BWL", purchasePrice: 11.0, fantasyPts: 421 },
-          { name: "Shubman Gill",     team: "GT",   role: "BAT", purchasePrice: 10.5, fantasyPts: 387 },
-          { name: "Suryakumar Yadav", team: "MI",   role: "BAT", purchasePrice: 9.5,  fantasyPts: 364 },
-          { name: "Riyan Parag",      team: "RR",   role: "AR",  purchasePrice: 8.5,  fantasyPts: 341 },
-          { name: "Abhishek Sharma",  team: "SRH",  role: "AR",  purchasePrice: 8.0,  fantasyPts: 318 },
-          { name: "Axar Patel",       team: "DC",   role: "AR",  purchasePrice: 7.5,  fantasyPts: 305 },
-          { name: "MS Dhoni",         team: "CSK",  role: "WK",  purchasePrice: 7.0,  fantasyPts: 287 },
-          { name: "Sunil Narine",     team: "KKR",  role: "AR",  purchasePrice: 6.5,  fantasyPts: 276 },
-          { name: "Kagiso Rabada",    team: "GT",   role: "BWL", purchasePrice: 6.0,  fantasyPts: 264 },
-          { name: "Ruturaj Gaikwad",  team: "CSK",  role: "BAT", purchasePrice: 10.5, fantasyPts: 180 },
-        ],
-      },
-      {
-        id: "u3", username: "Arjun", initials: "AR", color: "#a855f7",
-        teamName: "Arjun Plays", rank: 3, prevRank: 3, budgetSpent: 94.5,
-        totalPts: 3389,
-        squad: [
-          { name: "Shreyas Iyer",     team: "PBKS", role: "BAT", purchasePrice: 12.5, fantasyPts: 431 },
-          { name: "Yashasvi Jaiswal", team: "RR",   role: "BAT", purchasePrice: 11.0, fantasyPts: 398 },
-          { name: "Varun Chakravarthy",team:"KKR",  role: "BWL", purchasePrice: 9.0,  fantasyPts: 376 },
-          { name: "Ishan Kishan",     team: "SRH",  role: "WK",  purchasePrice: 8.5,  fantasyPts: 343 },
-          { name: "Sai Sudharsan",    team: "GT",   role: "BAT", purchasePrice: 7.5,  fantasyPts: 318 },
-          { name: "Mitchell Marsh",   team: "LSG",  role: "AR",  purchasePrice: 7.5,  fantasyPts: 307 },
-          { name: "Kuldeep Yadav",    team: "DC",   role: "BWL", purchasePrice: 6.5,  fantasyPts: 289 },
-          { name: "Rinku Singh",      team: "KKR",  role: "BAT", purchasePrice: 6.0,  fantasyPts: 264 },
-          { name: "Harshal Patel",    team: "SRH",  role: "BWL", purchasePrice: 5.5,  fantasyPts: 254 },
-          { name: "Sherfane Rutherford",team:"MI",  role: "AR",  purchasePrice: 5.5,  fantasyPts: 238 },
-          { name: "Deepak Chahar",    team: "MI",   role: "BWL", purchasePrice: 5.0,  fantasyPts: 171 },
-        ],
-      },
-      {
-        id: "u4", username: "Sahil", initials: "SA", color: "#f59e0b",
-        teamName: "Sahil FC", rank: 4, prevRank: 4, budgetSpent: 91.0,
-        totalPts: 3142,
-        squad: [
-          { name: "Andre Russell",    team: "KKR",  role: "AR",  purchasePrice: 11.5, fantasyPts: 412 },
-          { name: "Nicholas Pooran",  team: "LSG",  role: "WK",  purchasePrice: 10.0, fantasyPts: 376 },
-          { name: "Trent Boult",      team: "MI",   role: "BWL", purchasePrice: 9.0,  fantasyPts: 341 },
-          { name: "Phil Salt",        team: "RCB",  role: "WK",  purchasePrice: 8.5,  fantasyPts: 318 },
-          { name: "Nitish Kumar Reddy",team:"SRH",  role: "AR",  purchasePrice: 7.5,  fantasyPts: 298 },
-          { name: "Jofra Archer",     team: "RR",   role: "BWL", purchasePrice: 7.0,  fantasyPts: 281 },
-          { name: "Shivam Dube",      team: "CSK",  role: "AR",  purchasePrice: 6.5,  fantasyPts: 264 },
-          { name: "Shimron Hetmyer",  team: "RR",   role: "BAT", purchasePrice: 6.0,  fantasyPts: 247 },
-          { name: "Kamindu Mendis",   team: "SRH",  role: "AR",  purchasePrice: 5.5,  fantasyPts: 231 },
-          { name: "Noor Ahmad",       team: "CSK",  role: "BWL", purchasePrice: 5.0,  fantasyPts: 218 },
-          { name: "Rahul Tewatia",    team: "GT",   role: "AR",  purchasePrice: 5.5,  fantasyPts: 156 },
-        ],
-      },
-    ],
-  },
-  {
-    id: "l2",
-    name: "Office League S2",
-    color: "#3b82f6",
-    format: "tier",
-    squadSize: 11,
-    budget: 100,
-    captainVC: true,
-    auctionDate: "20 Apr 2026",
-    members: [
-      {
-        id: "u5", username: "Priya", initials: "PR", color: "#34d399",
-        teamName: "Priya XI", rank: 1, prevRank: 1, budgetSpent: 97.5,
-        totalPts: 4102,
-        squad: [
-          { name: "Jasprit Bumrah",    team: "MI",   role: "BWL", purchasePrice: 15.0, fantasyPts: 487 },
-          { name: "Virat Kohli",       team: "RCB",  role: "BAT", purchasePrice: 13.5, fantasyPts: 398 },
-          { name: "Pat Cummins",       team: "SRH",  role: "BWL", purchasePrice: 11.0, fantasyPts: 421 },
-          { name: "Rashid Khan",       team: "GT",   role: "AR",  purchasePrice: 10.0, fantasyPts: 376 },
-          { name: "Yashasvi Jaiswal",  team: "RR",   role: "BAT", purchasePrice: 9.5,  fantasyPts: 398 },
-          { name: "Travis Head",       team: "SRH",  role: "BAT", purchasePrice: 8.5,  fantasyPts: 354 },
-          { name: "Tilak Varma",       team: "MI",   role: "AR",  purchasePrice: 7.5,  fantasyPts: 318 },
-          { name: "Axar Patel",        team: "DC",   role: "AR",  purchasePrice: 7.0,  fantasyPts: 305 },
-          { name: "Kuldeep Yadav",     team: "DC",   role: "BWL", purchasePrice: 6.5,  fantasyPts: 289 },
-          { name: "Ishan Kishan",      team: "SRH",  role: "WK",  purchasePrice: 5.5,  fantasyPts: 276 },
-          { name: "Rinku Singh",       team: "KKR",  role: "BAT", purchasePrice: 5.0,  fantasyPts: 480 },
-        ],
-      },
-      {
-        id: "u1", username: "Rajveer", initials: "RJ", color: "#c0392b", isMe: true,
-        teamName: "Raj Warriors", rank: 2, prevRank: 3, budgetSpent: 95.0,
-        totalPts: 3876,
-        squad: [
-          { name: "Hardik Pandya",     team: "MI",   role: "AR",  purchasePrice: 14.0, fantasyPts: 458 },
-          { name: "Rohit Sharma",      team: "MI",   role: "BAT", purchasePrice: 12.5, fantasyPts: 412 },
-          { name: "Abhishek Sharma",   team: "SRH",  role: "AR",  purchasePrice: 9.0,  fantasyPts: 387 },
-          { name: "Shubman Gill",      team: "GT",   role: "BAT", purchasePrice: 8.5,  fantasyPts: 364 },
-          { name: "Kagiso Rabada",     team: "GT",   role: "BWL", purchasePrice: 8.0,  fantasyPts: 341 },
-          { name: "Rishabh Pant",      team: "LSG",  role: "WK",  purchasePrice: 7.5,  fantasyPts: 318 },
-          { name: "Mitchell Marsh",    team: "LSG",  role: "AR",  purchasePrice: 7.0,  fantasyPts: 307 },
-          { name: "Arshdeep Singh",    team: "PBKS", role: "BWL", purchasePrice: 6.5,  fantasyPts: 302 },
-          { name: "Sunil Narine",      team: "KKR",  role: "AR",  purchasePrice: 6.0,  fantasyPts: 276 },
-          { name: "Sai Sudharsan",     team: "GT",   role: "BAT", purchasePrice: 5.5,  fantasyPts: 264 },
-          { name: "Harshal Patel",     team: "SRH",  role: "BWL", purchasePrice: 5.5,  fantasyPts: 247 },
-        ],
-      },
-      {
-        id: "u6", username: "Dev", initials: "DV", color: "#818cf8",
-        teamName: "Dev Dynamite", rank: 3, prevRank: 2, budgetSpent: 93.5,
-        totalPts: 3654,
-        squad: [
-          { name: "Suryakumar Yadav", team: "MI",   role: "BAT", purchasePrice: 12.0, fantasyPts: 431 },
-          { name: "Jofra Archer",     team: "RR",   role: "BWL", purchasePrice: 10.5, fantasyPts: 398 },
-          { name: "Andre Russell",    team: "KKR",  role: "AR",  purchasePrice: 9.5,  fantasyPts: 376 },
-          { name: "Shreyas Iyer",     team: "PBKS", role: "BAT", purchasePrice: 8.5,  fantasyPts: 354 },
-          { name: "Riyan Parag",      team: "RR",   role: "AR",  purchasePrice: 7.5,  fantasyPts: 318 },
-          { name: "Nicholas Pooran",  team: "LSG",  role: "WK",  purchasePrice: 7.0,  fantasyPts: 298 },
-          { name: "Kamindu Mendis",   team: "SRH",  role: "AR",  purchasePrice: 6.5,  fantasyPts: 281 },
-          { name: "Varun Chakravarthy",team:"KKR",  role: "BWL", purchasePrice: 6.0,  fantasyPts: 264 },
-          { name: "Phil Salt",        team: "RCB",  role: "WK",  purchasePrice: 5.5,  fantasyPts: 247 },
-          { name: "Noor Ahmad",       team: "CSK",  role: "BWL", purchasePrice: 5.0,  fantasyPts: 231 },
-          { name: "Dhruv Jurel",      team: "RR",   role: "WK",  purchasePrice: 5.5,  fantasyPts: 256 },
-        ],
-      },
-    ],
-  },
-  {
-    id: "l3",
-    name: "Cousins Cup",
-    color: "#a855f7",
-    format: "classic",
-    squadSize: 11,
-    budget: 80,
-    captainVC: false,
-    auctionDate: "22 Apr 2026",
-    members: [
-      {
-        id: "u7", username: "Nisha", initials: "NI", color: "#f472b6",
-        teamName: "Nisha's Rockets", rank: 1, prevRank: 2, budgetSpent: 76.0,
-        totalPts: 3521,
-        squad: [
-          { name: "Yashasvi Jaiswal",  team: "RR",   role: "BAT", purchasePrice: 12.0, fantasyPts: 398 },
-          { name: "Tilak Varma",       team: "MI",   role: "AR",  purchasePrice: 9.5,  fantasyPts: 376 },
-          { name: "Rashid Khan",       team: "GT",   role: "AR",  purchasePrice: 8.5,  fantasyPts: 354 },
-          { name: "Ishan Kishan",      team: "SRH",  role: "WK",  purchasePrice: 7.5,  fantasyPts: 318 },
-          { name: "Kagiso Rabada",     team: "GT",   role: "BWL", purchasePrice: 7.0,  fantasyPts: 307 },
-          { name: "Nitish Kumar Reddy",team: "SRH",  role: "AR",  purchasePrice: 6.5,  fantasyPts: 287 },
-          { name: "Sai Sudharsan",     team: "GT",   role: "BAT", purchasePrice: 5.5,  fantasyPts: 264 },
-          { name: "Arshdeep Singh",    team: "PBKS", role: "BWL", purchasePrice: 5.5,  fantasyPts: 302 },
-          { name: "Sunil Narine",      team: "KKR",  role: "AR",  purchasePrice: 5.0,  fantasyPts: 276 },
-          { name: "Shimron Hetmyer",   team: "RR",   role: "BAT", purchasePrice: 4.5,  fantasyPts: 264 },
-          { name: "Deepak Chahar",     team: "MI",   role: "BWL", purchasePrice: 4.5,  fantasyPts: 175 },
-        ],
-      },
-      {
-        id: "u1", username: "Rajveer", initials: "RJ", color: "#c0392b", isMe: true,
-        teamName: "Raj Rockets", rank: 2, prevRank: 1, budgetSpent: 74.5,
-        totalPts: 3312,
-        squad: [
-          { name: "Hardik Pandya",    team: "MI",   role: "AR",  purchasePrice: 11.5, fantasyPts: 412 },
-          { name: "Travis Head",      team: "SRH",  role: "BAT", purchasePrice: 9.0,  fantasyPts: 387 },
-          { name: "Andre Russell",    team: "KKR",  role: "AR",  purchasePrice: 8.0,  fantasyPts: 354 },
-          { name: "Abhishek Sharma",  team: "SRH",  role: "AR",  purchasePrice: 7.0,  fantasyPts: 318 },
-          { name: "Shivam Dube",      team: "CSK",  role: "AR",  purchasePrice: 6.0,  fantasyPts: 281 },
-          { name: "Kuldeep Yadav",    team: "DC",   role: "BWL", purchasePrice: 5.5,  fantasyPts: 264 },
-          { name: "Phil Salt",        team: "RCB",  role: "WK",  purchasePrice: 5.5,  fantasyPts: 247 },
-          { name: "Rinku Singh",      team: "KKR",  role: "BAT", purchasePrice: 5.0,  fantasyPts: 231 },
-          { name: "Harshal Patel",    team: "SRH",  role: "BWL", purchasePrice: 5.0,  fantasyPts: 218 },
-          { name: "Axar Patel",       team: "DC",   role: "AR",  purchasePrice: 5.0,  fantasyPts: 238 },
-          { name: "Kumar Kushagra",   team: "GT",   role: "WK",  purchasePrice: 2.5,  fantasyPts: 162 },
-        ],
-      },
-      {
-        id: "u8", username: "Meera", initials: "ME", color: "#34d399",
-        teamName: "Meera Strikers", rank: 3, prevRank: 3, budgetSpent: 72.0,
-        totalPts: 3098,
-        squad: [
-          { name: "Virat Kohli",      team: "RCB",  role: "BAT", purchasePrice: 10.5, fantasyPts: 376 },
-          { name: "Varun Chakravarthy",team:"KKR",  role: "BWL", purchasePrice: 8.5,  fantasyPts: 341 },
-          { name: "Suryakumar Yadav", team: "MI",   role: "BAT", purchasePrice: 7.5,  fantasyPts: 318 },
-          { name: "Rishabh Pant",     team: "LSG",  role: "WK",  purchasePrice: 7.0,  fantasyPts: 298 },
-          { name: "Jofra Archer",     team: "RR",   role: "BWL", purchasePrice: 6.5,  fantasyPts: 281 },
-          { name: "Nicholas Pooran",  team: "LSG",  role: "WK",  purchasePrice: 6.0,  fantasyPts: 264 },
-          { name: "Kamindu Mendis",   team: "SRH",  role: "AR",  purchasePrice: 5.5,  fantasyPts: 247 },
-          { name: "Shreyas Iyer",     team: "PBKS", role: "BAT", purchasePrice: 5.5,  fantasyPts: 231 },
-          { name: "Noor Ahmad",       team: "CSK",  role: "BWL", purchasePrice: 5.0,  fantasyPts: 218 },
-          { name: "Shimron Hetmyer",  team: "RR",   role: "BAT", purchasePrice: 5.0,  fantasyPts: 218 },
-          { name: "R Smaran",         team: "SRH",  role: "BAT", purchasePrice: 1.5,  fantasyPts: 106 },
-        ],
-      },
-    ],
-  },
-];
+const LEAGUES: League[] = [];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -682,17 +465,19 @@ export default function Leaderboard() {
       .finally(() => setLoadingS(false));
   }, []);
 
-  const selectedLeague = LEAGUES.find(l => l.id === activeLeague) ?? LEAGUES[0];
+  const selectedLeague = LEAGUES.find(l => l.id === activeLeague) ?? LEAGUES[0] ?? null;
   const top3 = standings.slice(0, 3);
   const podiumDisplay = top3.length === 3 ? [top3[1], top3[0], top3[2]] : top3;
   const podiumHeights = ["h-28", "h-36", "h-24"];
 
   // My overall stats across all leagues
   const myStats = useMemo(() => {
+    if (LEAGUES.length === 0) return { leagues: 0, bestRank: 0, topPts: 0 };
     const myRows = LEAGUES.flatMap(l => l.members.filter(m => m.isMe));
+    if (myRows.length === 0) return { leagues: 0, bestRank: 0, topPts: 0 };
     const bestRank = Math.min(...myRows.map(m => m.rank));
-    const totalPts = Math.max(...myRows.map(m => m.totalPts));
-    return { leagues: myRows.length, bestRank, topPts: totalPts };
+    const topPts   = Math.max(...myRows.map(m => m.totalPts));
+    return { leagues: myRows.length, bestRank, topPts };
   }, []);
 
   return (

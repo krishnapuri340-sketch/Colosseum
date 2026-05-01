@@ -45,88 +45,17 @@ interface Pick {
 }
 
 // ── Mock leagues the user is in ───────────────────────────────────────────────
-const MY_LEAGUES = [
-  { id: "l1", name: "Friday Night Draft",  color: "#c0392b" },
-  { id: "l2", name: "Office League S2",    color: "#3b82f6" },
-  { id: "l3", name: "Cousins Cup",         color: "#a855f7" },
-];
+const MY_LEAGUES: {id:string;name:string;color:string}[] = [];
 
 // ── Match data ─────────────────────────────────────────────────────────────────
 // friendPicks deliberately covers multiple leagues so the filter works
-const MATCHES: MatchPred[] = [
-  {
-    id: "m1", matchNo: 35, team1: "MI", team2: "RCB",
-    venue: "Wankhede Stadium, Mumbai", date: "Today", time: "7:30 PM",
-    status: "open", community: { t1: 62, t2: 38 }, deadlineMins: 47,
-    friendPicks: [
-      { name: "Rajveer", initials: "RJ", color: "#c0392b", league: "l1", winner: "MI",  mom: "Jasprit Bumrah",    sixes: "10–14" },
-      { name: "Karan",   initials: "KA", color: "#3b82f6", league: "l1", winner: "MI",  mom: "Rohit Sharma",      sixes: "15–19" },
-      { name: "Arjun",   initials: "AR", color: "#a855f7", league: "l1", winner: "RCB", mom: "Virat Kohli",       sixes: "15–19" },
-      { name: "Sahil",   initials: "SA", color: "#f59e0b", league: "l2", winner: "MI",  mom: "Tilak Varma",       sixes: "10–14" },
-      { name: "Priya",   initials: "PR", color: "#34d399", league: "l2", winner: "RCB", mom: "Phil Salt",         sixes: "< 10"  },
-      { name: "Dev",     initials: "DV", color: "#818cf8", league: "l3", winner: "MI",  mom: "Hardik Pandya",     sixes: "15–19" },
-      { name: "Nisha",   initials: "NI", color: "#f472b6", league: "l3", winner: "MI",  mom: "Suryakumar Yadav",  sixes: "20+"   },
-    ],
-  },
-  {
-    id: "m2", matchNo: 36, team1: "GT", team2: "CSK",
-    venue: "Narendra Modi Stadium, Ahmedabad", date: "Tomorrow", time: "3:30 PM",
-    status: "open", community: { t1: 55, t2: 45 }, deadlineMins: 1127,
-    friendPicks: [
-      { name: "Rajveer", initials: "RJ", color: "#c0392b", league: "l1", winner: "GT",  mom: "Shubman Gill",    sixes: "10–14" },
-      { name: "Karan",   initials: "KA", color: "#3b82f6", league: "l1", winner: "CSK", mom: "MS Dhoni",        sixes: "< 10"  },
-      { name: "Sahil",   initials: "SA", color: "#f59e0b", league: "l2", winner: "GT",  mom: "Rashid Khan",     sixes: "10–14" },
-      { name: "Dev",     initials: "DV", color: "#818cf8", league: "l3", winner: "GT",  mom: "Sai Sudharsan",   sixes: "15–19" },
-    ],
-  },
-  {
-    id: "m3", matchNo: 34, team1: "SRH", team2: "KKR",
-    venue: "Rajiv Gandhi IS, Hyderabad", date: "Yesterday", time: "7:30 PM",
-    status: "settled",
-    result: { winner: "SRH", mom: "Travis Head", sixes: 18 },
-    community: { t1: 48, t2: 52 }, deadlineMins: 0,
-    friendPicks: [
-      { name: "Rajveer", initials: "RJ", color: "#c0392b", league: "l1", winner: "KKR", mom: "Sunil Narine",        sixes: "15–19" },
-      { name: "Karan",   initials: "KA", color: "#3b82f6", league: "l1", winner: "SRH", mom: "Travis Head",         sixes: "15–19" },
-      { name: "Arjun",   initials: "AR", color: "#a855f7", league: "l1", winner: "KKR", mom: "Varun Chakravarthy",  sixes: "10–14" },
-      { name: "Sahil",   initials: "SA", color: "#f59e0b", league: "l2", winner: "SRH", mom: "Travis Head",         sixes: "20+"   },
-      { name: "Nisha",   initials: "NI", color: "#f472b6", league: "l3", winner: "KKR", mom: "Andre Russell",       sixes: "20+"   },
-    ],
-  },
-  {
-    id: "m4", matchNo: 33, team1: "RR", team2: "PBKS",
-    venue: "Sawai Mansingh Stadium, Jaipur", date: "2 days ago", time: "3:30 PM",
-    status: "settled",
-    result: { winner: "RR", mom: "Yashasvi Jaiswal", sixes: 14 },
-    community: { t1: 58, t2: 42 }, deadlineMins: 0,
-    friendPicks: [
-      { name: "Rajveer", initials: "RJ", color: "#c0392b", league: "l1", winner: "RR",   mom: "Yashasvi Jaiswal", sixes: "10–14" },
-      { name: "Sahil",   initials: "SA", color: "#f59e0b", league: "l2", winner: "PBKS", mom: "Arshdeep Singh",   sixes: "10–14" },
-      { name: "Dev",     initials: "DV", color: "#818cf8", league: "l3", winner: "RR",   mom: "Riyan Parag",      sixes: "15–19" },
-    ],
-  },
-  {
-    id: "m5", matchNo: 37, team1: "DC", team2: "LSG",
-    venue: "Arun Jaitley Stadium, Delhi", date: "Sat 3 May", time: "7:30 PM",
-    status: "open", community: { t1: 52, t2: 48 }, deadlineMins: 3200,
-    friendPicks: [
-      { name: "Karan",   initials: "KA", color: "#3b82f6", league: "l1", winner: "LSG", mom: "Rishabh Pant",     sixes: "10–14" },
-      { name: "Priya",   initials: "PR", color: "#34d399", league: "l2", winner: "DC",  mom: "Axar Patel",       sixes: "< 10"  },
-      { name: "Nisha",   initials: "NI", color: "#f472b6", league: "l3", winner: "LSG", mom: "Mohammed Shami",   sixes: "< 10"  },
-    ],
-  },
-];
+const MATCHES: MatchPred[] = [];
 
 const SIXES_BANDS = ["< 10", "10–14", "15–19", "20+"];
-const MY_STATS    = { total: 28, correct: 19, streak: 4, pts: 1840, accuracy: 68 };
+const MY_STATS = { total: 0, correct: 0, streak: 0, pts: 0, accuracy: 0 };
 
-const PRED_LEADERS = [
-  { rank: 1, name: "BumrahOrNothing",  pts: 3210, correct: 41 },
-  { rank: 2, name: "GillForPresident", pts: 3080, correct: 39 },
-  { rank: 3, name: "SRH_Fanatic",      pts: 2940, correct: 37 },
-  { rank: 4, name: "TravisHeadCase",   pts: 2790, correct: 35 },
-  { rank: 5, name: "You",              pts: 1840, correct: 19, isMe: true },
-];
+type PredLeader = { rank:number; name:string; pts:number; correct:number; isMe?:boolean; };
+const PRED_LEADERS: PredLeader[] = [];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function fmtDeadline(mins: number): string {
@@ -875,6 +804,19 @@ export default function Predictions() {
 
         {tab === "predict" && (
           <>
+            {MATCHES.length === 0 && (
+              <div style={{ textAlign:"center", padding:"4rem 2rem",
+                background:"rgba(255,255,255,0.02)", border:"1px dashed rgba(255,255,255,0.08)",
+                borderRadius:20, marginBottom:"1rem" }}>
+                <div style={{ fontSize:"2.5rem", marginBottom:"0.75rem" }}>🎯</div>
+                <div style={{ fontSize:"1.1rem", fontWeight:700, color:"rgba(255,255,255,0.4)" }}>
+                  No matches to predict yet
+                </div>
+                <div style={{ fontSize:"0.85rem", color:"rgba(255,255,255,0.25)", marginTop:6 }}>
+                  Match predictions will appear here as fixtures are scheduled
+                </div>
+              </div>
+            )}
             {/* ── League filter ── */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <span style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.1em",
@@ -945,6 +887,13 @@ export default function Predictions() {
                 Prediction Leaderboard
               </span>
             </div>
+            {PRED_LEADERS.length === 0 && (
+              <div style={{ padding:"3rem 2rem", textAlign:"center",
+                color:"rgba(255,255,255,0.25)", fontSize:"0.85rem" }}>
+                <div style={{ fontSize:"2rem", marginBottom:"0.5rem" }}>🏆</div>
+                Leaderboard builds once predictions are submitted
+              </div>
+            )}
             {PRED_LEADERS.map((e, i) => (
               <div key={e.rank}
                 style={{

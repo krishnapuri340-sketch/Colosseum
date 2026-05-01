@@ -18,7 +18,6 @@ const ROLE_COLOR_MAP: Record<string,string> = {
   WK:"text-yellow-400 bg-yellow-400/10 border-yellow-400/20",
 };
 
-// Teams come from AppContext
 
 const statusStyle = (s:string) => ({
   live:      "bg-green-500/20 text-green-400 border-green-500/30",

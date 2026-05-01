@@ -51,30 +51,11 @@ interface LiveMatch {
 }
 
 // ── Mock live events (replace with real API) ──────────────────────────
-const MOCK_EVENTS: LiveEvent[] = [
-  { id:"e1",  player:"Jasprit Bumrah",    team:"MI",  event:"Wicket (Bowled)",pts:38, over:"8.3",  timestamp:Date.now()-180000 },
-  { id:"e2",  player:"Suryakumar Yadav",  team:"MI",  event:"Six",            pts:6,  over:"9.1",  timestamp:Date.now()-150000 },
-  { id:"e3",  player:"Suryakumar Yadav",  team:"MI",  event:"Four",           pts:4,  over:"9.3",  timestamp:Date.now()-140000 },
-  { id:"e4",  player:"Virat Kohli",       team:"RCB", event:"Fifty",          pts:8,  over:"10.0", timestamp:Date.now()-120000 },
-  { id:"e5",  player:"Jasprit Bumrah",    team:"MI",  event:"Wicket (LBW)",   pts:38, over:"11.2", timestamp:Date.now()-90000  },
-  { id:"e6",  player:"Tilak Varma",       team:"MI",  event:"Six",            pts:6,  over:"12.1", timestamp:Date.now()-60000  },
-  { id:"e7",  player:"Hardik Pandya",     team:"MI",  event:"Four",           pts:4,  over:"12.4", timestamp:Date.now()-40000  },
-  { id:"e8",  player:"Jasprit Bumrah",    team:"MI",  event:"Maiden Over",    pts:12, over:"13.0", timestamp:Date.now()-20000  },
-  { id:"e9",  player:"Virat Kohli",       team:"RCB", event:"Hundred",        pts:16, over:"14.2", timestamp:Date.now()-8000   },
-  { id:"e10", player:"Suryakumar Yadav",  team:"MI",  event:"Catch",          pts:8,  over:"15.0", timestamp:Date.now()-3000   },
-];
+const MOCK_EVENTS: LiveEvent[] = [];
 
 // MY_SQUAD_NAMES derived from AppContext myTeams in component
 
-const MOCK_PLAYERS: LivePlayerScore[] = [
-  { name:"Virat Kohli",      team:"RCB", role:"BAT", runs:102, balls:63, fantasyPts:142, isActive:true,  events:MOCK_EVENTS.filter(e=>e.player==="Virat Kohli") },
-  { name:"Jasprit Bumrah",   team:"MI",  role:"BWL", wickets:3, overs:4, fantasyPts:126, isActive:false, events:MOCK_EVENTS.filter(e=>e.player==="Jasprit Bumrah") },
-  { name:"Suryakumar Yadav", team:"MI",  role:"BAT", runs:48, balls:28, fantasyPts:72,  isActive:true,  events:MOCK_EVENTS.filter(e=>e.player==="Suryakumar Yadav") },
-  { name:"Hardik Pandya",    team:"MI",  role:"AR",  runs:22, balls:14, fantasyPts:38,  isActive:false, events:MOCK_EVENTS.filter(e=>e.player==="Hardik Pandya") },
-  { name:"Tilak Varma",      team:"MI",  role:"AR",  runs:31, balls:18, fantasyPts:49,  isActive:true,  events:MOCK_EVENTS.filter(e=>e.player==="Tilak Varma") },
-  { name:"Phil Salt",        team:"RCB", role:"WK",  runs:14, balls:10, fantasyPts:18,  isActive:false, events:[] },
-  { name:"Krunal Pandya",    team:"RCB", role:"AR",  wickets:1, overs:2, fantasyPts:44, isActive:false, events:[] },
-];
+const MOCK_PLAYERS: LivePlayerScore[] = [];
 
 const EVENT_COLORS: Record<string,string> = {
   "Wicket (Bowled)":  "#22c55e",
@@ -256,16 +237,14 @@ export default function LiveScore() {
   const MY_SQUAD_NAMES = new Set(myTeams.flatMap(t => t.players));
   const [liveMatches, setLiveMatches] = useState<LiveMatch[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
-  const [events, setEvents] = useState<LiveEvent[]>(MOCK_EVENTS);
+  const [events, setEvents] = useState<LiveEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [filter, setFilter] = useState<"all"|"mysquad">("all");
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
   const pollRef = useRef<ReturnType<typeof setInterval>>();
 
-  const mySquadTotalPts = MOCK_PLAYERS
-    .filter(p => MY_SQUAD_NAMES.has(p.name))
-    .reduce((s,p) => s+p.fantasyPts, 0);
+  const mySquadTotalPts = 0; // Will come from live API
 
   function fetchLiveData() {
     apiFetch("/ipl/matches")
@@ -289,9 +268,7 @@ export default function LiveScore() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
-  const displayedPlayers = filter === "mysquad"
-    ? MOCK_PLAYERS.filter(p => MY_SQUAD_NAMES.has(p.name))
-    : MOCK_PLAYERS;
+  const displayedPlayers: LivePlayerScore[] = []; // Will come from live API
 
   const sortedPlayers = [...displayedPlayers].sort((a,b) => b.fantasyPts - a.fantasyPts);
   const sortedEvents  = [...events].sort((a,b) => b.timestamp - a.timestamp);
@@ -344,7 +321,7 @@ export default function LiveScore() {
               <div style={{ fontSize:"0.72rem", fontWeight:700, color:"rgba(255,255,255,0.4)",
                 textTransform:"uppercase", letterSpacing:"0.08em" }}>My Squad — This Match</div>
               <div style={{ fontSize:"0.82rem", color:"rgba(255,255,255,0.6)", marginTop:1 }}>
-                Bumrah Leads · vs RCB
+                {myTeams.length > 0 ? myTeams[0].name : "No teams yet"}
               </div>
             </div>
           </div>
@@ -421,7 +398,19 @@ export default function LiveScore() {
               </div>
             </div>
 
-            {sortedPlayers.map(p=>(
+            {sortedPlayers.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"3rem 1rem",
+                background:"rgba(255,255,255,0.02)", border:"1px dashed rgba(255,255,255,0.08)",
+                borderRadius:16 }}>
+                <div style={{ fontSize:"2rem", marginBottom:"0.5rem" }}>📡</div>
+                <div style={{ fontSize:"0.9rem", fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
+                  No live match data yet
+                </div>
+                <div style={{ fontSize:"0.78rem", color:"rgba(255,255,255,0.2)", marginTop:4 }}>
+                  Player scores will appear here during live matches
+                </div>
+              </div>
+            ) : sortedPlayers.map(p=>(
               <PlayerScoreCard key={p.name} player={p}
                 isMySquad={MY_SQUAD_NAMES.has(p.name)} />
             ))}
@@ -434,6 +423,12 @@ export default function LiveScore() {
             </h2>
             <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)",
               borderRadius:14, overflow:"hidden" }}>
+              {sortedEvents.length === 0 && (
+                <div style={{ padding:"2rem", textAlign:"center",
+                  fontSize:"0.8rem", color:"rgba(255,255,255,0.2)" }}>
+                  Events appear here during live matches
+                </div>
+              )}
               {sortedEvents.map((ev,i)=>{
                 const isMyPlayer = MY_SQUAD_NAMES.has(ev.player);
                 const evColor = EVENT_COLORS[ev.event] ?? "#818cf8";

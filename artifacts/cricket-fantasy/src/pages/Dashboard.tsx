@@ -23,12 +23,7 @@ interface IplMatch {
   isLive: boolean; isCompleted: boolean; isUpcoming: boolean;
 }
 
-const chartData = [
-  { w:"W1", pts:187, rank:18 }, { w:"W2", pts:312, rank:12 },
-  { w:"W3", pts:245, rank:15 }, { w:"W4", pts:418, rank:9 },
-  { w:"W5", pts:376, rank:11 }, { w:"W6", pts:502, rank:7 },
-  { w:"W7", pts:489, rank:7 },
-];
+// Chart data will come from API
 
 const QUICK_ACTIONS = [
   { label:"Host Auction",  href:"/auction/create", icon:Gavel,  color:"#c0192c", bg:"rgba(192,25,44,0.12)" },
@@ -37,18 +32,9 @@ const QUICK_ACTIONS = [
   { label:"My Teams",     href:"/my-teams",       icon:Star,   color:"#f59e0b", bg:"rgba(245,158,11,0.12)" },
 ];
 
-const DIFFERENTIALS = [
-  { name:"Vaibhav Suryavanshi", team:"RR",  role:"BAT", sel:"14%", pts:387, trend:"+23%" },
-  { name:"Washington Sundar",   team:"GT",  role:"AR",  sel:"22%", pts:342, trend:"+18%" },
-  { name:"Mayank Yadav",        team:"LSG", role:"BWL", sel:"29%", pts:318, trend:"+31%" },
-];
 
-const RECENT_ACTIVITY = [
-  { text:"Your auction 'Friday Night Draft' is live",    time:"2m ago",  color:"#22c55e", dot:"#22c55e" },
-  { text:"Jasprit Bumrah scored 47 pts vs DC",           time:"1h ago",  color:"#818cf8", dot:"#818cf8" },
-  { text:"Prediction locked — MI vs RCB",                time:"3h ago",  color:"#f59e0b", dot:"#f59e0b" },
-  { text:"Tilak Varma added to watchlist",               time:"5h ago",  color:"rgba(255,255,255,0.4)", dot:"rgba(255,255,255,0.2)" },
-];
+
+
 
 const fade = {
   hidden:  { opacity:0, y:16 },
@@ -117,7 +103,7 @@ export default function Dashboard() {
               )}
 
               <h1 className="text-3xl md:text-4xl font-black text-white mb-1 tracking-tight">
-                Good evening, Strategist
+                {`Good ${new Date().getHours()<12?"morning":new Date().getHours()<17?"afternoon":"evening"}, ${profile.displayName}`}
               </h1>
               <p className="text-white/50 text-base mb-5">
                 {loading ? "Loading IPL 2026…" : (
@@ -145,24 +131,10 @@ export default function Dashboard() {
             {/* Sparkline */}
             <div className="hidden md:block w-72 shrink-0">
               <div className="text-xs text-white/30 font-semibold uppercase tracking-widest mb-2">Fantasy Points — Season</div>
-              <div style={{ height:90 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor="#c0192c" stopOpacity={0.5} />
-                        <stop offset="95%" stopColor="#c0192c" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="w" tick={{ fontSize:9, fill:"rgba(255,255,255,0.3)" }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ background:"#0f1220", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, fontSize:11 }}
-                      formatter={(v:number) => [`${v} pts`, "Points"]}
-                    />
-                    <Area type="monotone" dataKey="pts" stroke="#c0192c" strokeWidth={2.5}
-                      fillOpacity={1} fill="url(#pg)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <div style={{ height:90, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <span style={{ fontSize:"0.78rem", color:"rgba(255,255,255,0.2)" }}>
+                  Points chart builds as you play
+                </span>
               </div>
               <div className="flex items-baseline gap-1.5 mt-1">
                 <span className="text-2xl font-black text-white">{totalPts.toLocaleString()}</span>
@@ -270,7 +242,7 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Differentials */}
+            {/* Differentials — populated when live scoring is available */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-bold flex items-center gap-2">
@@ -281,71 +253,60 @@ export default function Dashboard() {
                   All players <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
-              <div className="space-y-2">
-                {DIFFERENTIALS.map(p => {
-                  const color = TEAM_COLOR[p.team] ?? "#818cf8";
-                  return (
-                    <div key={p.name} className="flex items-center gap-3 p-3 rounded-xl"
-                      style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderLeft:`3px solid ${color}` }}>
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background:`${color}20`, color }}>
-                        {p.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-white truncate">{p.name}</div>
-                        <div className="text-xs" style={{ color }}>{p.team} · {p.role} · {p.sel} owned</div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-sm font-bold text-cyan-400">{p.pts} pts</div>
-                        <div className="text-xs text-emerald-400 font-semibold">{p.trend}</div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="rounded-2xl p-6 text-center"
+                style={{ background:"rgba(255,255,255,0.02)", border:"1px dashed rgba(255,255,255,0.08)" }}>
+                <div className="text-2xl mb-2">📊</div>
+                <div className="text-sm font-semibold text-white/40">Differentials update during live matches</div>
+                <div className="text-xs text-white/25 mt-1">Players performing above average ownership will appear here</div>
               </div>
             </div>
           </motion.div>
 
           {/* RIGHT: Activity + weekly chart */}
           <motion.div variants={fade} className="space-y-4">
-            {/* Weekly bar chart */}
-            <div className="rounded-2xl p-4"
-              style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)" }}>
-              <div className="text-sm font-bold text-white/60 mb-3">Weekly Fantasy Points</div>
-              <div style={{ height:120 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} barCategoryGap="35%">
-                    <XAxis dataKey="w" tick={{ fontSize:9, fill:"rgba(255,255,255,0.3)" }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ background:"#0f1220", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, fontSize:11 }}
-                      formatter={(v:number) => [`${v} pts`]}
-                    />
-                    <Bar dataKey="pts" fill="#818cf8" radius={[4,4,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+            {/* Weekly chart — shows when you have teams playing */}
+            {myTeams.length === 0 && (
+              <div className="rounded-2xl p-5 text-center"
+                style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)" }}>
+                <div className="text-2xl mb-2">⚡</div>
+                <div className="text-sm font-semibold text-white/40">No teams yet</div>
+                <div className="text-xs text-white/25 mt-1">Build a team or join an auction to see your points</div>
               </div>
-            </div>
+            )}
 
-            {/* Activity feed */}
+            {/* Activity feed — driven by real notifications */}
             <div className="rounded-2xl p-4"
               style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)" }}>
               <div className="text-sm font-bold text-white/60 mb-4">Recent Activity</div>
-              <div className="space-y-4">
-                {RECENT_ACTIVITY.map((a, i) => (
-                  <div key={i} className="flex gap-3">
-                    <div className="relative shrink-0">
-                      <div className="w-2 h-2 rounded-full mt-1.5" style={{ background:a.dot }} />
-                      {i < RECENT_ACTIVITY.length-1 && (
-                        <div className="absolute left-[3px] top-[10px] bottom-[-12px] w-px bg-white/8" />
-                      )}
+              {notifications.length === 0 ? (
+                <div className="text-center py-4">
+                  <div className="text-2xl mb-2">🔔</div>
+                  <div className="text-sm text-white/30">No activity yet</div>
+                  <div className="text-xs text-white/20 mt-1">Auction and match events will appear here</div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {notifications.slice(0,4).map((a, i) => (
+                    <div key={a.id} className="flex gap-3">
+                      <div className="relative shrink-0">
+                        <div className="w-2 h-2 rounded-full mt-1.5"
+                          style={{ background: a.read ? "rgba(255,255,255,0.2)" : "#c0192c" }} />
+                        {i < Math.min(notifications.length,4)-1 && (
+                          <div className="absolute left-[3px] top-[10px] bottom-[-12px] w-px bg-white/8" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm text-white/70 leading-tight">{a.body}</div>
+                        <div className="text-xs text-white/30 mt-1">
+                          {Math.floor((Date.now()-a.time)/60000) < 60
+                            ? `${Math.max(1,Math.floor((Date.now()-a.time)/60000))}m ago`
+                            : `${Math.floor((Date.now()-a.time)/3600000)}h ago`}
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm text-white/70 leading-tight">{a.text}</div>
-                      <div className="text-xs text-white/30 mt-1">{a.time}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Auction CTA */}

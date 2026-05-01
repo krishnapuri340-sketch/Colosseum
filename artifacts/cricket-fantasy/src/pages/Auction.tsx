@@ -6,10 +6,8 @@ const ACCENT = "#c0192c";
 const INDIGO  = "#818cf8";
 const C = { card:"rgba(255,255,255,0.035)", border:"rgba(255,255,255,0.1)", dim:"rgba(255,255,255,0.4)" };
 
-const MY_AUCTIONS = [
-  { id:"a1", name:"Friday Night Draft", participants:4, playersLeft:28, status:"live",     code:"FND2026" },
-  { id:"a2", name:"Office League S2",   participants:6, playersLeft:0,  status:"complete", code:"OLS2026" },
-];
+type AucEntry = {id:string;name:string;participants:number;playersLeft:number;status:string;code:string;};
+const MY_AUCTIONS: AucEntry[] = [];
 
 export default function Auction() {
   const [, navigate] = useLocation();
