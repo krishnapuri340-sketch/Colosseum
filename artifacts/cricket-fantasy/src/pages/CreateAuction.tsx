@@ -80,9 +80,12 @@ export default function CreateAuction() {
   const [captainVC, setCaptainVC]   = useState(true);
   const [tradeWindow, setTrade]      = useState(false);
   const [captainChanges, setCapChg]  = useState(true);
-  const [loading, setLoading]       = useState(false);
-  const [code, setCode]             = useState("");
-  const [copied, setCopied]         = useState(false);
+  const [loading, setLoading]         = useState(false);
+  const [enterLoading, setEnterLoading] = useState(false);
+  const [code, setCode]               = useState("");
+  const [copied, setCopied]           = useState(false);
+  const [hostTeam, setHostTeam]       = useState("");
+  const [hostTeamFocused, setHostTeamFocused] = useState(false);
 
   // Keep topScoringCount within bounds when maxPlayers changes
   useEffect(() => {
@@ -118,6 +121,28 @@ export default function CreateAuction() {
   }
 
   // ── Invite code screen ──
+  async function handleEnterRoom() {
+    if (!hostTeam.trim() || enterLoading) return;
+    setEnterLoading(true);
+    try {
+      // Register host's team in DB
+      await apiFetch(`/auction/rooms/${code}/teams`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamName: hostTeam.trim(), isHost: true }),
+      });
+    } catch { /* non-fatal */ }
+    try {
+      localStorage.setItem("colosseum_auction_config", JSON.stringify({
+        name, budget, maxPlayers, format,
+        topScoring, topScoringCount, captainVC,
+        roomCode: code,
+      }));
+    } catch {}
+    setEnterLoading(false);
+    navigate("/auction/room");
+  }
+
   if (code) {
     return (
       <Layout>
@@ -128,7 +153,9 @@ export default function CreateAuction() {
             color:ACCENT, textTransform:"uppercase" }}>Auction Created</div>
           <h1 style={{ margin:0, fontSize:"1.75rem", fontWeight:900, color:"#fff",
             letterSpacing:"-0.03em" }}>{name}</h1>
-          <Card style={{ width:"100%", maxWidth:340, display:"flex", flexDirection:"column",
+
+          {/* Invite code card */}
+          <Card style={{ width:"100%", maxWidth:380, display:"flex", flexDirection:"column",
             alignItems:"center", gap:"0.85rem" }}>
             <p style={{ margin:0, fontSize:"0.68rem", fontWeight:700,
               letterSpacing:"0.12em", color:LABEL_CLR, textTransform:"uppercase" }}>
@@ -149,19 +176,41 @@ export default function CreateAuction() {
               {topScoring && ` · Top ${topScoringCount} count`}
             </div>
           </Card>
+
+          {/* Host team name */}
+          <Card style={{ width:"100%", maxWidth:380, textAlign:"left" }}>
+            <Label>Your Team Name</Label>
+            <input
+              type="text"
+              value={hostTeam}
+              onChange={e => setHostTeam(e.target.value)}
+              onFocus={() => setHostTeamFocused(true)}
+              onBlur={() => setHostTeamFocused(false)}
+              maxLength={30}
+              placeholder="e.g. Rajveer's Army"
+              autoFocus
+              style={{ width:"100%", boxSizing:"border-box",
+                padding:"0.85rem 1rem",
+                background: hostTeamFocused ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)",
+                border:`1.5px solid ${hostTeamFocused ? "rgba(192,25,44,0.55)" : BORDER}`,
+                borderRadius:12, color:"#fff", fontSize:"1rem",
+                outline:"none", transition:"all 0.18s" }} />
+            <p style={{ margin:"0.55rem 0 0", fontSize:"0.72rem", color:LABEL_CLR }}>
+              This name will appear in the auction room for all participants.
+            </p>
+          </Card>
+
           <div style={{ display:"flex", gap:"0.65rem", flexWrap:"wrap", justifyContent:"center" }}>
-            <button onClick={()=>{
-              try {
-                localStorage.setItem("colosseum_auction_config", JSON.stringify({
-                  name, budget, maxPlayers, format,
-                  topScoring, topScoringCount, captainVC,
-                }));
-              } catch {}
-              navigate("/auction/room");
-            }}
-              style={{ padding:"0.85rem 1.75rem", background:ACCENT, border:"none",
-                borderRadius:12, color:"#fff", fontWeight:800, fontSize:"0.9rem",
-                cursor:"pointer", display:"flex", alignItems:"center", gap:"0.4rem" }}>
+            <button onClick={handleEnterRoom}
+              disabled={!hostTeam.trim() || enterLoading}
+              style={{ padding:"0.85rem 1.75rem",
+                background: hostTeam.trim() ? ACCENT : "rgba(192,25,44,0.18)",
+                border:"none",
+                borderRadius:12,
+                color: hostTeam.trim() ? "#fff" : "rgba(255,255,255,0.3)",
+                fontWeight:800, fontSize:"0.9rem",
+                cursor: hostTeam.trim() ? "pointer" : "default",
+                display:"flex", alignItems:"center", gap:"0.4rem" }}>
               <Users style={{ width:15, height:15 }} />
               Enter Auction Room
             </button>

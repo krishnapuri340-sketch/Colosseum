@@ -36,6 +36,7 @@ import {
 import {
   TEAM_COLOR, TEAM_FULL_NAME, ROLE_LABEL, ROLE_ICON, ROLE_COLOR
 } from "@/lib/ipl-constants";
+import { apiFetch } from "@/lib/api";
 
 // ── Types ────────────────────────────────────────────────────────────
 interface Player {
@@ -70,21 +71,33 @@ const TD = {
   T4: { label: "Rookie",    color: "#94a3b8", glow: "rgba(148,163,184,0.09)" },
 };
 
-// ── Auction config (persisted from CreateAuction) ─────────────────────
+// ── Auction config (persisted from CreateAuction / JoinAuction) ───────
 const AUCTION_CONFIG_KEY = "colosseum_auction_config";
-interface AuctionConfig { name:string; budget:number; maxPlayers:number; format:AuctionMode; topScoring:boolean; topScoringCount:number; captainVC:boolean; }
+interface AuctionConfig { name:string; budget:number; maxPlayers:number; format:AuctionMode; topScoring:boolean; topScoringCount:number; captainVC:boolean; roomCode?:string; }
 const DEFAULT_CONFIG: AuctionConfig = { name:"Auction", budget:100, maxPlayers:11, format:"classic", topScoring:false, topScoringCount:11, captainVC:true };
 function loadAuctionConfig(): AuctionConfig {
   try { const r = localStorage.getItem(AUCTION_CONFIG_KEY); if (r) return { ...DEFAULT_CONFIG, ...JSON.parse(r) }; } catch {}
   return DEFAULT_CONFIG;
 }
 
-function makeInitTeams(startBudget: number): AucTeam[] {
+interface RegisteredTeam { id: number; roomCode: string; teamName: string; color: string; isHost: boolean; }
+
+function makeInitTeams(startBudget: number, registered: RegisteredTeam[]): AucTeam[] {
+  if (registered.length > 0) {
+    return registered.map((t, i) => ({
+      id:     `t${i + 1}`,
+      name:   t.teamName,
+      color:  t.color,
+      budget: startBudget,
+      squad:  [],
+    }));
+  }
+  // Fallback when no registered teams (direct navigation without creating first)
   return [
-    { id: "t1", name: "Rajveer's Army", color: "#c0392b", budget: startBudget, squad: [] },
-    { id: "t2", name: "Karan's XI",     color: "#3b82f6", budget: startBudget, squad: [] },
-    { id: "t3", name: "Arjun Plays",    color: "#a855f7", budget: startBudget, squad: [] },
-    { id: "t4", name: "Sahil FC",       color: "#f59e0b", budget: startBudget, squad: [] },
+    { id: "t1", name: "Team 1", color: "#c0392b", budget: startBudget, squad: [] },
+    { id: "t2", name: "Team 2", color: "#3b82f6", budget: startBudget, squad: [] },
+    { id: "t3", name: "Team 3", color: "#a855f7", budget: startBudget, squad: [] },
+    { id: "t4", name: "Team 4", color: "#f59e0b", budget: startBudget, squad: [] },
   ];
 }
 
@@ -593,8 +606,8 @@ export default function AuctionRoom() {
   const queueRef = useRef<Player[]>([]);
   const queueIdx = useRef(0);
 
-  // Auction state
-  const [teams, setTeams]       = useState<AucTeam[]>(() => makeInitTeams(startBudget));
+  // Auction state — teams start empty, populated once API responds
+  const [teams, setTeams]       = useState<AucTeam[]>(() => makeInitTeams(startBudget, []));
   const soldRef                  = useRef<Set<string>>(new Set());
 
   const [phase, setPhase]         = useState<AucPhase>("idle");
@@ -608,6 +621,20 @@ export default function AuctionRoom() {
 
   const leadTeam  = teams.find(t => t.id === leadId) ?? null;
   const remaining = queueRef.current.length - queueIdx.current;
+
+  // ── Fetch registered teams from API ──────────────────────────────
+  useEffect(() => {
+    const roomCode = config.roomCode;
+    if (!roomCode) return;
+    apiFetch(`/auction/rooms/${roomCode}/teams`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { teams: RegisteredTeam[] } | null) => {
+        if (data && data.teams.length > 0) {
+          setTeams(makeInitTeams(startBudget, data.teams));
+        }
+      })
+      .catch(() => { /* keep fallback teams */ });
+  }, [config.roomCode, startBudget]);
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────
   const handleKey = useCallback((e: KeyboardEvent) => {
@@ -1221,7 +1248,7 @@ export default function AuctionRoom() {
                               : team.squad.map((p, i) => (
                                 <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.38rem",
                                   padding: "0.22rem 0.38rem", borderRadius: 6, background: "rgba(255,255,255,0.03)" }}>
-                                  <span style={{ fontSize: "0.55rem", color: TD[p.tier].color }}>{TD[p.tier].emoji}</span>
+                                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: TD[p.tier].color, display: "inline-block", flexShrink: 0 }} />
                                   <span style={{ fontSize: "0.68rem", color: "#fff", flex: 1,
                                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                     {p.name}

@@ -70,10 +70,19 @@ export default function JoinAuction() {
     setLoading(false);
   }
 
-  // ── Step 2: join with a team name → save config → navigate ───────
-  function handleJoin(e: React.FormEvent) {
+  // ── Step 2: join with a team name → register → save config → navigate ──
+  async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
-    if (!teamName.trim() || !room) return;
+    if (!teamName.trim() || !room || loading) return;
+    setLoading(true);
+    try {
+      // Register this team in the DB under the room code
+      await apiFetch(`/auction/rooms/${room.code}/teams`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamName: teamName.trim(), isHost: false }),
+      });
+    } catch { /* non-fatal */ }
     // Save room config for AuctionRoom to read
     try {
       localStorage.setItem("colosseum_auction_config", JSON.stringify({
@@ -84,9 +93,10 @@ export default function JoinAuction() {
         topScoring:      room.topScoring,
         topScoringCount: room.topScoringCount,
         captainVC:       room.captainVC,
-        teamName:        teamName.trim(),
+        roomCode:        room.code,
       }));
     } catch { /* ignore storage errors */ }
+    setLoading(false);
     navigate("/auction/room");
   }
 
