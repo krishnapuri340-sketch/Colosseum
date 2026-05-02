@@ -1,41 +1,66 @@
+import { lazy, Suspense } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/Dashboard";
-import Matches from "@/pages/Matches";
-import Players from "@/pages/Players";
-import MyTeams from "@/pages/MyTeams";
-import Auction from "@/pages/Auction";
-import JoinAuction from "@/pages/JoinAuction";
-import CreateAuction from "@/pages/CreateAuction";
-import AuctionRoom from "@/pages/AuctionRoom";
-import AuctionComplete from "@/pages/AuctionComplete";
-import Predictions from "@/pages/Predictions";
-import Guide from "@/pages/Guide";
-import Leaderboard from "@/pages/Leaderboard";
-import LiveScore from "@/pages/LiveScore";
-import Watchlist from "@/pages/Watchlist";
-import AuthPages from "@/pages/Auth";
-import Profile from "@/pages/Profile";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppProvider } from "@/context/AppContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 
-const queryClient = new QueryClient();
+/* ───────── Lazy-loaded routes ─────────
+ * Each page becomes its own JS chunk so the initial bundle is small and
+ * routes load on demand. The Suspense fallback below matches the auth
+ * loading state so transitions stay calm.
+ */
+const Dashboard       = lazy(() => import("@/pages/Dashboard"));
+const Matches         = lazy(() => import("@/pages/Matches"));
+const Players         = lazy(() => import("@/pages/Players"));
+const MyTeams         = lazy(() => import("@/pages/MyTeams"));
+const Auction         = lazy(() => import("@/pages/Auction"));
+const JoinAuction     = lazy(() => import("@/pages/JoinAuction"));
+const CreateAuction   = lazy(() => import("@/pages/CreateAuction"));
+const AuctionRoom     = lazy(() => import("@/pages/AuctionRoom"));
+const AuctionComplete = lazy(() => import("@/pages/AuctionComplete"));
+const Predictions     = lazy(() => import("@/pages/Predictions"));
+const Guide           = lazy(() => import("@/pages/Guide"));
+const Leaderboard     = lazy(() => import("@/pages/Leaderboard"));
+const LiveScore       = lazy(() => import("@/pages/LiveScore"));
+const Watchlist       = lazy(() => import("@/pages/Watchlist"));
+const Profile         = lazy(() => import("@/pages/Profile"));
+const AuthPages       = lazy(() => import("@/pages/Auth"));
+const NotFound        = lazy(() => import("@/pages/not-found"));
+
+/* ───────── Query client with sensible defaults ─────────
+ * - staleTime 30s so back/forward and intra-session navigation use cache
+ * - retry 1 to absorb the occasional flaky request without piling on
+ * - refetchOnWindowFocus off — the live ticker / live score do explicit polling
+ */
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+function AppFallback() {
+  return (
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center",
+      justifyContent: "center", background: "#07080f",
+      color: "rgba(255,255,255,0.4)", fontSize: "0.9rem",
+    }}>
+      Loading…
+    </div>
+  );
+}
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, loading } = useAuth();
-  if (loading) {
-    return (
-      <div style={{ minHeight:"100vh", display:"flex", alignItems:"center",
-        justifyContent:"center", background:"#07080f",
-        color:"rgba(255,255,255,0.4)", fontSize:"0.9rem" }}>
-        Loading…
-      </div>
-    );
-  }
+  if (loading) return <AppFallback />;
   if (!user) return <Redirect to="/login" />;
   return <Component />;
 }
@@ -47,36 +72,45 @@ function AppRoutes() {
   if (isAuthRoute) {
     return (
       <>
-        <div style={{ position:"fixed", inset:0, zIndex:0 }}>
-          <img src="/register-bg.jpeg" alt="" style={{ width:"100%", height:"100%",
-            objectFit:"cover", objectPosition:"center" }} />
-          <div style={{ position:"absolute", inset:0,
-            background:"linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.55) 100%)" }} />
+        <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
+          <img
+            src="/register-bg.jpeg"
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+          />
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.55) 100%)",
+          }} />
         </div>
-        <AuthPages mode={location === "/register" ? "register" : "login"} />
+        <Suspense fallback={<AppFallback />}>
+          <AuthPages mode={location === "/register" ? "register" : "login"} />
+        </Suspense>
       </>
     );
   }
 
   return (
-    <Switch>
-      <Route path="/"               component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/matches"        component={() => <ProtectedRoute component={Matches} />} />
-      <Route path="/players"        component={() => <ProtectedRoute component={Players} />} />
-      <Route path="/my-teams"       component={() => <ProtectedRoute component={MyTeams} />} />
-      <Route path="/auction"        component={() => <ProtectedRoute component={Auction} />} />
-      <Route path="/auction/join"   component={() => <ProtectedRoute component={JoinAuction} />} />
-      <Route path="/auction/create" component={() => <ProtectedRoute component={CreateAuction} />} />
-      <Route path="/auction/room"     component={() => <ProtectedRoute component={AuctionRoom} />} />
-      <Route path="/auction/complete" component={() => <ProtectedRoute component={AuctionComplete} />} />
-      <Route path="/predictions"    component={() => <ProtectedRoute component={Predictions} />} />
-      <Route path="/guide"          component={() => <ProtectedRoute component={Guide} />} />
-      <Route path="/leaderboard"    component={() => <ProtectedRoute component={Leaderboard} />} />
-      <Route path="/live"           component={() => <ProtectedRoute component={LiveScore} />} />
-      <Route path="/watchlist"      component={() => <ProtectedRoute component={Watchlist} />} />
-      <Route path="/profile"       component={() => <ProtectedRoute component={Profile} />} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<AppFallback />}>
+      <Switch>
+        <Route path="/"                 component={() => <ProtectedRoute component={Dashboard} />} />
+        <Route path="/matches"          component={() => <ProtectedRoute component={Matches} />} />
+        <Route path="/players"          component={() => <ProtectedRoute component={Players} />} />
+        <Route path="/my-teams"         component={() => <ProtectedRoute component={MyTeams} />} />
+        <Route path="/auction"          component={() => <ProtectedRoute component={Auction} />} />
+        <Route path="/auction/join"     component={() => <ProtectedRoute component={JoinAuction} />} />
+        <Route path="/auction/create"   component={() => <ProtectedRoute component={CreateAuction} />} />
+        <Route path="/auction/room"     component={() => <ProtectedRoute component={AuctionRoom} />} />
+        <Route path="/auction/complete" component={() => <ProtectedRoute component={AuctionComplete} />} />
+        <Route path="/predictions"      component={() => <ProtectedRoute component={Predictions} />} />
+        <Route path="/guide"            component={() => <ProtectedRoute component={Guide} />} />
+        <Route path="/leaderboard"      component={() => <ProtectedRoute component={Leaderboard} />} />
+        <Route path="/live"             component={() => <ProtectedRoute component={LiveScore} />} />
+        <Route path="/watchlist"        component={() => <ProtectedRoute component={Watchlist} />} />
+        <Route path="/profile"          component={() => <ProtectedRoute component={Profile} />} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
@@ -87,9 +121,9 @@ function App() {
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
             <AppProvider>
-            <SidebarProvider>
-              <AppRoutes />
-            </SidebarProvider>
+              <SidebarProvider>
+                <AppRoutes />
+              </SidebarProvider>
             </AppProvider>
           </AuthProvider>
         </WouterRouter>

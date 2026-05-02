@@ -276,27 +276,6 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
   }
 });
 
-router.get("/ipl/standings", async (_req, res): Promise<void> => {
-  try {
-    const data = await fetchS3(`${COMP_ID}-standings.js`);
-    const table = data?.Table ?? data?.standings ?? [];
-    const standings = table.map((row: any) => ({
-      team: row.TeamCode ?? row.team ?? "",
-      teamFull: row.TeamName ?? row.teamName ?? "",
-      played: row.MatchesPlayed ?? row.played ?? 0,
-      won: row.MatchesWon ?? row.won ?? 0,
-      lost: row.MatchesLost ?? row.lost ?? 0,
-      tied: row.MatchesTied ?? row.tied ?? 0,
-      nrr: parseFloat(row.NetRunRate ?? row.nrr ?? "0"),
-      points: row.Points ?? row.points ?? 0,
-      position: row.Position ?? row.position ?? 0,
-    }));
-    res.json({ standings });
-  } catch (err: any) {
-    res.status(502).json({ error: "Failed to fetch IPL standings", detail: err?.message });
-  }
-});
-
 router.get("/ipl/scorecard/:matchId", async (req, res): Promise<void> => {
   const { matchId } = req.params;
   if (!MATCH_ID_RE.test(matchId)) {

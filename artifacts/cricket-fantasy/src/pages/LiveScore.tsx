@@ -4,13 +4,13 @@
  * Shows per-player events as they happen with point increments
  * My squad players highlighted — points tick up live
  */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { motion, AnimatePresence } from "framer-motion";
 import { Radio, Zap, TrendingUp, RefreshCw, Star, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { TEAM_COLOR, TEAM_LOGO, TEAM_FULL_NAME, ROLE_LABEL } from "@/lib/ipl-constants";
-import { apiFetch } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
+import { useIplMatches, useRefreshIpl, type IplMatch } from "@/hooks/use-ipl-data";
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface LiveEvent {
@@ -37,18 +37,9 @@ interface LivePlayerScore {
   events: LiveEvent[];
 }
 
-interface LiveMatch {
-  iplId: string;
-  matchNumber: number;
-  homeTeam: string;
-  awayTeam: string;
-  firstInningsScore: string | null;
-  secondInningsScore: string | null;
-  currentOver: string;
-  result: string | null;
-  isLive: boolean;
-  isCompleted: boolean;
-}
+// Live match view-model: the canonical IplMatch plus a UI-only currentOver
+// that may be supplied later by a richer live-events feed.
+type LiveMatch = IplMatch & { currentOver?: string };
 
 // ── Mock live events (replace with real API) ──────────────────────────
 const MOCK_EVENTS: LiveEvent[] = [];
@@ -235,38 +226,36 @@ function PlayerScoreCard({ player, isMySquad }: { player:LivePlayerScore; isMySq
 export default function LiveScore() {
   const { myTeams } = useApp();
   const MY_SQUAD_NAMES = new Set(myTeams.flatMap(t => t.players));
-  const [liveMatches, setLiveMatches] = useState<LiveMatch[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
   const [events, setEvents] = useState<LiveEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
   const [filter, setFilter] = useState<"all"|"mysquad">("all");
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
-  const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+
+  // Shared cache: 30s polling for live scoring; other pages already
+  // share this query via useIplMatches() — no duplicate network calls.
+  const { data: allMatches = [], isLoading: loading, dataUpdatedAt } = useIplMatches({
+    refetchInterval: 30_000,
+  });
+  const refreshIpl = useRefreshIpl();
+
+  // LiveMatch is structurally an IplMatch with optional UI-only extras,
+  // so direct assignment is type-safe.
+  const allLive: LiveMatch[] = allMatches;
+
+  const liveMatches = useMemo<LiveMatch[]>(
+    () => allLive.filter(m => m.isLive || m.isCompleted).slice(0, 5),
+    [allLive],
+  );
+  const lastUpdated = useMemo(() => new Date(dataUpdatedAt || Date.now()), [dataUpdatedAt]);
+
+  // Auto-select the first live match once data lands.
+  useEffect(() => {
+    if (selectedMatch) return;
+    const firstLive = allLive.find(m => m.isLive);
+    if (firstLive) setSelectedMatch(firstLive.iplId);
+  }, [allLive, selectedMatch]);
 
   const mySquadTotalPts = 0; // Will come from live API
-
-  function fetchLiveData() {
-    apiFetch("/ipl/matches")
-      .then(r => r.json())
-      .then(d => {
-        if (Array.isArray(d.matches)) {
-          setLiveMatches(d.matches.filter((m:LiveMatch) => m.isLive || m.isCompleted).slice(0,5));
-          if (!selectedMatch && d.matches.find((m:LiveMatch)=>m.isLive)) {
-            setSelectedMatch(d.matches.find((m:LiveMatch)=>m.isLive)?.iplId ?? null);
-          }
-        }
-        setLastUpdated(new Date());
-      })
-      .catch(()=>{})
-      .finally(()=>setLoading(false));
-  }
-
-  useEffect(() => {
-    fetchLiveData();
-    pollRef.current = setInterval(fetchLiveData, 30000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, []);
 
   const displayedPlayers: LivePlayerScore[] = []; // Will come from live API
 
@@ -296,7 +285,7 @@ export default function LiveScore() {
               <Clock size={11} />
               {lastUpdated.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })}
             </span>
-            <button onClick={fetchLiveData}
+            <button onClick={refreshIpl}
               style={{ display:"flex", alignItems:"center", gap:4, padding:"0.4rem 0.8rem",
                 background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)",
                 borderRadius:9, color:"rgba(255,255,255,0.5)", fontSize:"0.75rem",

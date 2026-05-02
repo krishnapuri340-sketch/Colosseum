@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, type Variants } from "framer-motion";
 import {
@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { TEAM_COLOR, TEAM_LOGO } from "@/lib/ipl-constants";
-import { apiFetch } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
+import { useIplMatches, type IplMatch } from "@/hooks/use-ipl-data";
 import { AnimatedNumber } from "@/components/effects/AnimatedNumber";
 import { SpotlightCard } from "@/components/effects/SpotlightCard";
 
@@ -25,17 +25,6 @@ function toRgbCsv(hex: string): string {
     ? h.split("").map(c => parseInt(c+c, 16))
     : [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
   return `${v[0]},${v[1]},${v[2]}`;
-}
-
-interface IplMatch {
-  iplId: string; matchNumber: number;
-  homeTeam: string; awayTeam: string;
-  homeTeamFull: string; awayTeamFull: string;
-  venue: string; city: string;
-  matchDate: string; matchTime: string;
-  firstInningsScore: string|null; secondInningsScore: string|null;
-  result: string|null; winningTeamCode: string|null;
-  isLive: boolean; isCompleted: boolean; isUpcoming: boolean;
 }
 
 type FilterKey = "all" | "live" | "upcoming" | "completed";
@@ -136,22 +125,15 @@ function todayLabel() {
 }
 
 export default function Dashboard() {
-  const [matches, setMatches] = useState<IplMatch[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter]   = useState<FilterKey>("all");
   const { profile, totalPts, currentRank, myTeams, predAccuracy, notifications } = useApp();
+  const { data: matches = [], isLoading: loading } = useIplMatches();
 
-  useEffect(() => {
-    apiFetch("/ipl/matches")
-      .then(r => r.json())
-      .then(d => { if (Array.isArray(d.matches)) setMatches(d.matches); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  const live      = matches.filter(m => m.isLive);
-  const upcoming  = matches.filter(m => m.isUpcoming);
-  const completed = matches.filter(m => m.isCompleted);
+  const { live, upcoming, completed } = useMemo(() => ({
+    live:      matches.filter(m => m.isLive),
+    upcoming:  matches.filter(m => m.isUpcoming),
+    completed: matches.filter(m => m.isCompleted),
+  }), [matches]);
 
   const featured = live[0] ?? upcoming[0] ?? null;
 

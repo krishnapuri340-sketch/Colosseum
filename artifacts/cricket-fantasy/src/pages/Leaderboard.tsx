@@ -27,6 +27,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { TEAM_COLOR, TEAM_LOGO, TEAM_FULL_NAME } from "@/lib/ipl-constants";
 import { apiFetch } from "@/lib/api";
+import { useIplStandings } from "@/hooks/use-ipl-data";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -519,21 +520,16 @@ function adaptLeague(api: ApiLeague, idx: number): League {
 }
 
 export default function Leaderboard() {
-  const [standings,   setStandings]   = useState<Standing[]>([]);
-  const [loadingStandings, setLoadingS] = useState(true);
+  // Shared cache with Matches.tsx — no duplicate fetches.
+  // Local `Standing` is structurally a subset of the canonical IplStanding,
+  // so the data is directly assignable without a cast.
+  const { data: standings = [], isLoading: loadingStandings } = useIplStandings();
+
   const [leagues, setLeagues]           = useState<League[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(true);
   const [activeLeague, setActiveLeague] = useState<string>("");
   const [mainTab, setMainTab]           = useState<"fantasy" | "ipl">("fantasy");
   const [, navigate] = useLocation();
-
-  useEffect(() => {
-    apiFetch("/ipl/standings")
-      .then(r => r.json())
-      .then(d => { if (Array.isArray(d.standings)) setStandings(d.standings); })
-      .catch(() => {})
-      .finally(() => setLoadingS(false));
-  }, []);
 
   useEffect(() => {
     apiFetch("/leagues")

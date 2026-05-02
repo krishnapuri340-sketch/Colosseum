@@ -1,47 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MapPin, Swords, Radio, Calendar, Trophy, ChevronDown, ChevronUp } from "lucide-react";
 import { TEAM_LOGO, TEAM_COLOR, TEAM_FULL_NAME, ALL_TEAMS } from "@/lib/ipl-constants";
-import { apiFetch } from "@/lib/api";
-
-interface StandingRow {
-  team: string;
-  teamFull: string;
-  played: number;
-  won: number;
-  lost: number;
-  noResult: number;
-  nrr: number;
-  points: number;
-  position: number;
-}
-
-interface IplMatch {
-  iplId: string;
-  matchNumber: number;
-  name: string;
-  homeTeam: string;
-  awayTeam: string;
-  homeTeamFull: string;
-  awayTeamFull: string;
-  venue: string;
-  city: string;
-  matchDate: string;
-  matchTime: string;
-  status: string;
-  firstInningsScore: string | null;
-  secondInningsScore: string | null;
-  result: string | null;
-  winningTeamCode: string | null;
-  mom: string | null;
-  tossText: string | null;
-  isLive: boolean;
-  isCompleted: boolean;
-  isUpcoming: boolean;
-}
+import {
+  useIplMatches,
+  useIplStandings,
+  type IplMatch,
+  type IplStanding as StandingRow,
+} from "@/hooks/use-ipl-data";
 
 function TeamBadge({ code, size = 36 }: { code: string; size?: number }) {
   const logo  = TEAM_LOGO[code];
@@ -72,7 +41,7 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
     ? [...standings].sort((a, b) => a.position - b.position)
     : ALL_TEAMS.map((t, i) => ({
         team: t, teamFull: TEAM_FULL_NAME[t] ?? t,
-        played: 0, won: 0, lost: 0, noResult: 0, nrr: 0, points: 0, position: i + 1,
+        played: 0, won: 0, lost: 0, noResult: 0, tied: 0, nrr: 0, points: 0, position: i + 1,
       }));
 
   const qualifiers = rows.filter(r => r.position <= 4);
@@ -476,41 +445,11 @@ function MatchCard({ match }: { match: IplMatch }) {
 }
 
 export default function Matches() {
-  const [matches, setMatches] = useState<IplMatch[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [standings, setStandings] = useState<StandingRow[]>([]);
-  const [standingsLoading, setStandingsLoading] = useState(true);
+  // Shared cache with Dashboard / LiveTicker / LiveScore — no duplicate fetches.
+  const { data: matches = [], isLoading: loading, error: matchesError } = useIplMatches();
+  const { data: standings = [], isLoading: standingsLoading } = useIplStandings();
 
-  useEffect(() => {
-    apiFetch("/ipl/matches")
-      .then(async r => {
-        if (!r.ok) {
-          const text = await r.text();
-          throw new Error(`HTTP ${r.status}: ${text.slice(0, 200)}`);
-        }
-        return r.json();
-      })
-      .then(d => {
-        if (Array.isArray(d.matches)) {
-          setMatches(d.matches);
-        } else {
-          setError(`Unexpected response format (count=${d.count ?? "?"})`);
-        }
-      })
-      .catch(e => setError(`Failed to load matches: ${e.message}`))
-      .finally(() => setLoading(false));
-
-    apiFetch("/ipl/standings")
-      .then(async r => r.json())
-      .then(d => {
-        if (Array.isArray(d.standings) && d.standings.length > 0) {
-          setStandings(d.standings);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setStandingsLoading(false));
-  }, []);
+  const error = matchesError ? `Failed to load matches: ${matchesError.message}` : null;
 
   const containerVariants = {
     hidden: { opacity: 0 },

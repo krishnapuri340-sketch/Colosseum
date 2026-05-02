@@ -1,22 +1,6 @@
-import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { useMemo } from "react";
+import { useIplMatches, type IplMatch } from "@/hooks/use-ipl-data";
 import { TEAM_COLOR } from "@/lib/ipl-constants";
-
-interface IplMatch {
-  iplId: string;
-  matchNumber: number;
-  homeTeam: string;
-  awayTeam: string;
-  venue: string;
-  matchDate: string;
-  matchTime: string;
-  firstInningsScore: string | null;
-  secondInningsScore: string | null;
-  result: string | null;
-  isLive: boolean;
-  isCompleted: boolean;
-  isUpcoming: boolean;
-}
 
 type TickerItem = {
   key: string;
@@ -70,39 +54,11 @@ function buildItems(matches: IplMatch[]): TickerItem[] {
 }
 
 export function LiveTicker() {
-  const [items, setItems] = useState<TickerItem[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    let inflight: AbortController | null = null;
-
-    async function load() {
-      // Skip if a previous fetch is still in flight — prevents pile-ups
-      // on slow networks where the request exceeds the polling interval.
-      if (inflight) return;
-      const ctrl = new AbortController();
-      inflight = ctrl;
-      try {
-        const r = await apiFetch("/ipl/matches", { signal: ctrl.signal });
-        const d = await r.json();
-        if (!cancelled && Array.isArray(d.matches)) {
-          setItems(buildItems(d.matches as IplMatch[]));
-        }
-      } catch {
-        /* silent — ticker is purely cosmetic */
-      } finally {
-        if (inflight === ctrl) inflight = null;
-      }
-    }
-
-    load();
-    const t = setInterval(load, 60_000); // refresh every minute
-    return () => {
-      cancelled = true;
-      clearInterval(t);
-      inflight?.abort();
-    };
-  }, []);
+  // Shared cache + dedup with Dashboard / LiveScore / Matches.
+  // Polls every 60s — React Query coalesces with any other consumer's
+  // refetchInterval, so the upstream feed is hit at most once per cycle.
+  const { data: matches = [] } = useIplMatches({ refetchInterval: 60_000 });
+  const items = useMemo(() => buildItems(matches), [matches]);
 
   if (items.length === 0) return null;
 
