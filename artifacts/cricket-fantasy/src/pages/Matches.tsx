@@ -92,13 +92,13 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
   function Stat({ label, value, highlight }: { label: string; value: string | number; highlight?: string }) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 32 }}>
+        <span style={{ fontSize: "0.55rem", fontWeight: 600, color: "rgba(255,255,255,0.25)",
+          letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 2 }}>
+          {label}
+        </span>
         <span style={{ fontSize: "0.82rem", fontWeight: 700, color: highlight ?? "rgba(255,255,255,0.75)",
           fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
           {value === 0 ? <span style={{ color: "rgba(255,255,255,0.2)" }}>0</span> : value}
-        </span>
-        <span style={{ fontSize: "0.55rem", fontWeight: 600, color: "rgba(255,255,255,0.25)",
-          letterSpacing: "0.07em", textTransform: "uppercase", marginTop: 2 }}>
-          {label}
         </span>
       </div>
     );
