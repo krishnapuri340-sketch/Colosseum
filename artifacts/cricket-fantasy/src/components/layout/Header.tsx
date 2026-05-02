@@ -62,7 +62,7 @@ export function Header() {
 
   return (
     <header style={{
-      height: 58, display: "flex", alignItems: "center",
+      height: 72, display: "flex", alignItems: "center",
       justifyContent: "space-between",
       padding: "0 18px",
       background: "rgba(9,12,24,0.7)",

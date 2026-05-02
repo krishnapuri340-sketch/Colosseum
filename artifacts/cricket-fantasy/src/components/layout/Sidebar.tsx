@@ -96,7 +96,7 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
 
       {/* Logo row */}
       <div style={{
-        height: 62, display: "flex", alignItems: "center",
+        height: 72, display: "flex", alignItems: "center",
         justifyContent: (!isMobile && collapsed) ? "center" : "space-between",
         padding: (!isMobile && collapsed) ? "0" : "0 14px",
         borderBottom: "1px solid rgba(255,255,255,0.05)", flexShrink: 0,
