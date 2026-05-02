@@ -27,11 +27,21 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
   });
 }
 
+export class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await apiFetch(path, init);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error((body as any)?.error ?? `Request failed: ${res.status}`);
+    throw new ApiError(
+      res.status,
+      (body as any)?.error ?? `Request failed: ${res.status}`,
+    );
   }
   return res.json() as Promise<T>;
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { apiJson, apiFetch, storeAuthToken, clearAuthToken } from "../lib/api";
+import { apiJson, apiFetch, storeAuthToken, clearAuthToken, ApiError } from "../lib/api";
 
 interface AuthUser {
   id: number;
@@ -24,11 +24,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    try {
-      const me = await apiJson<AuthUser>("/auth/me");
-      setUser(me);
-    } catch {
-      setUser(null);
+    // Resilient auth check: only an explicit 401/403 means "really logged out".
+    // Network errors and 5xx (e.g., backend warming up after a fresh deploy)
+    // are treated as transient and retried with backoff so users do not get
+    // bounced to the login screen every time we republish the app.
+    const MAX_ATTEMPTS = 3;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      try {
+        const me = await apiJson<AuthUser>("/auth/me");
+        setUser(me);
+        return;
+      } catch (err) {
+        const status = err instanceof ApiError ? err.status : 0;
+        const isAuthFailure = status === 401 || status === 403;
+        if (isAuthFailure) {
+          // Real auth failure — token (if any) is invalid; clear and stop.
+          clearAuthToken();
+          setUser(null);
+          return;
+        }
+        // Transient (network down, 5xx, server warming up). Back off and retry.
+        if (attempt < MAX_ATTEMPTS - 1) {
+          await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+          continue;
+        }
+        // Out of retries — leave user null but DO NOT clear the token, so
+        // the next page load can try again with the same credentials.
+        setUser(null);
+        return;
+      }
     }
   }, []);
 
