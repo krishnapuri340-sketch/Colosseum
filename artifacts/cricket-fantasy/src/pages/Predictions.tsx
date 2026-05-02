@@ -188,10 +188,10 @@ function PickRow({
             display: "flex", alignItems: "center", gap: 8,
             padding: "5px 10px", borderRadius: 9,
             background: isMine
-              ? isRight ? "rgba(34,197,94,0.07)" : isWrong ? "rgba(239,68,68,0.07)" : "rgba(129,140,248,0.07)"
+              ? isRight ? "rgba(34,197,94,0.07)" : isWrong ? "rgba(239,68,68,0.07)" : "rgba(192,25,44,0.07)"
               : "rgba(255,255,255,0.025)",
             border: `1px solid ${isMine
-              ? isRight ? "rgba(34,197,94,0.2)" : isWrong ? "rgba(239,68,68,0.2)" : "rgba(129,140,248,0.15)"
+              ? isRight ? "rgba(34,197,94,0.2)" : isWrong ? "rgba(239,68,68,0.2)" : "rgba(192,25,44,0.15)"
               : "rgba(255,255,255,0.05)"}`,
           }}>
             <div style={{ display: "flex", marginRight: 2 }}>
@@ -426,75 +426,109 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden"
-      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <div className="rounded-2xl overflow-hidden" style={{
+      background: "rgba(255,255,255,0.025)",
+      border: `1px solid ${isLive ? "rgba(239,68,68,0.35)" : isSettled ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.09)"}`,
+      boxShadow: isLive ? "0 0 0 1px rgba(239,68,68,0.15)" : "none",
+    }}>
+
+      {/* Coloured top strip: red=live, amber=open, grey=settled */}
+      <div style={{
+        height: 3,
+        background: isLive
+          ? "linear-gradient(90deg,#ef4444,#f97316)"
+          : isSettled
+          ? "rgba(255,255,255,0.06)"
+          : `linear-gradient(90deg,${c1},${c2})`,
+      }} />
 
       {/* Header */}
       <div
         onClick={() => setOpen(o => !o)}
         style={{
-          padding: "0.9rem 1.1rem", cursor: "pointer",
+          padding: "0.85rem 1.1rem", cursor: "pointer",
           borderBottom: open ? "1px solid rgba(255,255,255,0.06)" : "none",
-          background: "rgba(255,255,255,0.015)",
           display: "flex", alignItems: "center", gap: 10,
         }}
       >
-        <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "rgba(255,255,255,0.3)",
-          background: "rgba(255,255,255,0.07)", padding: "2px 7px", borderRadius: 6, flexShrink: 0 }}>
+        <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "rgba(255,255,255,0.3)",
+          background: "rgba(255,255,255,0.06)", padding: "2px 7px", borderRadius: 6, flexShrink: 0,
+          letterSpacing: "0.06em" }}>
           M{match.matchNumber}
         </span>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
-          <TeamLogo code={match.team1} size={24} />
-          <span style={{ fontWeight: 700, fontSize: "0.88rem", color: c1 }}>{match.team1}</span>
-          <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.2)" }}>vs</span>
-          <span style={{ fontWeight: 700, fontSize: "0.88rem", color: c2 }}>{match.team2}</span>
-          <TeamLogo code={match.team2} size={24} />
-          <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.3)",
+          <TeamLogo code={match.team1} size={22} />
+          <span style={{ fontWeight: 800, fontSize: "0.9rem", color: c1 }}>{match.team1}</span>
+          <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.2)", fontWeight: 600 }}>VS</span>
+          <span style={{ fontWeight: 800, fontSize: "0.9rem", color: c2 }}>{match.team2}</span>
+          <TeamLogo code={match.team2} size={22} />
+          <span style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.25)",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
             className="hidden sm:block">
             · {match.date}, {match.time}
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
           {match.allPicks.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 4,
               padding: "2px 8px 2px 6px", borderRadius: 20,
-              background: "rgba(192,25,44,0.1)", border: "1px solid rgba(192,25,44,0.2)" }}>
-              <Users size={10} style={{ color: "#e05572" }} />
-              <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "#e05572" }}>
-                {match.allPicks.length} in your leagues
+              background: "rgba(192,25,44,0.1)", border: "1px solid rgba(192,25,44,0.22)" }}>
+              <Users size={9} style={{ color: "#e05572" }} />
+              <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#e05572" }}>
+                {match.allPicks.length}
               </span>
             </div>
           )}
 
           {isSettled && pts !== null && (
-            <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "0.82rem",
+            <span style={{
+              padding: "2px 8px", borderRadius: 8,
+              background: pts > 0 ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${pts > 0 ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.08)"}`,
+              fontFamily: "monospace", fontWeight: 800, fontSize: "0.78rem",
               color: pts > 0 ? "#22c55e" : "rgba(255,255,255,0.2)" }}>
-              +{pts}pts
+              {pts > 0 ? `+${pts}` : "0"}pts
             </span>
           )}
 
           {isLive && !submitted && (
-            <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#ef4444",
-              display: "flex", alignItems: "center", gap: 3 }}>
-              🔴 LIVE
+            <span style={{
+              fontSize: "0.62rem", fontWeight: 800, color: "#ef4444",
+              background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)",
+              padding: "2px 8px", borderRadius: 8, letterSpacing: "0.06em",
+              display: "flex", alignItems: "center", gap: 4,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444",
+                animation: "ping 1.2s ease-in-out infinite", display: "inline-block" }} />
+              LIVE
             </span>
           )}
 
           {match.status === "open" && !submitted && deadlineMins > 0 && (
-            <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#f59e0b",
-              display: "flex", alignItems: "center", gap: 3 }}>
-              <Clock size={11} /> {fmtDeadline(deadlineMins)}
+            <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#f59e0b",
+              display: "flex", alignItems: "center", gap: 4,
+              background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)",
+              padding: "2px 8px", borderRadius: 8 }}>
+              <Clock size={10} /> {fmtDeadline(deadlineMins)}
             </span>
           )}
 
-          {submitted && !isSettled && <CheckCircle size={14} style={{ color: "#22c55e" }} />}
-          {isSettled && <Lock size={13} style={{ color: "rgba(255,255,255,0.2)" }} />}
+          {submitted && !isSettled && (
+            <span style={{
+              display: "flex", alignItems: "center", gap: 4,
+              fontSize: "0.62rem", fontWeight: 700, color: "#22c55e",
+              background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)",
+              padding: "2px 8px", borderRadius: 8,
+            }}>
+              <CheckCircle size={10} /> Locked
+            </span>
+          )}
+          {isSettled && <Lock size={12} style={{ color: "rgba(255,255,255,0.18)" }} />}
           {open
-            ? <ChevronUp   size={14} style={{ color: "rgba(255,255,255,0.25)" }} />
-            : <ChevronDown size={14} style={{ color: "rgba(255,255,255,0.25)" }} />}
+            ? <ChevronUp   size={13} style={{ color: "rgba(255,255,255,0.2)" }} />
+            : <ChevronDown size={13} style={{ color: "rgba(255,255,255,0.2)" }} />}
         </div>
       </div>
 
@@ -693,9 +727,9 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                           style={{
                             padding: "0.45rem 0.9rem", borderRadius: 9,
                             cursor: submitted ? "default" : "pointer",
-                            background: sel ? "rgba(129,140,248,0.18)" : "rgba(255,255,255,0.04)",
-                            border: `1.5px solid ${sel ? "#818cf8" : "rgba(255,255,255,0.09)"}`,
-                            color: sel ? "#818cf8" : "rgba(255,255,255,0.5)",
+                            background: sel ? "rgba(192,25,44,0.15)" : "rgba(255,255,255,0.04)",
+                            border: `1.5px solid ${sel ? "#c0192c" : "rgba(255,255,255,0.09)"}`,
+                            color: sel ? "#c0192c" : "rgba(255,255,255,0.5)",
                             fontWeight: sel ? 700 : 500, fontSize: "0.82rem",
                             transition: "all 0.15s",
                           }}
@@ -835,18 +869,14 @@ export default function Predictions() {
             >
               <RefreshCw size={14} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
             </button>
-            <div className="flex gap-1.5 shrink-0">
-              {(["predict", "leaderboard"] as const).map(t => (
-                <button key={t} onClick={() => setTab(t)}
-                  style={{
-                    padding: "0.45rem 1rem", borderRadius: 10,
-                    background: tab === t ? "rgba(129,140,248,0.15)" : "rgba(255,255,255,0.05)",
-                    border: `1px solid ${tab === t ? "rgba(129,140,248,0.35)" : "rgba(255,255,255,0.08)"}`,
-                    color: tab === t ? "#818cf8" : "rgba(255,255,255,0.45)",
-                    fontSize: "0.82rem", fontWeight: 600, cursor: "pointer",
-                    textTransform: "capitalize",
-                  }}>
-                  {t}
+            <div className="tab-bar shrink-0" style={{ padding: "3px", gap: 2 }}>
+              {([
+                { id: "predict",     label: "Predictions" },
+                { id: "leaderboard", label: "Leaderboard" },
+              ] as const).map(t => (
+                <button key={t.id} onClick={() => setTab(t.id)}
+                  className={`tab-item${tab === t.id ? " active" : ""}`}>
+                  {t.label}
                 </button>
               ))}
             </div>
@@ -854,23 +884,28 @@ export default function Predictions() {
         </div>
 
         {/* My stats */}
-        <div className="grid grid-cols-5 gap-2.5">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}
+          className="pred-stats">
           {[
-            { label: "Made",     value: myStats.total,                     color: "#fff",    icon: <Target size={13} /> },
-            { label: "Correct",  value: myStats.correct,                   color: "#22c55e", icon: <CheckCircle size={13} /> },
-            { label: "Accuracy", value: `${myStats.accuracy}%`,            color: "#60a5fa", icon: <TrendingUp size={13} /> },
-            { label: "Streak",   value: `${myStats.streak}`,               color: "#f59e0b", icon: <Zap size={13} /> },
-            { label: "Pts",      value: myStats.pts.toLocaleString(),      color: "#a78bfa", icon: <Award size={13} /> },
+            { label: "Made",     value: myStats.total,                color: "rgba(255,255,255,0.85)", glow: "rgba(255,255,255,0.04)", icon: <Target size={12} /> },
+            { label: "Correct",  value: myStats.correct,              color: "#22c55e", glow: "rgba(34,197,94,0.1)",   icon: <CheckCircle size={12} /> },
+            { label: "Accuracy", value: `${myStats.accuracy}%`,       color: "#38bdf8", glow: "rgba(56,189,248,0.08)", icon: <TrendingUp size={12} /> },
+            { label: "Streak",   value: myStats.streak,               color: "#f59e0b", glow: "rgba(245,158,11,0.1)", icon: <Zap size={12} /> },
+            { label: "Points",   value: myStats.pts.toLocaleString(), color: "#e05572", glow: "rgba(192,25,44,0.12)", icon: <Award size={12} /> },
           ].map(s => (
-            <div key={s.label}
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 14, padding: "0.75rem 0.9rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, color: s.color, marginBottom: 5 }}>
+            <div key={s.label} style={{
+              background: s.glow,
+              border: `1px solid ${s.color}28`,
+              borderRadius: 14, padding: "0.85rem 1rem",
+              display: "flex", flexDirection: "column", gap: 5,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, color: s.color }}>
                 {s.icon}
-                <span style={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase",
-                  letterSpacing: "0.08em", opacity: 0.7 }}>{s.label}</span>
+                <span style={{ fontSize: "0.58rem", fontWeight: 700, textTransform: "uppercase",
+                  letterSpacing: "0.1em", opacity: 0.75 }}>{s.label}</span>
               </div>
-              <div style={{ fontSize: "1.25rem", fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: "1.45rem", fontWeight: 900, color: s.color, lineHeight: 1,
+                fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
             </div>
           ))}
         </div>
@@ -898,9 +933,13 @@ export default function Predictions() {
             {/* Open matches */}
             {openMatches.length > 0 && (
               <div className="space-y-2.5">
-                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
-                  <Flame size={15} style={{ color: "#fb923c" }} />
-                  <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "rgba(255,255,255,0.55)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6,
+                  padding: "0.45rem 0.85rem",
+                  background: "rgba(251,146,60,0.06)", border: "1px solid rgba(251,146,60,0.18)",
+                  borderRadius: 10, width: "fit-content" }}>
+                  <Flame size={13} style={{ color: "#fb923c" }} />
+                  <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#fb923c",
+                    letterSpacing: "0.08em", textTransform: "uppercase" }}>
                     Open for predictions
                   </span>
                 </div>
@@ -926,9 +965,13 @@ export default function Predictions() {
             {/* Settled matches */}
             {settledMatches.length > 0 && (
               <div className="space-y-2.5">
-                <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 8, marginBottom: 4 }}>
-                  <Lock size={13} style={{ color: "rgba(255,255,255,0.2)" }} />
-                  <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, marginBottom: 6,
+                  padding: "0.45rem 0.85rem",
+                  background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 10, width: "fit-content" }}>
+                  <Lock size={11} style={{ color: "rgba(255,255,255,0.3)" }} />
+                  <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "rgba(255,255,255,0.4)",
+                    letterSpacing: "0.08em", textTransform: "uppercase" }}>
                     Settled results
                   </span>
                 </div>
@@ -963,47 +1006,73 @@ export default function Predictions() {
               </div>
             )}
 
-            {leaders.map((e, i) => (
-              <div key={e.userId}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "0.8rem 1.2rem",
-                  borderBottom: i < leaders.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                  background: e.isMe ? "rgba(129,140,248,0.06)" : "transparent",
-                  borderLeft: e.isMe ? "2px solid #818cf8" : "2px solid transparent",
-                }}
-              >
-                <span style={{ fontWeight: 800, minWidth: 24, textAlign: "center",
-                  color: i === 0 ? "#f59e0b" : i === 1 ? "#9ca3af" : i === 2 ? "#d97706" : "rgba(255,255,255,0.3)",
-                  fontSize: i < 3 ? "1.1rem" : "0.85rem" }}>
-                  {i < 3 ? ["#1", "#2", "#3"][i] : `#${e.rank}`}
-                </span>
-                <div style={{ width: 30, height: 30, borderRadius: "50%",
-                  background: e.isMe ? "rgba(129,140,248,0.2)" : `${e.color}20`,
-                  border: `1px solid ${e.isMe ? "rgba(129,140,248,0.35)" : e.color}`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.68rem", fontWeight: 700,
-                  color: e.isMe ? "#818cf8" : "#fff", flexShrink: 0 }}>
-                  {e.initials}
+            {leaders.map((e, i) => {
+              const medal = i === 0 ? { icon: "🥇", color: "#f59e0b" }
+                          : i === 1 ? { icon: "🥈", color: "#9ca3af" }
+                          : i === 2 ? { icon: "🥉", color: "#d97706" }
+                          : null;
+              return (
+                <div key={e.userId}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "0.75rem 1.2rem",
+                    borderBottom: i < leaders.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                    background: e.isMe ? "rgba(192,25,44,0.06)" : i < 3 ? `rgba(255,255,255,0.015)` : "transparent",
+                    borderLeft: `3px solid ${e.isMe ? "#c0192c" : "transparent"}`,
+                    transition: "background 0.15s",
+                  }}
+                >
+                  <div style={{ minWidth: 28, textAlign: "center", flexShrink: 0 }}>
+                    {medal
+                      ? <span style={{ fontSize: "1rem" }}>{medal.icon}</span>
+                      : <span style={{ fontSize: "0.78rem", fontWeight: 700,
+                          color: "rgba(255,255,255,0.25)" }}>#{e.rank}</span>
+                    }
+                  </div>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                    background: e.isMe ? "rgba(192,25,44,0.2)" : `${e.color}20`,
+                    border: `1.5px solid ${e.isMe ? "rgba(192,25,44,0.5)" : e.color}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "0.7rem", fontWeight: 800,
+                    color: e.isMe ? "#e05572" : "#fff" }}>
+                    {e.initials}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: e.isMe ? 700 : 500,
+                      color: e.isMe ? "#e05572" : "#fff", fontSize: "0.85rem" }}>
+                      {e.name}{e.isMe && <span style={{ fontSize: "0.65rem", marginLeft: 6,
+                        opacity: 0.7, fontWeight: 600 }}>(You)</span>}
+                    </div>
+                    <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.28)", marginTop: 1 }}>
+                      {e.correct}/{e.total} correct
+                    </div>
+                  </div>
+                  <div style={{
+                    padding: "3px 10px", borderRadius: 8,
+                    background: e.isMe ? "rgba(192,25,44,0.12)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${e.isMe ? "rgba(192,25,44,0.3)" : "rgba(255,255,255,0.07)"}`,
+                  }}>
+                    <span style={{ fontFamily: "monospace", fontWeight: 800,
+                      color: e.isMe ? "#e05572" : "rgba(255,255,255,0.7)", fontSize: "0.88rem" }}>
+                      {Number(e.pts).toLocaleString()}
+                    </span>
+                    <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.3)", marginLeft: 3 }}>pts</span>
+                  </div>
                 </div>
-                <span style={{ flex: 1, fontWeight: e.isMe ? 700 : 500,
-                  color: e.isMe ? "#818cf8" : "#fff", fontSize: "0.85rem" }}>
-                  {e.name}{e.isMe && " (You)"}
-                </span>
-                <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.3)", marginRight: 6 }}>
-                  {e.correct}/{e.total} correct
-                </span>
-                <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#a78bfa", fontSize: "0.88rem" }}>
-                  {Number(e.pts).toLocaleString()} pts
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </motion.div>
 
       <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes spin  { from { transform: rotate(0deg); }    to { transform: rotate(360deg); } }
+        @keyframes ping  { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } }
+        @media (max-width: 640px) {
+          .pred-stats { grid-template-columns: repeat(3, 1fr) !important; }
+          .pred-stats > div:nth-child(4),
+          .pred-stats > div:nth-child(5) { grid-column: span 1; }
+        }
       `}</style>
     </Layout>
   );
