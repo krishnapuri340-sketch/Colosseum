@@ -53,12 +53,6 @@ export function Glassmorphism() {
             pointerEvents: "none",
           }} />
 
-          {/* Gradient top strip */}
-          <div style={{
-            height: 4,
-            background: `linear-gradient(90deg, ${C1}, ${C2_TEXT})`,
-          }} />
-
           {/* Header */}
           <div style={{
             padding: "13px 18px",

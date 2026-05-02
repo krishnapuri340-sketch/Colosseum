@@ -451,15 +451,6 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
         background: `radial-gradient(circle, ${c2}1e 0%, transparent 70%)`,
       }} />
 
-      {/* Coloured top strip: red=live, amber=open, grey=settled */}
-      <div style={{
-        height: 4,
-        background: isLive
-          ? "linear-gradient(90deg,#ef4444,#f97316)"
-          : isSettled
-          ? "rgba(255,255,255,0.07)"
-          : `linear-gradient(90deg,${c1},${c2})`,
-      }} />
 
       {/* Header */}
       <div
