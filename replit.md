@@ -113,6 +113,17 @@ IPL fantasy cricket platform. Dark space-themed UI. pnpm monorepo with a React+V
 - `artifacts/cricket-fantasy/src/pages/AuctionComplete.tsx` — final results page
 - `artifacts/api-server/src/routes/auction-rooms.ts` — all auction REST routes
 
+## Visual Effects Layer (`src/components/effects/`)
+
+Premium UI polish, additive — does not alter layout. All respect `prefers-reduced-motion`.
+
+- `StadiumAmbient.tsx` — fixed-position background (zIndex 0, pointer-events none) with two drifting aurora blobs (crimson + indigo) and a sweeping floodlight beam. Mounted once in `Layout.tsx`. Pure CSS animations (`auroraDriftA/B`, `floodSweep` keyframes in `index.css`).
+- `LiveTicker.tsx` — broadcast-style ticker bar (~30px) rendered between `Header` and `main`. Polls `/api/ipl/matches` every 60s with an `AbortController` in-flight guard so slow networks can't pile up requests. Shows scrolling team codes + scores (live) or fixtures (none live). Marquee paused on hover; disabled entirely under reduced-motion.
+- `AnimatedNumber.tsx` — `requestAnimationFrame` count-up with easeOutCubic. Cleans up RAF on unmount/value change. Snaps to value when reduced-motion is set.
+- `SpotlightCard.tsx` — wrapper that updates `--mx`/`--my` CSS vars on mousemove; the global `.spotlight-card::after` pseudo (in `index.css`) renders a radial glow with `mix-blend-mode: screen`. Pseudo is `pointer-events: none` so child clicks (e.g. `<Link>`) are unaffected.
+
+CSS additions in `src/index.css` (bottom of file): keyframes block + `.spotlight-card` rules + `.text-gradient-crimson` / `.text-gradient-amber` text-clip utilities for big hero numerals.
+
 ## Key Commands
 
 - `pnpm run typecheck` — full typecheck

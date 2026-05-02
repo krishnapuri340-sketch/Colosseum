@@ -3,6 +3,8 @@ import { Header } from "./Header";
 import { useLocation, Link } from "wouter";
 import { useSidebar } from "@/context/SidebarContext";
 import { LayoutDashboard, Swords, Gavel, Target, Trophy } from "lucide-react";
+import { StadiumAmbient } from "@/components/effects/StadiumAmbient";
+import { LiveTicker } from "@/components/effects/LiveTicker";
 
 const BOTTOM_NAV = [
   { href: "/",            label: "Home",    icon: LayoutDashboard },
@@ -21,14 +23,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
     href === "/" ? location === "/" : location === href || location.startsWith(href + "/");
 
   return (
-    <div className="h-screen text-foreground overflow-hidden flex flex-col">
+    <div className="h-screen text-foreground overflow-hidden flex flex-col relative">
+
+      {/* Ambient stadium background — fixed, behind all content */}
+      <StadiumAmbient />
 
       {/* ── DESKTOP ── */}
-      <div className="hidden lg:flex flex-1 overflow-hidden">
+      <div className="hidden lg:flex flex-1 overflow-hidden relative" style={{ zIndex: 1 }}>
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0"
           style={{ marginLeft: sidebarW, transition: "margin-left 0.22s ease" }}>
           <Header />
+          <LiveTicker />
           <main className="flex-1 overflow-x-hidden overflow-y-auto"
             style={{ padding: "20px 24px 24px" }}>
             <div className="max-w-6xl mx-auto stagger-children">
@@ -39,9 +45,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* ── MOBILE ── */}
-      <div className="lg:hidden flex flex-col flex-1 overflow-hidden">
+      <div className="lg:hidden flex flex-col flex-1 overflow-hidden relative" style={{ zIndex: 1 }}>
         <Sidebar />
         <Header />
+        <LiveTicker />
         <main className="flex-1 overflow-x-hidden overflow-y-auto"
           style={{ padding: "14px 14px 88px" }}>
           <div className="stagger-children">

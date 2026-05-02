@@ -10,6 +10,20 @@ import { Link } from "wouter";
 import { TEAM_COLOR, TEAM_LOGO } from "@/lib/ipl-constants";
 import { apiFetch } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
+import { AnimatedNumber } from "@/components/effects/AnimatedNumber";
+import { SpotlightCard } from "@/components/effects/SpotlightCard";
+
+/** Convert "#aabbcc" or "rgb(a,b,c)" to "r,g,b" for the spotlight var. */
+function toRgbCsv(hex: string): string {
+  if (hex.startsWith("rgb")) {
+    return hex.replace(/rgba?\(([^)]+)\)/, "$1").split(",").slice(0,3).map(s => s.trim()).join(",");
+  }
+  const h = hex.replace("#","");
+  const v = h.length === 3
+    ? h.split("").map(c => parseInt(c+c, 16))
+    : [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  return `${v[0]},${v[1]},${v[2]}`;
+}
 
 interface IplMatch {
   iplId: string; matchNumber: number;
@@ -176,17 +190,19 @@ export default function Dashboard() {
                 <div className="flex flex-wrap gap-2">
                   {QUICK_ACTIONS.map(a => (
                     <Link key={a.href} href={a.href}>
-                      <div className="press-sm flex items-center gap-2 px-4 py-2.5 rounded-2xl cursor-pointer transition-all"
+                      <SpotlightCard
+                        color={toRgbCsv(a.color)}
+                        radius={220}
+                        className="press-sm flex items-center gap-2 px-4 py-2.5 rounded-2xl cursor-pointer transition-transform"
                         style={{
                           background: a.bg,
                           border: `1px solid ${a.border}`,
                           boxShadow: "0 1px 0 rgba(255,255,255,0.06) inset",
                         }}
-                        onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)"}
-                        onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"}>
+                      >
                         <a.icon className="w-3.5 h-3.5" style={{ color: a.color }} />
                         <span className="text-xs font-bold text-white">{a.label}</span>
-                      </div>
+                      </SpotlightCard>
                     </Link>
                   ))}
                 </div>
@@ -196,14 +212,16 @@ export default function Dashboard() {
               <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
                 <div className="text-xs font-bold tracking-widest uppercase text-white/30 mb-1">Season Stats</div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black text-white tabular-nums" style={{ letterSpacing: "-0.03em" }}>
-                    {totalPts.toLocaleString()}
+                  <span className="text-4xl font-black tabular-nums text-gradient-crimson" style={{ letterSpacing: "-0.03em" }}>
+                    <AnimatedNumber value={totalPts} />
                   </span>
                   <span className="text-sm text-white/40 font-medium">pts</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-white/40">Rank</span>
-                  <span className="text-2xl font-black text-amber-400 tabular-nums">#{currentRank}</span>
+                  <span className="text-2xl font-black tabular-nums text-gradient-amber">
+                    #<AnimatedNumber value={currentRank} />
+                  </span>
                 </div>
                 <div className="text-xs text-white/25 font-medium">IPL 2026 Fantasy League</div>
               </div>
@@ -215,13 +233,17 @@ export default function Dashboard() {
         <motion.div variants={fade}
           className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label:"Total Points",  value:totalPts.toLocaleString(), sub:"Season total",                    color:"#818cf8", icon:<Zap className="w-4.5 h-4.5" /> },
-            { label:"Current Rank",  value:`#${currentRank}`,         sub:"Fantasy league",                  color:"#f59e0b", icon:<Trophy className="w-4.5 h-4.5" /> },
-            { label:"Teams Active",  value:myTeams.length,            sub:`${myTeams.filter(t=>t.status==="live").length} live`, color:"#34d399", icon:<Users className="w-4.5 h-4.5" /> },
-            { label:"Predictions",   value:`${predAccuracy}%`,        sub:"Accuracy this season",            color:"#f87171", icon:<Target className="w-4.5 h-4.5" /> },
+            { label:"Total Points",  value:<AnimatedNumber value={totalPts} />,            sub:"Season total",                    color:"#818cf8", icon:<Zap className="w-4.5 h-4.5" /> },
+            { label:"Current Rank",  value:<><span>#</span><AnimatedNumber value={currentRank} /></>, sub:"Fantasy league",       color:"#f59e0b", icon:<Trophy className="w-4.5 h-4.5" /> },
+            { label:"Teams Active",  value:<AnimatedNumber value={myTeams.length} />,      sub:`${myTeams.filter(t=>t.status==="live").length} live`, color:"#34d399", icon:<Users className="w-4.5 h-4.5" /> },
+            { label:"Predictions",   value:<><AnimatedNumber value={predAccuracy} /><span>%</span></>, sub:"Accuracy this season",  color:"#f87171", icon:<Target className="w-4.5 h-4.5" /> },
           ].map(s => (
-            <div key={s.label}
-              className="glass-elevated rounded-2xl p-4 flex items-center gap-3.5 group cursor-default">
+            <SpotlightCard
+              key={s.label}
+              color={toRgbCsv(s.color)}
+              radius={300}
+              className="glass-elevated rounded-2xl p-4 flex items-center gap-3.5 group cursor-default"
+            >
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all group-hover:scale-110"
                 style={{
                   background: `linear-gradient(135deg, ${s.color}20, ${s.color}10)`,
@@ -236,7 +258,7 @@ export default function Dashboard() {
                 <div className="text-xs font-semibold text-white/40 leading-tight">{s.label}</div>
                 <div className="text-xs text-white/22 leading-tight mt-0.5">{s.sub}</div>
               </div>
-            </div>
+            </SpotlightCard>
           ))}
         </motion.div>
 
