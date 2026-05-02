@@ -335,33 +335,24 @@ function MomDropdown({
                           onClick={() => { onChange(p.name); setOpen(false); setQ(""); }}
                           style={{
                             display: "flex", alignItems: "center", gap: 10,
-                            padding: "0.48rem 0.85rem", cursor: "pointer",
+                            padding: "0.6rem 0.85rem", cursor: "pointer",
                             background: selected ? `${tc}14` : "transparent",
-                            borderBottom: "1px solid rgba(255,255,255,0.03)",
+                            borderBottom: "1px solid rgba(255,255,255,0.04)",
                             transition: "background 0.12s",
                           }}
                           onMouseEnter={e => { if (!selected) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)"; }}
                           onMouseLeave={e => { if (!selected) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
                         >
                           <span style={{ fontSize: "0.58rem", fontWeight: 800, letterSpacing: "0.04em",
-                            width: 24, textAlign: "center", flexShrink: 0,
+                            width: 26, textAlign: "center", flexShrink: 0,
                             color: ROLE_COLOR[p.role] ?? "#aaa" }}>
                             {roleIcon[p.role] ?? "BAT"}
                           </span>
-                          <span style={{ flex: 1, fontSize: "0.82rem", fontWeight: selected ? 700 : 500,
-                            color: selected ? tc : "rgba(255,255,255,0.75)",
+                          <span style={{ flex: 1, fontSize: "0.84rem", fontWeight: selected ? 700 : 500,
+                            color: selected ? tc : "rgba(255,255,255,0.8)",
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {p.name}
                           </span>
-                          <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.25)",
-                            flexShrink: 0, fontFamily: "monospace" }}>
-                            {p.credits}cr
-                          </span>
-                          {!p.capped && (
-                            <span style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.25)",
-                              background: "rgba(255,255,255,0.06)", padding: "1px 4px",
-                              borderRadius: 3, flexShrink: 0 }}>UC</span>
-                          )}
                           {selected && <CheckCircle size={13} style={{ color: tc, flexShrink: 0 }} />}
                         </div>
                       );
