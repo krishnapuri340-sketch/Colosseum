@@ -15,7 +15,7 @@ type Row = { code: string; full: string; color: string; textColor: string; pct: 
 function TeamRow({ row, selected, onClick }: { row: Row; selected: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{
-      width: "100%", background: "none", border: "none", cursor: "pointer",
+      width: "100%", border: "none", cursor: "pointer",
       padding: "14px 18px",
       display: "grid",
       gridTemplateColumns: "42px 1fr 54px 48px",
