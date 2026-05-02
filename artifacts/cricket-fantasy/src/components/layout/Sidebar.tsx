@@ -27,46 +27,64 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
       <div title={collapsed ? label : undefined} className="press-sm"
         style={{
           display: "flex", alignItems: "center",
-          gap: collapsed ? 0 : 12,
-          padding: collapsed ? "0" : "0 12px",
-          height: 46,
+          gap: collapsed ? 0 : 11,
+          padding: collapsed ? "0" : "0 10px",
+          height: 44,
           justifyContent: collapsed ? "center" : "flex-start",
           borderRadius: 12, cursor: "pointer",
-          transition: "background 0.18s",
-          background: active ? "rgba(192,25,44,0.14)" : "transparent",
+          transition: "background 0.18s, box-shadow 0.18s",
+          background: active ? "rgba(192,25,44,0.15)" : "transparent",
+          boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 12px rgba(192,25,44,0.12)" : "none",
           WebkitTapHighlightColor: "transparent",
+          position: "relative",
         }}
         onMouseEnter={e => {
-          if (!active) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)";
+          if (!active) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.055)";
         }}
         onMouseLeave={e => {
           if (!active) (e.currentTarget as HTMLDivElement).style.background = "transparent";
         }}>
+
+        {/* Active left seam line */}
+        {active && (
+          <div style={{
+            position: "absolute", left: 0, top: "20%", bottom: "20%",
+            width: 3, borderRadius: 9999,
+            background: "linear-gradient(180deg, #e05572, #c0192c)",
+            boxShadow: "0 0 8px rgba(192,25,44,0.6)",
+          }} />
+        )}
+
         <div style={{
-          width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: active ? "rgba(192,25,44,0.22)" : "rgba(255,255,255,0.04)",
+          background: active
+            ? "linear-gradient(135deg, rgba(192,25,44,0.30), rgba(192,25,44,0.15))"
+            : "rgba(255,255,255,0.045)",
+          border: active ? "1px solid rgba(192,25,44,0.3)" : "1px solid rgba(255,255,255,0.06)",
           transition: "all 0.18s",
+          boxShadow: active ? "0 2px 8px rgba(192,25,44,0.18)" : "none",
         }}>
           <Icon style={{
-            width: 16, height: 16,
-            color: active ? "#e05572" : "rgba(255,255,255,0.38)",
+            width: 15, height: 15,
+            color: active ? "#e05572" : "rgba(255,255,255,0.36)",
           }} />
         </div>
         {!collapsed && (
           <span style={{
-            fontSize: "0.88rem", fontWeight: active ? 700 : 500,
-            color: active ? "#e0ddff" : "rgba(255,255,255,0.45)",
+            fontSize: "0.87rem", fontWeight: active ? 700 : 500,
+            color: active ? "#f0eeff" : "rgba(255,255,255,0.42)",
             whiteSpace: "nowrap", transition: "color 0.18s",
           }}>
             {label}
           </span>
         )}
         {active && !collapsed && (
-          <div style={{
-            width: 4, height: 4, borderRadius: "50%",
-            background: "#c0192c", marginLeft: "auto",
-          }} />
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 2 }}>
+            {/* Cricket seam dots — two small dots like ball seam */}
+            <div style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(192,25,44,0.7)" }} />
+            <div style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(192,25,44,0.4)" }} />
+          </div>
         )}
       </div>
     </Link>
@@ -87,38 +105,46 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
   return (
     <div style={{
       width: w, height: "100%", display: "flex", flexDirection: "column",
-      background: "rgba(9,12,24,0.95)",
-      backdropFilter: "blur(32px) saturate(200%)",
-      WebkitBackdropFilter: "blur(32px) saturate(200%)",
-      borderRight: "1px solid rgba(255,255,255,0.06)",
+      background: "linear-gradient(180deg, rgba(7,9,26,0.97) 0%, rgba(9,12,24,0.98) 100%)",
+      backdropFilter: "blur(36px) saturate(220%)",
+      WebkitBackdropFilter: "blur(36px) saturate(220%)",
+      borderRight: "1px solid rgba(255,255,255,0.07)",
       position: "relative",
     }}>
 
+      {/* Subtle cricket ball decoration — top corner */}
+      <div style={{
+        position: "absolute", top: -20, right: -20,
+        width: 80, height: 80, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(192,25,44,0.06) 0%, transparent 70%)",
+        pointerEvents: "none",
+      }} />
+
       {/* Logo row */}
       <div style={{
-        height: 72, display: "flex", alignItems: "center",
+        height: 70, display: "flex", alignItems: "center",
         justifyContent: (!isMobile && collapsed) ? "center" : "space-between",
         padding: (!isMobile && collapsed) ? "0" : "0 14px",
-        borderBottom: "1px solid rgba(255,255,255,0.05)", flexShrink: 0,
+        borderBottom: "1px solid rgba(255,255,255,0.055)", flexShrink: 0,
       }}>
         {(isMobile || !collapsed) && (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
               width: 34, height: 34, borderRadius: 10, flexShrink: 0, overflow: "hidden",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(192,25,44,0.2)",
             }}>
               <img src="/logo.png" alt="Colosseum" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#fff", lineHeight: 1.1 }}>Colosseum</div>
-              <div style={{ fontSize: "0.6rem", color: "rgba(192,25,44,0.8)", fontWeight: 600, letterSpacing: "0.05em" }}>IPL 2026</div>
+              <div style={{ fontWeight: 900, fontSize: "0.97rem", color: "#fff", lineHeight: 1.1, letterSpacing: "-0.01em" }}>Colosseum</div>
+              <div style={{ fontSize: "0.58rem", color: "rgba(192,25,44,0.85)", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>IPL 2026 🏏</div>
             </div>
           </div>
         )}
         {!isMobile && collapsed && (
           <div style={{
             width: 34, height: 34, borderRadius: 10, overflow: "hidden",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(192,25,44,0.2)",
           }}>
             <img src="/logo.png" alt="Colosseum" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
@@ -126,7 +152,7 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
         {isMobile && onClose && (
           <button onClick={onClose} style={{
             width: 32, height: 32, borderRadius: 10,
-            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)",
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", color: "rgba(255,255,255,0.5)",
           }}>
@@ -137,8 +163,8 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
 
       {/* Nav */}
       <nav style={{
-        flex: 1, padding: "14px 12px", display: "flex",
-        flexDirection: "column", gap: 3, overflowY: "auto", overflowX: "hidden",
+        flex: 1, padding: "12px 10px", display: "flex",
+        flexDirection: "column", gap: 2, overflowY: "auto", overflowX: "hidden",
       }}>
         {!collapsed && !isMobile && (
           <div className="section-label" style={{ padding: "4px 10px 8px" }}>Navigation</div>
@@ -153,8 +179,8 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
 
       {/* Bottom */}
       <div style={{
-        padding: "12px", borderTop: "1px solid rgba(255,255,255,0.05)",
-        display: "flex", flexDirection: "column", gap: 3,
+        padding: "10px", borderTop: "1px solid rgba(255,255,255,0.055)",
+        display: "flex", flexDirection: "column", gap: 2,
       }}>
         <NavItem href="/profile" label="Profile" Icon={UserCircle}
           active={isActive("/profile")} collapsed={!isMobile && collapsed}
@@ -165,23 +191,23 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
           className="press-sm"
           style={{
             display: "flex", alignItems: "center",
-            gap: collapsed ? 0 : 12, padding: collapsed ? "0" : "0 12px",
-            height: 46, justifyContent: collapsed ? "center" : "flex-start",
+            gap: collapsed ? 0 : 11, padding: collapsed ? "0" : "0 10px",
+            height: 44, justifyContent: collapsed ? "center" : "flex-start",
             borderRadius: 12, cursor: "pointer", width: "100%",
             background: "transparent", border: "none", transition: "background 0.18s",
             WebkitTapHighlightColor: "transparent",
           }}
-          onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "rgba(220,38,38,0.08)"}
+          onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "rgba(220,38,38,0.09)"}
           onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "transparent"}>
           <div style={{
-            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+            width: 32, height: 32, borderRadius: 9, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: "rgba(255,255,255,0.04)",
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
           }}>
-            <LogOut size={15} style={{ color: "rgba(255,100,100,0.6)" }} />
+            <LogOut size={14} style={{ color: "rgba(255,100,100,0.55)" }} />
           </div>
           {(isMobile || !collapsed) && (
-            <span style={{ fontSize: "0.86rem", fontWeight: 500, color: "rgba(255,100,100,0.6)" }}>
+            <span style={{ fontSize: "0.86rem", fontWeight: 500, color: "rgba(255,100,100,0.55)" }}>
               Sign out
             </span>
           )}
@@ -191,23 +217,27 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
       {/* Collapse toggle — desktop only */}
       {!isMobile && (
         <button onClick={toggle} style={{
-          position: "absolute", right: -12, top: "50%", transform: "translateY(-50%)",
-          width: 24, height: 24, borderRadius: "50%",
-          background: "rgba(9,12,24,0.95)", border: "1px solid rgba(255,255,255,0.12)",
+          position: "absolute", right: -13, top: "50%", transform: "translateY(-50%)",
+          width: 26, height: 26, borderRadius: "50%",
+          background: "rgba(7,9,26,0.98)",
+          border: "1px solid rgba(255,255,255,0.13)",
           display: "flex", alignItems: "center", justifyContent: "center",
           cursor: "pointer", zIndex: 10, transition: "all 0.2s",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
         }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLButtonElement).style.background = "#c0192c";
             (e.currentTarget as HTMLButtonElement).style.borderColor = "#c0192c";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 12px rgba(192,25,44,0.5)";
           }}
           onMouseLeave={e => {
-            (e.currentTarget as HTMLButtonElement).style.background = "rgba(9,12,24,0.95)";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)";
+            (e.currentTarget as HTMLButtonElement).style.background = "rgba(7,9,26,0.98)";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.13)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.4)";
           }}>
           {collapsed
-            ? <ChevronRight size={11} style={{ color: "rgba(255,255,255,0.6)" }} />
-            : <ChevronLeft  size={11} style={{ color: "rgba(255,255,255,0.6)" }} />}
+            ? <ChevronRight size={11} style={{ color: "rgba(255,255,255,0.65)" }} />
+            : <ChevronLeft  size={11} style={{ color: "rgba(255,255,255,0.65)" }} />}
         </button>
       )}
     </div>
@@ -234,7 +264,7 @@ export function Sidebar() {
         <div className="lg:hidden" style={{ position: "fixed", inset: 0, zIndex: 100 }}>
           <div onClick={closeMobile} style={{
             position: "absolute", inset: 0,
-            background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+            background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)",
           }} />
           <div className="anim-slide-left" style={{
             position: "absolute", left: 0, top: 0, bottom: 0, width: 260,

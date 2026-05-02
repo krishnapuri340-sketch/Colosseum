@@ -53,22 +53,25 @@ export function Header() {
 
   const dropStyle: React.CSSProperties = {
     position: "absolute", right: 0, top: "calc(100% + 10px)",
-    background: "rgba(9,12,24,0.97)",
-    backdropFilter: "blur(32px) saturate(200%)",
-    WebkitBackdropFilter: "blur(32px) saturate(200%)",
-    border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16,
-    boxShadow: "0 20px 60px rgba(0,0,0,0.6)", zIndex: 200,
+    background: "linear-gradient(145deg, rgba(10,13,28,0.98) 0%, rgba(7,9,22,0.97) 100%)",
+    backdropFilter: "blur(36px) saturate(220%)",
+    WebkitBackdropFilter: "blur(36px) saturate(220%)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: 16,
+    boxShadow: "0 24px 60px rgba(0,0,0,0.65), 0 1px 0 rgba(255,255,255,0.05) inset",
+    zIndex: 200,
   };
 
   return (
     <header style={{
-      height: 72, display: "flex", alignItems: "center",
+      height: 70, display: "flex", alignItems: "center",
       justifyContent: "space-between",
-      padding: "0 18px",
-      background: "rgba(9,12,24,0.7)",
-      backdropFilter: "blur(24px) saturate(180%)",
-      WebkitBackdropFilter: "blur(24px) saturate(180%)",
-      borderBottom: "1px solid rgba(255,255,255,0.06)",
+      padding: "0 20px",
+      background: "linear-gradient(180deg, rgba(7,9,26,0.85) 0%, rgba(7,9,26,0.75) 100%)",
+      backdropFilter: "blur(32px) saturate(200%)",
+      WebkitBackdropFilter: "blur(32px) saturate(200%)",
+      borderBottom: "1px solid rgba(255,255,255,0.07)",
+      boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 4px 24px rgba(0,0,0,0.2)",
       flexShrink: 0, position: "sticky", top: 0, zIndex: 40,
     }}>
 
@@ -76,7 +79,9 @@ export function Header() {
       <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
         <button className="lg:hidden press-sm" onClick={openMobile} style={{
           width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.09)",
+          boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset",
           display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
         }}>
           <Menu size={16} style={{ color: "rgba(255,255,255,0.6)" }} />
@@ -86,13 +91,14 @@ export function Header() {
         <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
           {crumbs.map((c, i) => (
             <span key={i} style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-              {i > 0 && <ChevronRight size={12} style={{ color: "rgba(255,255,255,0.2)", flexShrink: 0 }} />}
+              {i > 0 && <ChevronRight size={12} style={{ color: "rgba(255,255,255,0.18)", flexShrink: 0 }} />}
               <span style={{
-                fontSize: i === crumbs.length - 1 ? "0.9rem" : "0.82rem",
-                fontWeight: i === crumbs.length - 1 ? 700 : 500,
-                color: i === crumbs.length - 1 ? "#fff" : "rgba(255,255,255,0.35)",
+                fontSize: i === crumbs.length - 1 ? "0.92rem" : "0.82rem",
+                fontWeight: i === crumbs.length - 1 ? 800 : 500,
+                color: i === crumbs.length - 1 ? "#fff" : "rgba(255,255,255,0.30)",
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                 display: i === 0 && crumbs.length > 1 ? "none" : "block",
+                letterSpacing: i === crumbs.length - 1 ? "-0.01em" : "normal",
               }}
                 className={i === 0 && crumbs.length > 1 ? "hidden sm:block" : ""}>
                 {c.label}
@@ -109,18 +115,27 @@ export function Header() {
         <div className="hidden lg:block" style={{ position: "relative" }}>
           <Search size={13} style={{
             position: "absolute", left: "0.85rem", top: "50%", transform: "translateY(-50%)",
-            color: "rgba(255,255,255,0.3)", pointerEvents: "none",
+            color: "rgba(255,255,255,0.28)", pointerEvents: "none",
           }} />
-          <input type="text" placeholder="Search…"
+          <input type="text" placeholder="Search players, teams…"
             style={{
-              width: 200, height: 36, background: "rgba(255,255,255,0.05)",
-              border: "1.5px solid rgba(255,255,255,0.08)", borderRadius: 9999,
+              width: 210, height: 36,
+              background: "rgba(255,255,255,0.055)",
+              border: "1.5px solid rgba(255,255,255,0.09)",
+              borderRadius: 9999,
               paddingLeft: "2.2rem", paddingRight: "0.9rem",
               color: "#fff", fontSize: "0.82rem", outline: "none",
-              fontFamily: "inherit", transition: "border-color 0.2s",
+              fontFamily: "inherit", transition: "border-color 0.2s, box-shadow 0.2s",
+              boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset",
             }}
-            onFocus={e => (e.target as HTMLInputElement).style.borderColor = "rgba(192,25,44,0.5)"}
-            onBlur={e => (e.target as HTMLInputElement).style.borderColor = "rgba(255,255,255,0.08)"}
+            onFocus={e => {
+              (e.target as HTMLInputElement).style.borderColor = "rgba(192,25,44,0.5)";
+              (e.target as HTMLInputElement).style.boxShadow = "0 0 0 3px rgba(192,25,44,0.10), 0 1px 0 rgba(255,255,255,0.04) inset";
+            }}
+            onBlur={e => {
+              (e.target as HTMLInputElement).style.borderColor = "rgba(255,255,255,0.09)";
+              (e.target as HTMLInputElement).style.boxShadow = "0 1px 0 rgba(255,255,255,0.04) inset";
+            }}
           />
         </div>
 
@@ -130,16 +145,18 @@ export function Header() {
             className="press-sm"
             style={{
               width: 36, height: 36, borderRadius: 10,
-              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.055)",
+              border: "1px solid rgba(255,255,255,0.09)",
+              boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", position: "relative",
             }}>
             <Bell size={15} style={{ color: "rgba(255,255,255,0.5)" }} />
             {unreadCount > 0 && (
-              <div style={{
-                position: "absolute", top: 7, right: 7, width: 7, height: 7,
+              <div className="glow-pulse" style={{
+                position: "absolute", top: 8, right: 8, width: 7, height: 7,
                 borderRadius: "50%", background: "#c0192c",
-                border: "1.5px solid rgba(9,12,24,1)",
+                border: "1.5px solid rgba(7,9,26,1)",
               }} />
             )}
           </button>
@@ -153,10 +170,10 @@ export function Header() {
                 style={{ ...dropStyle, width: 320 }}>
                 <div style={{
                   padding: "0.85rem 1rem",
-                  borderBottom: "1px solid rgba(255,255,255,0.06)",
+                  borderBottom: "1px solid rgba(255,255,255,0.07)",
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                 }}>
-                  <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "#fff" }}>
+                  <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "#fff" }}>
                     Notifications
                     {unreadCount > 0 && (
                       <span style={{
@@ -180,7 +197,7 @@ export function Header() {
                   {notifications.length === 0 ? (
                     <div style={{
                       padding: "2.5rem 1rem", textAlign: "center",
-                      fontSize: "0.82rem", color: "rgba(255,255,255,0.25)",
+                      fontSize: "0.82rem", color: "rgba(255,255,255,0.22)",
                     }}>
                       No notifications yet
                     </div>
@@ -189,22 +206,22 @@ export function Header() {
                       style={{
                         padding: "0.75rem 1rem", cursor: "pointer",
                         borderBottom: "1px solid rgba(255,255,255,0.04)",
-                        background: n.read ? "transparent" : "rgba(192,25,44,0.04)",
+                        background: n.read ? "transparent" : "rgba(192,25,44,0.045)",
                         borderLeft: n.read ? "3px solid transparent" : "3px solid #c0192c",
                         transition: "background 0.15s",
                       }}
                       onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"}
-                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = n.read ? "transparent" : "rgba(192,25,44,0.04)"}>
+                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = n.read ? "transparent" : "rgba(192,25,44,0.045)"}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                         <div style={{
                           width: 8, height: 8, borderRadius: "50%", flexShrink: 0, marginTop: 5,
                           background: NOTIF_COLOR[n.type] ?? "rgba(255,255,255,0.3)",
                         }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "#fff", marginBottom: 2 }}>
+                          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#fff", marginBottom: 2 }}>
                             {n.title}
                           </div>
-                          <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>
+                          <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.42)", lineHeight: 1.4 }}>
                             {n.body}
                           </div>
                         </div>
@@ -225,12 +242,12 @@ export function Header() {
           <button onClick={() => { setShowProfile(v => !v); setShowNotifs(false); }}
             className="press-sm"
             style={{
-              width: 44, height: 44, borderRadius: "50%", cursor: "pointer",
-              background: `linear-gradient(135deg, ${profile.avatarColor}50, ${profile.avatarColor}20)`,
-              border: `2px solid ${profile.avatarColor}60`,
+              width: 40, height: 40, borderRadius: "50%", cursor: "pointer",
+              background: `linear-gradient(135deg, ${profile.avatarColor}55, ${profile.avatarColor}22)`,
+              border: `1.5px solid ${profile.avatarColor}55`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "1rem", fontWeight: 800, color: "#fff",
-              boxShadow: `0 0 16px ${profile.avatarColor}35`,
+              fontSize: "0.95rem", fontWeight: 800, color: "#fff",
+              boxShadow: `0 0 20px ${profile.avatarColor}30, 0 1px 0 rgba(255,255,255,0.08) inset`,
             }}>
             {profile.displayName.charAt(0).toUpperCase()}
           </button>
@@ -241,26 +258,26 @@ export function Header() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
                 transition={{ duration: 0.15 }}
-                style={{ ...dropStyle, width: 220 }}>
+                style={{ ...dropStyle, width: 224 }}>
                 <div style={{
                   padding: "1rem", borderBottom: "1px solid rgba(255,255,255,0.07)",
                   display: "flex", alignItems: "center", gap: 10,
                 }}>
                   <div style={{
                     width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
-                    background: `linear-gradient(135deg, ${profile.avatarColor}50, ${profile.avatarColor}20)`,
-                    border: `2px solid ${profile.avatarColor}60`,
+                    background: `linear-gradient(135deg, ${profile.avatarColor}55, ${profile.avatarColor}22)`,
+                    border: `1.5px solid ${profile.avatarColor}55`,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "1rem", fontWeight: 800, color: "#fff",
+                    fontSize: "0.95rem", fontWeight: 800, color: "#fff",
                   }}>
                     {profile.displayName.charAt(0).toUpperCase()}
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "#fff",
+                    <div style={{ fontWeight: 800, fontSize: "0.88rem", color: "#fff",
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {profile.displayName}
                     </div>
-                    <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.35)",
+                    <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.32)",
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {user?.email}
                     </div>
@@ -275,17 +292,17 @@ export function Header() {
                   <Link key={item.href} href={item.href} onClick={() => setShowProfile(false)}>
                     <div style={{
                       padding: "0.65rem 1rem", cursor: "pointer",
-                      fontSize: "0.83rem", color: "rgba(255,255,255,0.65)",
+                      fontSize: "0.83rem", color: "rgba(255,255,255,0.6)",
                       borderBottom: "1px solid rgba(255,255,255,0.05)",
                       transition: "background 0.12s, color 0.12s",
                     }}
                       onMouseEnter={e => {
-                        (e.currentTarget as HTMLDivElement).style.background = "rgba(192,25,44,0.08)";
+                        (e.currentTarget as HTMLDivElement).style.background = "rgba(192,25,44,0.09)";
                         (e.currentTarget as HTMLDivElement).style.color = "#fff";
                       }}
                       onMouseLeave={e => {
                         (e.currentTarget as HTMLDivElement).style.background = "transparent";
-                        (e.currentTarget as HTMLDivElement).style.color = "rgba(255,255,255,0.65)";
+                        (e.currentTarget as HTMLDivElement).style.color = "rgba(255,255,255,0.6)";
                       }}>
                       {item.label}
                     </div>
