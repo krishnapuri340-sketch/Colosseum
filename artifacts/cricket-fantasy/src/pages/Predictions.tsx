@@ -53,7 +53,6 @@ interface Pick {
   sixes?:  string;
 }
 
-const SIXES_BANDS = ["< 10", "10–14", "15–19", "20+"];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function computeDeadlineMins(date: string, time: string): number {
@@ -390,7 +389,7 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
   const c1 = TEAM_COLOR[match.team1] ?? "#aaa";
   const c2 = TEAM_COLOR[match.team2] ?? "#aaa";
 
-  const isOpen    = match.status !== "settled" && !submitted;
+  const isOpen    = match.status === "open" && !submitted;
   const isSettled = match.status === "settled";
   const isLive    = match.status === "live";
 
@@ -660,10 +659,10 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                       const sel = picks.winner === t;
                       return (
                         <button key={t}
-                          onClick={() => !submitted && setPicks(p => ({ ...p, winner: t }))}
-                          disabled={submitted}
+                          onClick={() => isOpen && setPicks(p => ({ ...p, winner: t }))}
+                          disabled={!isOpen}
                           style={{
-                            padding: "0.7rem 1rem", borderRadius: 11, cursor: submitted ? "default" : "pointer",
+                            padding: "0.7rem 1rem", borderRadius: 11, cursor: isOpen ? "pointer" : "default",
                             background: sel ? `${tc}20` : "rgba(255,255,255,0.04)",
                             border: `2px solid ${sel ? tc : "rgba(255,255,255,0.09)"}`,
                             display: "flex", alignItems: "center", gap: 8, transition: "all 0.15s",
@@ -699,8 +698,8 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                   <MomDropdown
                     team1={match.team1} team2={match.team2}
                     value={picks.mom ?? ""}
-                    onChange={v => !submitted && setPicks(p => ({ ...p, mom: v }))}
-                    disabled={submitted}
+                    onChange={v => isOpen && setPicks(p => ({ ...p, mom: v }))}
+                    disabled={!isOpen}
                   />
                   {match.allPicks.length > 0 && (
                     <div style={{ marginTop: 8 }}>
@@ -711,48 +710,27 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                   )}
                 </div>
 
-                {/* Total Sixes */}
-                <div>
-                  <div style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.1em",
-                    color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>
-                    Total Sixes <span style={{ color: "#f59e0b" }}>+15 pts</span>
-                  </div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {SIXES_BANDS.map(b => {
-                      const sel = picks.sixes === b;
-                      return (
-                        <button key={b}
-                          onClick={() => !submitted && setPicks(p => ({ ...p, sixes: b }))}
-                          disabled={submitted}
-                          style={{
-                            padding: "0.45rem 0.9rem", borderRadius: 9,
-                            cursor: submitted ? "default" : "pointer",
-                            background: sel ? "rgba(192,25,44,0.15)" : "rgba(255,255,255,0.04)",
-                            border: `1.5px solid ${sel ? "#c0192c" : "rgba(255,255,255,0.09)"}`,
-                            color: sel ? "#c0192c" : "rgba(255,255,255,0.5)",
-                            fontWeight: sel ? 700 : 500, fontSize: "0.82rem",
-                            transition: "all 0.15s",
-                          }}
-                        >
-                          {b}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {match.allPicks.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <PickRow label="sixes" picks={match.allPicks} field="sixes"
-                        myValue={picks.sixes} settled={isSettled}
-                        correct={isSettled && match.result
-                          ? picks.sixes === (match.result.sixes < 10 ? "< 10"
-                            : match.result.sixes <= 14 ? "10–14"
-                            : match.result.sixes <= 19 ? "15–19" : "20+")
-                          : false}
-                      />
-                    </div>
-                  )}
-                </div>
               </div>
+
+              {/* Live lock banner — shown when match has started but user never submitted */}
+              {isLive && !submitted && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "0.75rem 1rem",
+                  background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.25)",
+                  borderRadius: 12,
+                }}>
+                  <Lock size={14} style={{ color: "#ef4444", flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#ef4444" }}>
+                      Predictions closed
+                    </div>
+                    <div style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.35)", marginTop: 1 }}>
+                      This match is already underway — picks were locked at kick-off.
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Venue + submit */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -853,7 +831,7 @@ export default function Predictions() {
           <div>
             <h1 className="text-2xl font-black text-white">Predictions</h1>
             <p className="text-sm text-white/40 mt-0.5">
-              Pick winners · name the MOM · see what others think
+              Pick the winner · name the MOM · see what your leagues think
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
