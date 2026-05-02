@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Target, Trophy, Zap, TrendingUp, CheckCircle,
   Clock, Lock, Award, ChevronDown, ChevronUp,
-  Flame, Users, ChevronRight, Loader2, RefreshCw,
+  Flame, Users, ChevronRight, Loader2, RefreshCw, MapPin,
 } from "lucide-react";
 import { TEAM_COLOR, TEAM_FULL_NAME, TEAM_LOGO, ROLE_COLOR } from "@/lib/ipl-constants";
 import { ALL_IPL_2026_PLAYERS } from "@/lib/ipl-players-2026";
@@ -249,14 +249,15 @@ function MomDropdown({
         onClick={() => !disabled && setOpen(o => !o)}
         disabled={disabled}
         style={{
-          width: "100%", padding: "0.55rem 0.85rem",
-          background: value ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)",
-          border: `1.5px solid ${value ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.09)"}`,
-          borderRadius: 11, color: value ? "#fff" : "rgba(255,255,255,0.35)",
-          fontSize: "0.85rem", fontWeight: value ? 600 : 400,
+          width: "100%", padding: "0.6rem 0.9rem",
+          background: value ? "rgba(192,25,44,0.1)" : "rgba(255,255,255,0.04)",
+          border: `1.5px solid ${value ? "rgba(192,25,44,0.35)" : "rgba(255,255,255,0.09)"}`,
+          borderRadius: 13, color: value ? "#e05572" : "rgba(255,255,255,0.35)",
+          fontSize: "0.85rem", fontWeight: value ? 700 : 400,
           display: "flex", alignItems: "center", justifyContent: "space-between",
           cursor: disabled ? "default" : "pointer", textAlign: "left",
-          transition: "all 0.15s", opacity: disabled ? 0.6 : 1,
+          transition: "all 0.2s", opacity: disabled ? 0.6 : 1,
+          boxShadow: value ? "0 0 18px rgba(192,25,44,0.2)" : "none",
         }}
       >
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
@@ -426,18 +427,37 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{
-      background: "rgba(255,255,255,0.025)",
-      border: `1px solid ${isLive ? "rgba(239,68,68,0.35)" : isSettled ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.09)"}`,
-      boxShadow: isLive ? "0 0 0 1px rgba(239,68,68,0.15)" : "none",
+      background: "rgba(8,8,18,0.82)",
+      backdropFilter: "blur(18px)",
+      WebkitBackdropFilter: "blur(18px)",
+      border: `1px solid ${isLive ? "rgba(239,68,68,0.4)" : isSettled ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.1)"}`,
+      boxShadow: isLive
+        ? "0 0 0 1px rgba(239,68,68,0.15), 0 20px 48px rgba(0,0,0,0.5)"
+        : isSettled
+        ? "0 8px 24px rgba(0,0,0,0.3)"
+        : `0 16px 40px rgba(0,0,0,0.45), 0 0 0 1px ${c1}08`,
+      position: "relative",
     }}>
+
+      {/* Team colour orbs — behind all content */}
+      <div style={{
+        position: "absolute", top: -50, left: -50, width: 180, height: 180,
+        borderRadius: "50%", pointerEvents: "none",
+        background: `radial-gradient(circle, ${c1}1e 0%, transparent 70%)`,
+      }} />
+      <div style={{
+        position: "absolute", top: -50, right: -50, width: 180, height: 180,
+        borderRadius: "50%", pointerEvents: "none",
+        background: `radial-gradient(circle, ${c2}1e 0%, transparent 70%)`,
+      }} />
 
       {/* Coloured top strip: red=live, amber=open, grey=settled */}
       <div style={{
-        height: 3,
+        height: 4,
         background: isLive
           ? "linear-gradient(90deg,#ef4444,#f97316)"
           : isSettled
-          ? "rgba(255,255,255,0.06)"
+          ? "rgba(255,255,255,0.07)"
           : `linear-gradient(90deg,${c1},${c2})`,
       }} />
 
@@ -541,13 +561,19 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
             transition={{ duration: 0.22, ease: "easeInOut" }}
             style={{ overflow: "hidden" }}
           >
-            <div style={{ padding: "1rem 1.1rem", display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+            <div style={{ padding: "1.1rem 1.2rem", display: "flex", flexDirection: "column", gap: "1.1rem" }}>
 
               {/* Result banner */}
               {isSettled && match.result && (
-                <div style={{ padding: "0.6rem 0.9rem", background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10,
-                  display: "flex", gap: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
+                <div style={{
+                  padding: "0.65rem 0.9rem",
+                  background: `linear-gradient(90deg, ${(TEAM_COLOR[match.result.winner] ?? "#34d399")}0d, rgba(255,255,255,0.03))`,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderLeft: `3px solid ${TEAM_COLOR[match.result.winner] ?? "#34d399"}`,
+                  borderRadius: 12,
+                  display: "flex", gap: "1.5rem", flexWrap: "wrap", alignItems: "center",
+                  boxShadow: `0 0 24px ${(TEAM_COLOR[match.result.winner] ?? "#34d399")}18`,
+                }}>
                   <span style={{ fontSize: "0.8rem", fontWeight: 700,
                     color: TEAM_COLOR[match.result.winner] ?? "#34d399" }}>
                     {match.result.winner} won
@@ -566,92 +592,106 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                 </div>
               )}
 
-              {/* Community + Others bars */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
-                {/* Global community % */}
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                    <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c1 }}>
-                      {match.team1} {match.community.t1}%
-                    </span>
-                    <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.25)",
-                      display: "flex", alignItems: "center", gap: 4 }}>
-                      <Users size={10} /> All predictors ({match.totalPickers})
-                    </span>
-                    <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c2 }}>
-                      {match.community.t2}% {match.team2}
-                    </span>
-                  </div>
-                  <div style={{ height: 6, borderRadius: 3, overflow: "hidden", display: "flex",
-                    background: "rgba(255,255,255,0.05)" }}>
-                    <div style={{ width: `${match.community.t1}%`,
-                      background: `linear-gradient(90deg, ${c1}, ${c1}90)`,
-                      transition: "width 0.4s", borderRadius: 3 }} />
-                    <div style={{ flex: 1,
-                      background: `linear-gradient(90deg, ${c2}90, ${c2})`,
-                      borderRadius: 3 }} />
-                  </div>
+              {/* Community vote bar */}
+              <div style={{
+                padding: "0.75rem 0.9rem", borderRadius: 12,
+                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
+                  <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c1 }}>
+                    {match.community.t1}% {match.team1}
+                  </span>
+                  <span style={{ fontSize: "0.59rem", color: "rgba(255,255,255,0.22)",
+                    display: "flex", alignItems: "center", gap: 4 }}>
+                    <Users size={9} /> {match.totalPickers} predictors
+                  </span>
+                  <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c2 }}>
+                    {match.team2} {match.community.t2}%
+                  </span>
                 </div>
+                <div style={{ height: 7, borderRadius: 4, overflow: "hidden", display: "flex",
+                  background: "rgba(255,255,255,0.05)",
+                  boxShadow: "inset 0 1px 3px rgba(0,0,0,0.3)" }}>
+                  <div style={{ width: `${match.community.t1}%`,
+                    background: `linear-gradient(90deg, ${c1}, ${c1}90)`,
+                    transition: "width 0.5s", borderRadius: "4px 0 0 4px",
+                    boxShadow: `0 0 8px ${c1}60` }} />
+                  <div style={{ flex: 1,
+                    background: `linear-gradient(90deg, ${c2}90, ${c2})`,
+                    borderRadius: "0 4px 4px 0",
+                    boxShadow: `0 0 8px ${c2}60` }} />
+                </div>
+              </div>
 
-                {/* League friends bar — only shows people in your leagues */}
-                {match.allPicks.length > 0 && friendWinnerPct !== null && (
-                  <div style={{ padding: "0.65rem 0.75rem", borderRadius: 10,
-                    background: "rgba(192,25,44,0.05)",
-                    border: "1px solid rgba(192,25,44,0.12)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 7 }}>
+              {/* League friends bar */}
+              {match.allPicks.length > 0 && friendWinnerPct !== null && (
+                <div style={{
+                  padding: "0.7rem 0.9rem", borderRadius: 12,
+                  background: "rgba(192,25,44,0.05)",
+                  border: "1px solid rgba(192,25,44,0.14)",
+                  boxShadow: "inset 0 1px 0 rgba(192,25,44,0.07)",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                       <Users size={10} style={{ color: "#e05572" }} />
                       <span style={{ fontSize: "0.6rem", fontWeight: 700,
                         color: "#e05572", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                         Your Leagues
                       </span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                      <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c1 }}>
-                        {match.team1} {friendWinnerPct}%
-                      </span>
-                      <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c2 }}>
-                        {100 - friendWinnerPct}% {match.team2}
-                      </span>
-                    </div>
-                    <div style={{ height: 5, borderRadius: 3, overflow: "hidden", display: "flex",
-                      background: "rgba(255,255,255,0.05)" }}>
-                      <div style={{ width: `${friendWinnerPct}%`,
-                        background: `linear-gradient(90deg, ${c1}, ${c1}90)`,
-                        transition: "width 0.4s", borderRadius: 3 }} />
-                      <div style={{ flex: 1,
-                        background: `linear-gradient(90deg, ${c2}90, ${c2})`,
-                        borderRadius: 3 }} />
-                    </div>
-                    <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={{ display: "flex", gap: 3 }}>
-                        {match.allPicks.filter(f => f.winner === match.team1).map((f, fi) => (
-                          <Avatar key={fi} name={f.name} initials={f.initials} color={f.color}
-                            size={26} tooltip={`${f.name} → ${f.winner}`} />
-                        ))}
-                      </div>
-                      {match.allPicks.filter(f => f.winner === match.team1).length > 0 &&
-                       match.allPicks.filter(f => f.winner === match.team2).length > 0 && (
-                        <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
-                      )}
-                      <div style={{ display: "flex", gap: 3 }}>
-                        {match.allPicks.filter(f => f.winner === match.team2).map((f, fi) => (
-                          <Avatar key={fi} name={f.name} initials={f.initials} color={f.color}
-                            size={26} tooltip={`${f.name} → ${f.winner}`} />
-                        ))}
-                      </div>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c1 }}>{friendWinnerPct}%</span>
+                      <span style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.2)" }}>vs</span>
+                      <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c2 }}>{100 - friendWinnerPct}%</span>
                     </div>
                   </div>
-                )}
-              </div>
+                  <div style={{ height: 6, borderRadius: 3, overflow: "hidden", display: "flex",
+                    background: "rgba(255,255,255,0.05)",
+                    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.3)" }}>
+                    <div style={{ width: `${friendWinnerPct}%`,
+                      background: `linear-gradient(90deg, ${c1}, ${c1}90)`,
+                      transition: "width 0.5s", borderRadius: "3px 0 0 3px" }} />
+                    <div style={{ flex: 1,
+                      background: `linear-gradient(90deg, ${c2}90, ${c2})`,
+                      borderRadius: "0 3px 3px 0" }} />
+                  </div>
+                  <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                    <div style={{ display: "flex", gap: 3 }}>
+                      {match.allPicks.filter(f => f.winner === match.team1).map((f, fi) => (
+                        <Avatar key={fi} name={f.name} initials={f.initials} color={f.color}
+                          size={26} tooltip={`${f.name} → ${f.winner}`} />
+                      ))}
+                    </div>
+                    {match.allPicks.filter(f => f.winner === match.team1).length > 0 &&
+                     match.allPicks.filter(f => f.winner === match.team2).length > 0 && (
+                      <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
+                    )}
+                    <div style={{ display: "flex", gap: 3 }}>
+                      {match.allPicks.filter(f => f.winner === match.team2).map((f, fi) => (
+                        <Avatar key={fi} name={f.name} initials={f.initials} color={f.color}
+                          size={26} tooltip={`${f.name} → ${f.winner}`} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Prediction inputs */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.95rem" }}>
 
                 {/* Winner */}
                 <div>
-                  <div style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.1em",
-                    color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>
-                    Match Winner <span style={{ color: "#f59e0b" }}>+30 pts</span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
+                    <span style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.1em",
+                      color: "rgba(255,255,255,0.45)", textTransform: "uppercase" }}>
+                      Match Winner
+                    </span>
+                    <span style={{
+                      fontSize: "0.6rem", fontWeight: 800, color: "#f59e0b",
+                      background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)",
+                      padding: "2px 8px", borderRadius: 20, letterSpacing: "0.04em",
+                    }}>+30 pts</span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     {[match.team1, match.team2].map(t => {
@@ -662,10 +702,11 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                           onClick={() => isOpen && setPicks(p => ({ ...p, winner: t }))}
                           disabled={!isOpen}
                           style={{
-                            padding: "0.7rem 1rem", borderRadius: 11, cursor: isOpen ? "pointer" : "default",
-                            background: sel ? `${tc}20` : "rgba(255,255,255,0.04)",
-                            border: `2px solid ${sel ? tc : "rgba(255,255,255,0.09)"}`,
-                            display: "flex", alignItems: "center", gap: 8, transition: "all 0.15s",
+                            padding: "0.7rem 1rem", borderRadius: 13, cursor: isOpen ? "pointer" : "default",
+                            background: sel ? `${tc}18` : "rgba(255,255,255,0.04)",
+                            border: `1.5px solid ${sel ? tc : "rgba(255,255,255,0.09)"}`,
+                            display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s",
+                            boxShadow: sel ? `0 0 22px ${tc}30, inset 0 1px 0 ${tc}20` : "none",
                           }}
                         >
                           <TeamLogo code={t} size={28} />
@@ -691,9 +732,16 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
 
                 {/* MOM */}
                 <div>
-                  <div style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.1em",
-                    color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>
-                    Man of the Match <span style={{ color: "#f59e0b" }}>+50 pts</span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
+                    <span style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.1em",
+                      color: "rgba(255,255,255,0.45)", textTransform: "uppercase" }}>
+                      Man of the Match
+                    </span>
+                    <span style={{
+                      fontSize: "0.6rem", fontWeight: 800, color: "#f59e0b",
+                      background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)",
+                      padding: "2px 8px", borderRadius: 20, letterSpacing: "0.04em",
+                    }}>+50 pts</span>
                   </div>
                   <MomDropdown
                     team1={match.team1} team2={match.team2}
@@ -734,9 +782,12 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
 
               {/* Venue + submit */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-                flexWrap: "wrap", gap: 8 }}>
-                <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.25)" }}>
-                  📍 {match.venue}
+                flexWrap: "wrap", gap: 8,
+                borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "0.85rem" }}>
+                <span style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.22)",
+                  display: "flex", alignItems: "center", gap: 5 }}>
+                  <MapPin size={11} style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+                  {match.venue}
                 </span>
 
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
@@ -748,13 +799,16 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                       onClick={handleLockPicks}
                       disabled={!canSubmit || submitting}
                       style={{
-                        padding: "0.65rem 1.6rem", borderRadius: 11, border: "none",
-                        background: canSubmit ? "#c0192c" : "rgba(192,25,44,0.15)",
+                        padding: "0.65rem 1.7rem", borderRadius: 12, border: "none",
+                        background: canSubmit
+                          ? "linear-gradient(135deg, #c0192c 0%, #e05572 100%)"
+                          : "rgba(192,25,44,0.12)",
                         color: canSubmit ? "#fff" : "rgba(255,255,255,0.2)",
                         fontWeight: 800, fontSize: "0.85rem",
                         cursor: canSubmit && !submitting ? "pointer" : "default",
-                        transition: "all 0.15s",
+                        transition: "all 0.2s",
                         display: "flex", alignItems: "center", gap: 6,
+                        boxShadow: canSubmit ? "0 4px 20px rgba(192,25,44,0.45), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
                       }}
                     >
                       {submitting
