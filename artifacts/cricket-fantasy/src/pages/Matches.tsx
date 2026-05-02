@@ -121,7 +121,16 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
         borderBottom: "1px solid rgba(255,255,255,0.06)",
         background: "rgba(255,255,255,0.02)",
       }}>
-        <div /><div /><div /><div />
+        <div />
+        {lbl("#")}
+        <div />
+        <div style={{
+          paddingLeft: 10,
+          fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.06em",
+          textTransform: "uppercase" as const, color: "rgba(255,255,255,0.35)",
+        }}>
+          Team
+        </div>
         {lbl("P")}{lbl("W")}{lbl("L")}<div />{lbl("NRR")}<div />{lbl("PTS")}
       </div>
     );
