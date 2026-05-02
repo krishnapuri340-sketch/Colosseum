@@ -1903,6 +1903,28 @@ export default function AuctionRoom() {
               </button>
             )}
 
+            {/* Finish auction (host) — bypass the queue at any time */}
+            {isHost && roomStage === "auction" && (
+              <button
+                onClick={() => {
+                  const sold   = log.filter(e => e.status === "sold").length;
+                  const unsold = log.filter(e => e.status === "unsold").length;
+                  const left   = Math.max(0, queueRef.current.length - queueIdx.current);
+                  const msg = `Finish the auction now?\n\n${sold} sold · ${unsold} unsold · ${left} player${left === 1 ? "" : "s"} remaining.\n\nThis will end the auction for everyone and show the final results.`;
+                  if (window.confirm(msg)) doComplete();
+                }}
+                title="Finish auction & view results"
+                aria-label="Finish auction now"
+                style={{ width: 32, height: 32, borderRadius: 9,
+                  background: `linear-gradient(135deg, ${ACCENT}30, ${ACCENT}15)`,
+                  border: `1px solid ${ACCENT}55`,
+                  color: ACCENT, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "inherit" }}>
+                <Trophy size={13} />
+              </button>
+            )}
+
             {/* Copy log */}
             {log.length > 0 && (
               <button title="Copy auction log to clipboard" aria-label="Copy auction log"
