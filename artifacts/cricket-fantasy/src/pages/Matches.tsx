@@ -65,7 +65,7 @@ function TeamBadge({ code, size = 36 }: { code: string; size?: number }) {
   );
 }
 
-function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading: boolean }) {
+function LeagueTable({ standings, loading, seasonComplete }: { standings: StandingRow[]; loading: boolean; seasonComplete: boolean }) {
   const [collapsed, setCollapsed] = useState(false);
 
   const rows: StandingRow[] = standings.length > 0
@@ -160,7 +160,7 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
             }}>
               {row.team}
             </span>
-            {isTop3 && (
+            {isTop3 && seasonComplete && (
               <span style={{
                 fontSize: "0.52rem", fontWeight: 800, letterSpacing: "0.08em",
                 padding: "1px 5px", borderRadius: 4,
@@ -500,7 +500,11 @@ export default function Matches() {
           </p>
         </div>
 
-        <LeagueTable standings={standings} loading={standingsLoading} />
+        <LeagueTable
+          standings={standings}
+          loading={standingsLoading}
+          seasonComplete={!loading && matches.length > 0 && matches.every(m => m.isCompleted)}
+        />
 
         {error && (
           <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
