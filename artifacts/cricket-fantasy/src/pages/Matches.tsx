@@ -107,7 +107,7 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
     const lbl = (t: string) => (
       <div style={{
         textAlign: "center" as const,
-        fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.06em",
+        fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.06em",
         textTransform: "uppercase" as const, color: "rgba(255,255,255,0.35)",
       }}>
         {t}
@@ -137,7 +137,7 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
     const statVal = (val: string | number, color?: string) => (
       <div style={{
         textAlign: "center" as const,
-        fontSize: "0.78rem", fontWeight: 700, fontVariantNumeric: "tabular-nums",
+        fontSize: "0.88rem", fontWeight: 700, fontVariantNumeric: "tabular-nums",
         color: color ?? "rgba(255,255,255,0.5)",
       }}>
         {val}
