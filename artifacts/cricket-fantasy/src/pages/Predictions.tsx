@@ -174,8 +174,8 @@ function PickRow({
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 4,
         fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.08em",
-        color: "#a89ff9", textTransform: "uppercase" }}>
-        <Users size={9} style={{ color: "#a89ff9" }} />
+        color: "#e05572", textTransform: "uppercase" }}>
+        <Users size={9} style={{ color: "#e05572" }} />
         League friends — {label}
       </div>
       {Object.entries(groups).map(([choice, friends]) => {
@@ -461,9 +461,9 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
           {match.allPicks.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 4,
               padding: "2px 8px 2px 6px", borderRadius: 20,
-              background: "rgba(124,111,247,0.1)", border: "1px solid rgba(124,111,247,0.2)" }}>
-              <Users size={10} style={{ color: "#a89ff9" }} />
-              <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "#a89ff9" }}>
+              background: "rgba(192,25,44,0.1)", border: "1px solid rgba(192,25,44,0.2)" }}>
+              <Users size={10} style={{ color: "#e05572" }} />
+              <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "#e05572" }}>
                 {match.allPicks.length} in your leagues
               </span>
             </div>
@@ -563,12 +563,12 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                 {/* League friends bar — only shows people in your leagues */}
                 {match.allPicks.length > 0 && friendWinnerPct !== null && (
                   <div style={{ padding: "0.65rem 0.75rem", borderRadius: 10,
-                    background: "rgba(124,111,247,0.05)",
-                    border: "1px solid rgba(124,111,247,0.12)" }}>
+                    background: "rgba(192,25,44,0.05)",
+                    border: "1px solid rgba(192,25,44,0.12)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 7 }}>
-                      <Users size={10} style={{ color: "#a89ff9" }} />
+                      <Users size={10} style={{ color: "#e05572" }} />
                       <span style={{ fontSize: "0.6rem", fontWeight: 700,
-                        color: "#a89ff9", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                        color: "#e05572", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                         Your Leagues
                       </span>
                     </div>

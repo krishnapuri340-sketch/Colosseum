@@ -33,7 +33,7 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
           justifyContent: collapsed ? "center" : "flex-start",
           borderRadius: 12, cursor: "pointer",
           transition: "background 0.18s",
-          background: active ? "rgba(124,111,247,0.14)" : "transparent",
+          background: active ? "rgba(192,25,44,0.14)" : "transparent",
           WebkitTapHighlightColor: "transparent",
         }}
         onMouseEnter={e => {
@@ -45,12 +45,12 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
         <div style={{
           width: 34, height: 34, borderRadius: 10, flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: active ? "rgba(124,111,247,0.22)" : "rgba(255,255,255,0.04)",
+          background: active ? "rgba(192,25,44,0.22)" : "rgba(255,255,255,0.04)",
           transition: "all 0.18s",
         }}>
           <Icon style={{
             width: 16, height: 16,
-            color: active ? "#a89ff9" : "rgba(255,255,255,0.38)",
+            color: active ? "#e05572" : "rgba(255,255,255,0.38)",
           }} />
         </div>
         {!collapsed && (
@@ -65,7 +65,7 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
         {active && !collapsed && (
           <div style={{
             width: 4, height: 4, borderRadius: "50%",
-            background: "#7C6FF7", marginLeft: "auto",
+            background: "#c0192c", marginLeft: "auto",
           }} />
         )}
       </div>
@@ -105,9 +105,9 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
               width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-              background: "linear-gradient(135deg, #7C6FF7, #6055d8)",
+              background: "linear-gradient(135deg, #c0192c, #8c0f1e)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 16px rgba(124,111,247,0.4)",
+              boxShadow: "0 4px 16px rgba(192,25,44,0.4)",
             }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2L3 7l9 5 9-5-9-5zM3 17l9 5 9-5M3 12l9 5 9-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -115,16 +115,16 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
             </div>
             <div>
               <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#fff", lineHeight: 1.1 }}>Colosseum</div>
-              <div style={{ fontSize: "0.6rem", color: "rgba(124,111,247,0.8)", fontWeight: 600, letterSpacing: "0.05em" }}>IPL 2026</div>
+              <div style={{ fontSize: "0.6rem", color: "rgba(192,25,44,0.8)", fontWeight: 600, letterSpacing: "0.05em" }}>IPL 2026</div>
             </div>
           </div>
         )}
         {!isMobile && collapsed && (
           <div style={{
             width: 34, height: 34, borderRadius: 10,
-            background: "linear-gradient(135deg, #7C6FF7, #6055d8)",
+            background: "linear-gradient(135deg, #c0192c, #8c0f1e)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 16px rgba(124,111,247,0.4)",
+            boxShadow: "0 4px 16px rgba(192,25,44,0.4)",
           }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M12 2L3 7l9 5 9-5-9-5zM3 17l9 5 9-5M3 12l9 5 9-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -206,8 +206,8 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
           cursor: "pointer", zIndex: 10, transition: "all 0.2s",
         }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLButtonElement).style.background = "#7C6FF7";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "#7C6FF7";
+            (e.currentTarget as HTMLButtonElement).style.background = "#c0192c";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "#c0192c";
           }}
           onMouseLeave={e => {
             (e.currentTarget as HTMLButtonElement).style.background = "rgba(9,12,24,0.95)";

@@ -15,7 +15,7 @@ const PAGE_LABELS: Record<string, string> = {
 };
 
 const NOTIF_COLOR: Record<string, string> = {
-  auction: "#a89ff9", score: "#6ee7b7", prediction: "#fbbf24", system: "rgba(255,255,255,0.5)",
+  auction: "#e05572", score: "#6ee7b7", prediction: "#fbbf24", system: "rgba(255,255,255,0.5)",
 };
 
 function fmtTime(ts: number) {
@@ -119,7 +119,7 @@ export function Header() {
               color: "#fff", fontSize: "0.82rem", outline: "none",
               fontFamily: "inherit", transition: "border-color 0.2s",
             }}
-            onFocus={e => (e.target as HTMLInputElement).style.borderColor = "rgba(124,111,247,0.5)"}
+            onFocus={e => (e.target as HTMLInputElement).style.borderColor = "rgba(192,25,44,0.5)"}
             onBlur={e => (e.target as HTMLInputElement).style.borderColor = "rgba(255,255,255,0.08)"}
           />
         </div>
@@ -138,7 +138,7 @@ export function Header() {
             {unreadCount > 0 && (
               <div style={{
                 position: "absolute", top: 7, right: 7, width: 7, height: 7,
-                borderRadius: "50%", background: "#7C6FF7",
+                borderRadius: "50%", background: "#c0192c",
                 border: "1.5px solid rgba(9,12,24,1)",
               }} />
             )}
@@ -160,7 +160,7 @@ export function Header() {
                     Notifications
                     {unreadCount > 0 && (
                       <span style={{
-                        marginLeft: 8, background: "#7C6FF7", color: "#fff",
+                        marginLeft: 8, background: "#c0192c", color: "#fff",
                         borderRadius: 9999, fontSize: "0.65rem", fontWeight: 700,
                         padding: "1px 7px",
                       }}>{unreadCount}</span>
@@ -168,7 +168,7 @@ export function Header() {
                   </span>
                   {unreadCount > 0 && (
                     <button onClick={markAllRead} style={{
-                      fontSize: "0.72rem", color: "rgba(124,111,247,0.8)",
+                      fontSize: "0.72rem", color: "rgba(192,25,44,0.8)",
                       background: "none", border: "none", cursor: "pointer",
                       display: "flex", alignItems: "center", gap: 3, fontFamily: "inherit",
                     }}>
@@ -189,12 +189,12 @@ export function Header() {
                       style={{
                         padding: "0.75rem 1rem", cursor: "pointer",
                         borderBottom: "1px solid rgba(255,255,255,0.04)",
-                        background: n.read ? "transparent" : "rgba(124,111,247,0.04)",
-                        borderLeft: n.read ? "3px solid transparent" : "3px solid #7C6FF7",
+                        background: n.read ? "transparent" : "rgba(192,25,44,0.04)",
+                        borderLeft: n.read ? "3px solid transparent" : "3px solid #c0192c",
                         transition: "background 0.15s",
                       }}
                       onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"}
-                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = n.read ? "transparent" : "rgba(124,111,247,0.04)"}>
+                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = n.read ? "transparent" : "rgba(192,25,44,0.04)"}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                         <div style={{
                           width: 8, height: 8, borderRadius: "50%", flexShrink: 0, marginTop: 5,
@@ -280,7 +280,7 @@ export function Header() {
                       transition: "background 0.12s, color 0.12s",
                     }}
                       onMouseEnter={e => {
-                        (e.currentTarget as HTMLDivElement).style.background = "rgba(124,111,247,0.08)";
+                        (e.currentTarget as HTMLDivElement).style.background = "rgba(192,25,44,0.08)";
                         (e.currentTarget as HTMLDivElement).style.color = "#fff";
                       }}
                       onMouseLeave={e => {

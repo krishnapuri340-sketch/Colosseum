@@ -73,17 +73,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     flex: 1, display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center",
                     gap: 3, cursor: "pointer", borderRadius: 12,
-                    background: active ? "rgba(124,111,247,0.14)" : "transparent",
+                    background: active ? "rgba(192,25,44,0.14)" : "transparent",
                     transition: "background 0.2s",
                   }}>
                     <item.icon style={{
                       width: 19, height: 19,
-                      color: active ? "#a89ff9" : "rgba(255,255,255,0.3)",
+                      color: active ? "#e05572" : "rgba(255,255,255,0.3)",
                       transition: "color 0.2s",
                     }} />
                     <span style={{
                       fontSize: "0.58rem", fontWeight: active ? 800 : 500,
-                      color: active ? "#a89ff9" : "rgba(255,255,255,0.3)",
+                      color: active ? "#e05572" : "rgba(255,255,255,0.3)",
                       letterSpacing: "0.03em", lineHeight: 1,
                       transition: "color 0.2s",
                     }}>
