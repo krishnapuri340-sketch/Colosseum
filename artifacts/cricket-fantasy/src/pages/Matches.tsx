@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { MapPin, Swords, Radio, Calendar, Trophy } from "lucide-react";
+import { MapPin, Swords, Radio, Calendar, Trophy, ChevronDown, ChevronUp } from "lucide-react";
 import { TEAM_LOGO, TEAM_COLOR, TEAM_FULL_NAME, ALL_TEAMS } from "@/lib/ipl-constants";
 import { apiFetch } from "@/lib/api";
 
@@ -43,28 +43,22 @@ interface IplMatch {
   isUpcoming: boolean;
 }
 
-const COL_HEADER = "rgba(255,255,255,0.35)";
-const DIVIDER = "rgba(255,255,255,0.07)";
-
-function SmallLogo({ code }: { code: string }) {
-  const logo = TEAM_LOGO[code];
+function TeamBadge({ code, size = 36 }: { code: string; size?: number }) {
+  const logo  = TEAM_LOGO[code];
   const color = TEAM_COLOR[code] ?? "#aaa";
-  if (logo) {
+  if (logo)
     return (
-      <img
-        src={logo}
-        alt={code}
-        style={{ width: 26, height: 26, objectFit: "contain" }}
+      <img src={logo} alt={code}
+        style={{ width: size, height: size, objectFit: "contain" }}
         onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
       />
     );
-  }
   return (
     <div style={{
-      width: 26, height: 26, borderRadius: "50%",
+      width: size, height: size, borderRadius: "50%",
       background: `${color}22`, border: `1.5px solid ${color}50`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontWeight: 800, fontSize: "0.6rem", color,
+      fontWeight: 800, fontSize: size * 0.28, color,
     }}>
       {code}
     </div>
@@ -72,6 +66,8 @@ function SmallLogo({ code }: { code: string }) {
 }
 
 function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading: boolean }) {
+  const [collapsed, setCollapsed] = useState(false);
+
   const rows: StandingRow[] = standings.length > 0
     ? [...standings].sort((a, b) => a.position - b.position)
     : ALL_TEAMS.map((t, i) => ({
@@ -79,118 +75,253 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
         played: 0, won: 0, lost: 0, noResult: 0, nrr: 0, points: 0, position: i + 1,
       }));
 
-  const cols = ["#", "Team", "P", "W", "L", "NR", "NRR", "Pts"];
+  const qualifiers = rows.filter(r => r.position <= 4);
+  const rest       = rows.filter(r => r.position > 4);
+  const maxPts     = Math.max(...rows.map(r => r.points), 1);
+
+  function nrrDisplay(row: StandingRow) {
+    if (row.played === 0) return { label: "—", color: "rgba(255,255,255,0.25)" };
+    const n = parseFloat(String(row.nrr));
+    if (isNaN(n)) return { label: "—", color: "rgba(255,255,255,0.25)" };
+    return {
+      label: (n >= 0 ? "+" : "") + n.toFixed(3),
+      color: n > 0 ? "#34d399" : n < 0 ? "#f87171" : "rgba(255,255,255,0.35)",
+    };
+  }
+
+  function Stat({ label, value, highlight }: { label: string; value: string | number; highlight?: string }) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 32 }}>
+        <span style={{ fontSize: "0.82rem", fontWeight: 700, color: highlight ?? "rgba(255,255,255,0.75)",
+          fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+          {value === 0 ? <span style={{ color: "rgba(255,255,255,0.2)" }}>0</span> : value}
+        </span>
+        <span style={{ fontSize: "0.55rem", fontWeight: 600, color: "rgba(255,255,255,0.25)",
+          letterSpacing: "0.07em", textTransform: "uppercase", marginTop: 2 }}>
+          {label}
+        </span>
+      </div>
+    );
+  }
+
+  function TeamRow({ row, idx }: { row: StandingRow; idx: number }) {
+    const color   = TEAM_COLOR[row.team] ?? "#aaa";
+    const isTop4  = row.position <= 4;
+    const winPct  = row.played > 0 ? Math.round((row.won / row.played) * 100) : 0;
+    const nrr     = nrrDisplay(row);
+    const ptsPct  = maxPts > 0 ? (row.points / maxPts) * 100 : 0;
+
+    return (
+      <motion.div
+        key={row.team}
+        initial={{ opacity: 0, x: -12 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: idx * 0.04, duration: 0.25, ease: "easeOut" }}
+        style={{
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "11px 16px 11px 0",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          position: "relative",
+          background: isTop4
+            ? `linear-gradient(90deg, ${color}08 0%, transparent 60%)`
+            : "transparent",
+          transition: "background 0.15s",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = isTop4
+          ? `linear-gradient(90deg, ${color}14 0%, rgba(255,255,255,0.02) 60%)`
+          : "rgba(255,255,255,0.025)")}
+        onMouseLeave={e => (e.currentTarget.style.background = isTop4
+          ? `linear-gradient(90deg, ${color}08 0%, transparent 60%)`
+          : "transparent")}
+      >
+        {/* Left color bar */}
+        <div style={{
+          width: 3, alignSelf: "stretch", borderRadius: "0 3px 3px 0", flexShrink: 0,
+          background: isTop4 ? color : "rgba(255,255,255,0.08)",
+          opacity: isTop4 ? 0.8 : 0.4,
+        }} />
+
+        {/* Position badge */}
+        <div style={{
+          width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+          background: isTop4 ? `${color}20` : "rgba(255,255,255,0.06)",
+          border: `1.5px solid ${isTop4 ? color + "60" : "rgba(255,255,255,0.1)"}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "0.68rem", fontWeight: 800,
+          color: isTop4 ? color : "rgba(255,255,255,0.4)",
+        }}>
+          {row.position}
+        </div>
+
+        {/* Logo */}
+        <TeamBadge code={row.team} size={34} />
+
+        {/* Name + win-rate bar */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{
+              fontWeight: 800, fontSize: "0.85rem",
+              color: isTop4 ? color : "#fff",
+              whiteSpace: "nowrap",
+            }}>
+              {row.team}
+            </span>
+            {isTop4 && (
+              <span style={{
+                fontSize: "0.52rem", fontWeight: 800, letterSpacing: "0.08em",
+                padding: "1px 5px", borderRadius: 4,
+                background: `${color}22`, color, border: `1px solid ${color}40`,
+              }}>
+                Q
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.3)",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            maxWidth: 140, marginTop: 1 }}>
+            {row.teamFull}
+          </div>
+          {row.played > 0 && (
+            <div style={{ marginTop: 5, height: 3, borderRadius: 2,
+              background: "rgba(255,255,255,0.07)", overflow: "hidden", maxWidth: 120 }}>
+              <div style={{
+                height: "100%", borderRadius: 2,
+                width: `${winPct}%`,
+                background: `linear-gradient(90deg, ${color}, ${color}80)`,
+                transition: "width 0.6s ease",
+              }} />
+            </div>
+          )}
+        </div>
+
+        {/* Stats */}
+        <div style={{ display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
+          <Stat label="P" value={row.played} />
+          <Stat label="W" value={row.won} highlight={row.won > 0 ? "#fff" : undefined} />
+          <Stat label="L" value={row.lost} />
+          <Stat label="NRR" value={nrr.label} highlight={nrr.color} />
+        </div>
+
+        {/* Points pill */}
+        <div style={{
+          flexShrink: 0, marginLeft: 8,
+          display: "flex", flexDirection: "column", alignItems: "center",
+          minWidth: 44,
+        }}>
+          <div style={{
+            padding: "4px 10px", borderRadius: 8,
+            background: isTop4 ? `${color}22` : "rgba(255,255,255,0.06)",
+            border: `1.5px solid ${isTop4 ? color + "50" : "rgba(255,255,255,0.1)"}`,
+          }}>
+            <span style={{
+              fontSize: "1rem", fontWeight: 900,
+              color: isTop4 ? color : "rgba(255,255,255,0.7)",
+              fontVariantNumeric: "tabular-nums", lineHeight: 1,
+            }}>
+              {row.points}
+            </span>
+          </div>
+          <span style={{ fontSize: "0.52rem", fontWeight: 600, color: "rgba(255,255,255,0.2)",
+            letterSpacing: "0.07em", textTransform: "uppercase", marginTop: 3 }}>
+            pts
+          </span>
+          {row.played > 0 && (
+            <div style={{ marginTop: 3, height: 2, width: 36, borderRadius: 1,
+              background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+              <div style={{
+                height: "100%", borderRadius: 1,
+                width: `${ptsPct}%`,
+                background: isTop4 ? color : "rgba(255,255,255,0.3)",
+                transition: "width 0.6s ease",
+              }} />
+            </div>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  function ZoneLabel({ label, color }: { label: string; color: string }) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 8,
+        padding: "6px 16px 6px 19px",
+        background: `${color}08`,
+        borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        <div style={{ width: 5, height: 5, borderRadius: "50%", background: color, flexShrink: 0 }} />
+        <span style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em",
+          textTransform: "uppercase", color }}>
+          {label}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div style={{
-      background: "rgba(255,255,255,0.03)",
+      background: "rgba(255,255,255,0.025)",
       border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 16,
+      borderRadius: 18,
       overflow: "hidden",
     }}>
+      {/* Header */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "14px 20px 12px",
-        borderBottom: `1px solid ${DIVIDER}`,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "14px 16px 12px 20px",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(255,255,255,0.015)",
       }}>
-        <Trophy style={{ width: 15, height: 15, color: "#f59e0b" }} />
-        <span style={{ fontWeight: 700, fontSize: "0.82rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)" }}>
-          IPL 2026 — Points Table
-        </span>
-      </div>
-
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
-          <thead>
-            <tr style={{ borderBottom: `1px solid ${DIVIDER}` }}>
-              {cols.map(c => (
-                <th key={c} style={{
-                  padding: c === "Team" ? "8px 16px 8px 8px" : "8px 14px",
-                  textAlign: c === "#" || c === "Team" ? "left" : "center",
-                  color: COL_HEADER,
-                  fontWeight: 600,
-                  fontSize: "0.7rem",
-                  letterSpacing: "0.06em",
-                  whiteSpace: "nowrap",
-                }}>
-                  {c}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading
-              ? Array.from({ length: 10 }).map((_, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${DIVIDER}` }}>
-                    <td colSpan={8} style={{ padding: "10px 14px" }}>
-                      <div style={{ height: 14, borderRadius: 6, background: "rgba(255,255,255,0.05)" }} />
-                    </td>
-                  </tr>
-                ))
-              : rows.map((row, idx) => {
-                  const color = TEAM_COLOR[row.team] ?? "#aaa";
-                  const isTop4 = row.position <= 4;
-                  return (
-                    <tr
-                      key={row.team}
-                      style={{
-                        borderBottom: `1px solid ${DIVIDER}`,
-                        background: idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
-                        transition: "background 0.15s",
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-                      onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)")}
-                    >
-                      <td style={{ padding: "9px 8px 9px 14px", whiteSpace: "nowrap" }}>
-                        <div style={{
-                          width: 20, height: 20, borderRadius: "50%",
-                          background: isTop4 ? `${color}22` : "rgba(255,255,255,0.06)",
-                          border: isTop4 ? `1.5px solid ${color}60` : "1.5px solid rgba(255,255,255,0.1)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: "0.65rem", fontWeight: 800,
-                          color: isTop4 ? color : "rgba(255,255,255,0.4)",
-                        }}>
-                          {row.position}
-                        </div>
-                      </td>
-                      <td style={{ padding: "9px 16px 9px 8px", whiteSpace: "nowrap" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                          <SmallLogo code={row.team} />
-                          <div>
-                            <div style={{ fontWeight: 700, color: isTop4 ? color : "#fff", fontSize: "0.83rem" }}>
-                              {row.team}
-                            </div>
-                            <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>
-                              {row.teamFull}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      {[row.played, row.won, row.lost, row.noResult].map((v, ci) => (
-                        <td key={ci} style={{ padding: "9px 14px", textAlign: "center", color: v === 0 ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.7)", fontVariantNumeric: "tabular-nums" }}>
-                          {v}
-                        </td>
-                      ))}
-                      <td style={{ padding: "9px 14px", textAlign: "center", fontVariantNumeric: "tabular-nums", color: parseFloat(String(row.nrr)) > 0 ? "#34d399" : parseFloat(String(row.nrr)) < 0 ? "#f87171" : "rgba(255,255,255,0.35)" }}>
-                        {row.played > 0 ? (() => { const n = parseFloat(String(row.nrr)); return (isNaN(n) ? "—" : (n >= 0 ? "+" : "") + n.toFixed(3)); })() : "—"}
-                      </td>
-                      <td style={{ padding: "9px 14px", textAlign: "center", fontWeight: 800, fontSize: "0.88rem", color: isTop4 ? color : "rgba(255,255,255,0.75)", fontVariantNumeric: "tabular-nums" }}>
-                        {row.points}
-                      </td>
-                    </tr>
-                  );
-                })
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <div style={{ padding: "8px 14px", borderTop: `1px solid ${DIVIDER}`, display: "flex", gap: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#34d399" }} />
-          <span style={{ fontSize: "0.65rem", color: COL_HEADER }}>Playoff qualification zone (Top 4)</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Trophy style={{ width: 15, height: 15, color: "#f59e0b" }} />
+          <span style={{ fontWeight: 800, fontSize: "0.82rem", letterSpacing: "0.08em",
+            textTransform: "uppercase", color: "rgba(255,255,255,0.8)" }}>
+            IPL 2026 — Points Table
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#34d399" }} />
+            <span style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>
+              Top 4 qualify
+            </span>
+          </div>
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            style={{ background: "none", border: "none", cursor: "pointer",
+              color: "rgba(255,255,255,0.3)", padding: 2, display: "flex", alignItems: "center" }}>
+            {collapsed
+              ? <ChevronDown style={{ width: 15, height: 15 }} />
+              : <ChevronUp   style={{ width: 15, height: 15 }} />}
+          </button>
         </div>
       </div>
+
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            {loading ? (
+              <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} style={{ height: 52, borderRadius: 10,
+                    background: "rgba(255,255,255,0.04)", animation: "pulse 1.5s infinite" }} />
+                ))}
+              </div>
+            ) : (
+              <>
+                <ZoneLabel label="Playoff Qualification Zone" color="#34d399" />
+                {qualifiers.map((row, i) => <TeamRow key={row.team} row={row} idx={i} />)}
+                <ZoneLabel label="Elimination Zone" color="#f87171" />
+                {rest.map((row, i) => <TeamRow key={row.team} row={row} idx={i + 4} />)}
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
