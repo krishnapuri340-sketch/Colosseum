@@ -343,11 +343,6 @@ function MomDropdown({
                           onMouseEnter={e => { if (!selected) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)"; }}
                           onMouseLeave={e => { if (!selected) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
                         >
-                          <span style={{ fontSize: "0.58rem", fontWeight: 800, letterSpacing: "0.04em",
-                            width: 26, textAlign: "center", flexShrink: 0,
-                            color: ROLE_COLOR[p.role] ?? "#aaa" }}>
-                            {roleIcon[p.role] ?? "BAT"}
-                          </span>
                           <span style={{ flex: 1, fontSize: "0.84rem", fontWeight: selected ? 700 : 500,
                             color: selected ? tc : "rgba(255,255,255,0.8)",
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
