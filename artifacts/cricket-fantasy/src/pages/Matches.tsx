@@ -100,37 +100,29 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
     );
   }
 
+  // Shared grid: accent-bar | pos | logo | team-name | P | W | L | NRR | PTS
+  const GRID_COLS = "3px 24px 36px 1fr 40px 40px 40px 56px 56px";
+
   function ColHeaders() {
+    const lbl = (t: string) => (
+      <div style={{
+        textAlign: "center" as const,
+        fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.06em",
+        textTransform: "uppercase" as const, color: "rgba(255,255,255,0.35)",
+      }}>
+        {t}
+      </div>
+    );
     return (
       <div style={{
-        display: "flex", alignItems: "center", gap: 12,
+        display: "grid", gridTemplateColumns: GRID_COLS,
+        alignItems: "center",
         padding: "7px 16px 7px 0",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
         background: "rgba(255,255,255,0.02)",
       }}>
-        <div style={{ width: 3, flexShrink: 0 }} />
-        <div style={{ width: 18, flexShrink: 0 }} />
-        <div style={{ width: 34, flexShrink: 0 }} />
-        <div style={{ flex: 1 }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
-          {["P", "W", "L", "NRR"].map(h => (
-            <span key={h} style={{
-              minWidth: 32, textAlign: "center" as const, display: "block",
-              fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.06em",
-              textTransform: "uppercase" as const, color: "rgba(255,255,255,0.35)",
-            }}>
-              {h}
-            </span>
-          ))}
-        </div>
-        <span style={{
-          flexShrink: 0, marginLeft: 8, minWidth: 44,
-          textAlign: "center" as const, display: "block",
-          fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.06em",
-          textTransform: "uppercase" as const, color: "rgba(255,255,255,0.35)",
-        }}>
-          PTS
-        </span>
+        <div /><div /><div /><div />
+        {lbl("P")}{lbl("W")}{lbl("L")}{lbl("NRR")}{lbl("PTS")}
       </div>
     );
   }
@@ -142,6 +134,16 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
     const nrr     = nrrDisplay(row);
     const ptsPct  = maxPts > 0 ? (row.points / maxPts) * 100 : 0;
 
+    const statVal = (val: string | number, color?: string) => (
+      <div style={{
+        textAlign: "center" as const,
+        fontSize: "0.78rem", fontWeight: 700, fontVariantNumeric: "tabular-nums",
+        color: color ?? "rgba(255,255,255,0.5)",
+      }}>
+        {val}
+      </div>
+    );
+
     return (
       <motion.div
         key={row.team}
@@ -149,8 +151,9 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: idx * 0.04, duration: 0.25, ease: "easeOut" }}
         style={{
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "11px 16px 11px 0",
+          display: "grid", gridTemplateColumns: GRID_COLS,
+          alignItems: "center",
+          padding: "10px 16px 10px 0",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           background: isTop3 ? "rgba(52,211,153,0.04)" : "transparent",
           transition: "background 0.15s",
@@ -162,27 +165,28 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
           ? "rgba(52,211,153,0.04)"
           : "transparent")}
       >
-        {/* Left accent bar */}
+        {/* Col 1: Left accent bar */}
         <div style={{
-          width: 3, alignSelf: "stretch", borderRadius: "0 3px 3px 0", flexShrink: 0,
-          background: accent,
-          opacity: isTop3 ? 0.8 : 0.3,
+          alignSelf: "stretch", borderRadius: "0 3px 3px 0",
+          background: accent, opacity: isTop3 ? 0.8 : 0.3,
         }} />
 
-        {/* Position number — plain, no circle */}
-        <span style={{
-          width: 18, flexShrink: 0, textAlign: "center",
+        {/* Col 2: Position */}
+        <div style={{
+          textAlign: "center" as const,
           fontSize: "0.72rem", fontWeight: 800, fontVariantNumeric: "tabular-nums",
           color: isTop3 ? "#34d399" : "rgba(255,255,255,0.3)",
         }}>
           {row.position}
-        </span>
+        </div>
 
-        {/* Logo */}
-        <TeamBadge code={row.team} size={34} />
+        {/* Col 3: Logo */}
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <TeamBadge code={row.team} size={32} />
+        </div>
 
-        {/* Name + win-rate bar */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Col 4: Name + win-rate bar */}
+        <div style={{ minWidth: 0, paddingLeft: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{
               fontWeight: 800, fontSize: "0.85rem",
@@ -197,68 +201,54 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
                 padding: "1px 5px", borderRadius: 4,
                 background: "rgba(52,211,153,0.15)", color: "#34d399",
                 border: "1px solid rgba(52,211,153,0.3)",
-              }}>
-                Q
-              </span>
+              }}>Q</span>
             )}
           </div>
-          <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.28)",
+          <div style={{
+            fontSize: "0.62rem", color: "rgba(255,255,255,0.28)",
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            maxWidth: 140, marginTop: 1 }}>
+            maxWidth: 140, marginTop: 1,
+          }}>
             {row.teamFull}
           </div>
           {row.played > 0 && (
-            <div style={{ marginTop: 5, height: 3, borderRadius: 2,
-              background: "rgba(255,255,255,0.07)", overflow: "hidden", maxWidth: 120 }}>
+            <div style={{ marginTop: 4, height: 3, borderRadius: 2,
+              background: "rgba(255,255,255,0.07)", overflow: "hidden", maxWidth: 100 }}>
               <div style={{
-                height: "100%", borderRadius: 2,
-                width: `${winPct}%`,
-                background: isTop3
-                  ? "linear-gradient(90deg, #34d399, #34d39980)"
-                  : "rgba(255,255,255,0.2)",
+                height: "100%", borderRadius: 2, width: `${winPct}%`,
+                background: isTop3 ? "linear-gradient(90deg,#34d399,#34d39980)" : "rgba(255,255,255,0.2)",
                 transition: "width 0.6s ease",
               }} />
             </div>
           )}
         </div>
 
-        {/* Stats */}
-        <div style={{ display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
-          <Stat label="P" value={row.played} />
-          <Stat label="W" value={row.won} highlight={row.won > 0 ? "rgba(255,255,255,0.75)" : undefined} />
-          <Stat label="L" value={row.lost} />
-          <Stat label="NRR" value={nrr.label} highlight={nrr.color} />
-        </div>
+        {/* Cols 5-8: P W L NRR */}
+        {statVal(row.played)}
+        {statVal(row.won, row.won > 0 ? "rgba(255,255,255,0.75)" : undefined)}
+        {statVal(row.lost)}
+        {statVal(nrr.label, nrr.color)}
 
-        {/* Points pill */}
-        <div style={{
-          flexShrink: 0, marginLeft: 8,
-          display: "flex", flexDirection: "column", alignItems: "center",
-          minWidth: 44,
-        }}>
+        {/* Col 9: Points */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{
-            padding: "4px 10px", borderRadius: 8,
+            padding: "3px 8px", borderRadius: 7,
             background: isTop3 ? "rgba(52,211,153,0.12)" : "rgba(255,255,255,0.06)",
             border: `1.5px solid ${isTop3 ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.1)"}`,
           }}>
             <span style={{
-              fontSize: "1rem", fontWeight: 900,
+              fontSize: "0.95rem", fontWeight: 900,
               color: isTop3 ? "#34d399" : "rgba(255,255,255,0.6)",
               fontVariantNumeric: "tabular-nums", lineHeight: 1,
             }}>
               {row.points}
             </span>
           </div>
-          <span style={{ fontSize: "0.52rem", fontWeight: 600, color: "rgba(255,255,255,0.2)",
-            letterSpacing: "0.07em", textTransform: "uppercase", marginTop: 3 }}>
-            pts
-          </span>
           {row.played > 0 && (
-            <div style={{ marginTop: 3, height: 2, width: 36, borderRadius: 1,
+            <div style={{ marginTop: 3, height: 2, width: 32, borderRadius: 1,
               background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
               <div style={{
-                height: "100%", borderRadius: 1,
-                width: `${ptsPct}%`,
+                height: "100%", borderRadius: 1, width: `${ptsPct}%`,
                 background: isTop3 ? "#34d399" : "rgba(255,255,255,0.25)",
                 transition: "width 0.6s ease",
               }} />
