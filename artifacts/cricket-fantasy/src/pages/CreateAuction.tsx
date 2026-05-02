@@ -59,10 +59,11 @@ function genCode(name: string) {
   return `${prefix}${Math.random().toString(36).toUpperCase().slice(2,5)}`;
 }
 
-function Card({ children, style }: { children:React.ReactNode; style?:React.CSSProperties }) {
+function Card({ children, style, className }: { children:React.ReactNode; style?:React.CSSProperties; className?:string }) {
   return (
-    <div style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:16,
-      padding:"1.25rem 1.35rem", ...style }}>
+    <div className={className}
+      style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:16,
+        padding:"1.25rem 1.35rem", ...style }}>
       {children}
     </div>
   );
@@ -247,14 +248,11 @@ export default function CreateAuction() {
           </div>
         </div>
 
-        {/* Form cards — single column on mobile, 2-col on md+ */}
-        <div style={{ display:"grid",
-          gridTemplateColumns:"1fr",
-          gap:"0.85rem" }}
-          className="md:grid-cols-2">
+        {/* Bento grid */}
+        <div className="ca-bento">
 
           {/* Name */}
-          <Card>
+          <Card className="ca-name">
             <Label>Auction Name</Label>
             <input type="text" value={name} onChange={e=>setName(e.target.value)}
               onFocus={()=>setNameFocused(true)} onBlur={()=>setNameFocused(false)}
@@ -267,7 +265,7 @@ export default function CreateAuction() {
           </Card>
 
           {/* Format */}
-          <Card style={{ display:"flex", flexDirection:"column", gap:"0.65rem" }}>
+          <Card className="ca-format" style={{ display:"flex", flexDirection:"column", gap:"0.65rem" }}>
             <Label>Auction Format</Label>
             {(["classic","tier"] as const).map(f=>(
               <div key={f} onClick={()=>setFormat(f)}
@@ -296,19 +294,19 @@ export default function CreateAuction() {
           </Card>
 
           {/* Squad size */}
-          <Card>
+          <Card className="ca-squad">
             <Label>Max Players / Team</Label>
             <Stepper value={maxPlayers} onChange={setMaxPlayers} min={5} max={25} suffix="players per team" />
           </Card>
 
           {/* Budget */}
-          <Card>
+          <Card className="ca-budget">
             <Label>Starting Budget</Label>
             <Stepper value={budget} onChange={setBudget} min={50} max={500} suffix="crores per team" />
           </Card>
 
           {/* Toggles */}
-          <Card style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
+          <Card className="ca-options" style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
             <Label>Options</Label>
 
             {/* Captain & Vice-Captain */}
@@ -360,7 +358,7 @@ export default function CreateAuction() {
           </Card>
 
           {/* Season Rules */}
-          <Card style={{ display:"flex", flexDirection:"column", gap:"0.85rem" }}>
+          <Card className="ca-season" style={{ display:"flex", flexDirection:"column", gap:"0.85rem" }}>
             <Label>Season Rules</Label>
             {([
               ["tradeWindow",    tradeWindow,    ()=>setTrade((v:boolean)=>!v),   "Mid-Season Trade Window",  "Opens after every team completes 7 matches. Teams can propose optional player swaps."],
@@ -398,6 +396,29 @@ export default function CreateAuction() {
           </button>
         </div>
       </form>
+
+      <style>{`
+        .ca-bento {
+          display: grid;
+          gap: 0.85rem;
+          grid-template-columns: 1fr;
+        }
+        @media (min-width: 768px) {
+          .ca-bento {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-areas:
+              "ca-name   ca-format  ca-format"
+              "ca-squad  ca-budget  ca-options"
+              "ca-season ca-season  ca-options";
+          }
+          .ca-name    { grid-area: ca-name; }
+          .ca-format  { grid-area: ca-format; }
+          .ca-squad   { grid-area: ca-squad; }
+          .ca-budget  { grid-area: ca-budget; }
+          .ca-options { grid-area: ca-options; }
+          .ca-season  { grid-area: ca-season; }
+        }
+      `}</style>
     </Layout>
   );
 }
