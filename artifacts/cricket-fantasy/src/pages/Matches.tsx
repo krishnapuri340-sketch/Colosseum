@@ -104,9 +104,9 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
     return (
       <div style={{
         display: "flex", alignItems: "center", gap: 12,
-        padding: "5px 16px 5px 0",
+        padding: "7px 16px 7px 0",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
-        background: "rgba(255,255,255,0.015)",
+        background: "rgba(255,255,255,0.02)",
       }}>
         <div style={{ width: 3, flexShrink: 0 }} />
         <div style={{ width: 18, flexShrink: 0 }} />
@@ -115,18 +115,19 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
         <div style={{ display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
           {["P", "W", "L", "NRR"].map(h => (
             <span key={h} style={{
-              minWidth: 32, textAlign: "center", display: "block",
-              fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.08em",
-              textTransform: "uppercase", color: "rgba(255,255,255,0.25)",
+              minWidth: 32, textAlign: "center" as const, display: "block",
+              fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.06em",
+              textTransform: "uppercase" as const, color: "rgba(255,255,255,0.35)",
             }}>
               {h}
             </span>
           ))}
         </div>
         <span style={{
-          flexShrink: 0, marginLeft: 8, minWidth: 44, textAlign: "center", display: "block",
-          fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.08em",
-          textTransform: "uppercase", color: "rgba(255,255,255,0.25)",
+          flexShrink: 0, marginLeft: 8, minWidth: 44,
+          textAlign: "center" as const, display: "block",
+          fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.06em",
+          textTransform: "uppercase" as const, color: "rgba(255,255,255,0.35)",
         }}>
           PTS
         </span>
