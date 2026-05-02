@@ -132,7 +132,6 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
     const accent  = isTop3 ? "#34d399" : "rgba(255,255,255,0.18)";
     const winPct  = row.played > 0 ? Math.round((row.won / row.played) * 100) : 0;
     const nrr     = nrrDisplay(row);
-    const ptsPct  = maxPts > 0 ? (row.points / maxPts) * 100 : 0;
 
     const statVal = (val: string | number, color?: string) => (
       <div style={{
@@ -248,16 +247,6 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
               {row.points}
             </span>
           </div>
-          {row.played > 0 && (
-            <div style={{ marginTop: 3, height: 2, width: 32, borderRadius: 1,
-              background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-              <div style={{
-                height: "100%", borderRadius: 1, width: `${ptsPct}%`,
-                background: isTop3 ? "#34d399" : "rgba(255,255,255,0.25)",
-                transition: "width 0.6s ease",
-              }} />
-            </div>
-          )}
         </div>
       </motion.div>
     );
