@@ -101,7 +101,7 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
   }
 
   // Shared grid: accent-bar | pos | logo | team-name | P | W | L | NRR | PTS
-  const GRID_COLS = "3px 24px 36px 1fr 40px 40px 40px 56px 56px";
+  const GRID_COLS = "3px 22px 34px 1fr 32px 32px 32px 44px 48px";
 
   function ColHeaders() {
     const lbl = (t: string) => (
@@ -117,7 +117,7 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
       <div style={{
         display: "grid", gridTemplateColumns: GRID_COLS,
         alignItems: "center",
-        padding: "7px 16px 7px 0",
+        padding: "8px 16px 8px 0",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
         background: "rgba(255,255,255,0.02)",
       }}>
@@ -153,7 +153,7 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
         style={{
           display: "grid", gridTemplateColumns: GRID_COLS,
           alignItems: "center",
-          padding: "10px 16px 10px 0",
+          padding: "13px 16px 13px 0",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           background: isTop3 ? "rgba(52,211,153,0.04)" : "transparent",
           transition: "background 0.15s",
