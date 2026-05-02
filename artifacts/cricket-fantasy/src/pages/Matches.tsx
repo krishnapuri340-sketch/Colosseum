@@ -117,7 +117,7 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
       <div style={{
         display: "grid", gridTemplateColumns: GRID_COLS,
         alignItems: "center",
-        padding: "8px 16px 8px 0",
+        padding: "8px 8px 8px 0",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
         background: "rgba(255,255,255,0.02)",
       }}>
@@ -152,7 +152,7 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
         style={{
           display: "grid", gridTemplateColumns: GRID_COLS,
           alignItems: "center",
-          padding: "13px 16px 13px 0",
+          padding: "13px 8px 13px 0",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           background: isTop3
             ? "linear-gradient(90deg, rgba(52,211,153,0.055) 0%, rgba(52,211,153,0.018) 50%, transparent 100%)"
