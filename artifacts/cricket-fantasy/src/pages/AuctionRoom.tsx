@@ -827,7 +827,6 @@ export default function AuctionRoom() {
   const [bidValue, setBidValue]   = useState(0);
   const [leadId, setLeadId]       = useState<string | null>(null);
   const [log, setLog]             = useState<LogEntry[]>([]);
-  const [expandedTeam, setExpTeam] = useState<string | null>(null);
   const [mobileTab, setMobileTab]  = useState<MobileTab>("stage");
   const [showWL, setShowWL]        = useState(false);
   const [teamsLoaded, setTeamsLoaded] = useState(!config.roomCode); // true immediately if no roomCode
@@ -1694,6 +1693,86 @@ export default function AuctionRoom() {
     return null;
   }
 
+  // ── Squad card (always-visible roster) ──────────────────────────
+  function SquadCard({ team }: { team: AucTeam }) {
+    const filled = team.squad.length;
+    const target = config.maxPlayers;
+    const fillPct = Math.min(100, (filled / target) * 100);
+    const isLastWinner = log[0]?.status === "sold" && log[0].winner === team.name;
+    return (
+      <motion.div
+        animate={isLastWinner
+          ? { boxShadow: [`0 0 0 0 ${team.color}55`, `0 0 0 6px ${team.color}00`] }
+          : {}}
+        transition={{ duration: 1.2 }}
+        style={{ background: CARD,
+          border: `1px solid ${isLastWinner ? `${team.color}55` : BDR}`,
+          borderRadius: 11, overflow: "hidden", marginBottom: "0.4rem",
+          transition: "border-color 0.3s" }}>
+        {/* Header */}
+        <div style={{ padding: "0.5rem 0.7rem 0.4rem",
+          borderBottom: `1px solid ${BDR}` }}>
+          <div style={{ display: "flex", alignItems: "center",
+            justifyContent: "space-between", gap: "0.4rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", minWidth: 0 }}>
+              <div style={{ width: 7, height: 7, borderRadius: "50%",
+                background: team.color, flexShrink: 0,
+                boxShadow: `0 0 8px ${team.color}` }} />
+              <span style={{ fontSize: "0.74rem", fontWeight: 800, color: "#fff",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {team.name.split("'")[0]}
+              </span>
+            </div>
+            <span style={{ fontSize: "0.6rem", fontWeight: 700,
+              color: filled >= target ? "#22c55e" : DIM,
+              fontFamily: "monospace", flexShrink: 0 }}>
+              {filled}/{target}
+            </span>
+          </div>
+          {/* Slot fill bar */}
+          <div style={{ marginTop: 5, height: 3, background: "rgba(255,255,255,0.05)",
+            borderRadius: 2, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${fillPct}%`,
+              background: filled >= target ? "#22c55e" : team.color,
+              transition: "width 0.4s" }} />
+          </div>
+        </div>
+        {/* Roster */}
+        <div style={{ padding: "0.35rem 0.45rem", maxHeight: 200, overflowY: "auto",
+          display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+          {team.squad.length === 0 ? (
+            <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.22)",
+              fontStyle: "italic", padding: "0.25rem 0.3rem" }}>
+              No players yet
+            </span>
+          ) : (
+            team.squad.map((p, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.32rem",
+                padding: "0.22rem 0.35rem", borderRadius: 5,
+                background: "rgba(255,255,255,0.025)" }}>
+                <span style={{ width: 4, height: 4, borderRadius: "50%",
+                  background: TD[p.tier].color, flexShrink: 0 }} />
+                <span style={{ fontSize: "0.66rem", fontWeight: 600, color: "#fff",
+                  flex: 1, overflow: "hidden", textOverflow: "ellipsis",
+                  whiteSpace: "nowrap" }}>
+                  {p.name}
+                </span>
+                <span style={{ fontSize: "0.52rem", fontWeight: 800,
+                  color: ROLE_COLOR[p.role] ?? "#aaa", letterSpacing: "0.04em" }}>
+                  {ROLE_ICON[p.role] ?? "BAT"}
+                </span>
+                <span style={{ fontSize: "0.6rem", color: "#22c55e",
+                  fontFamily: "monospace", fontWeight: 700, flexShrink: 0 }}>
+                  {crFmt(p.price)}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
   // ── Log row ──────────────────────────────────────────────────────
   function LogRow({ entry }: { entry: LogEntry }) {
     const td = TD[entry.tier];
@@ -1933,57 +2012,18 @@ export default function AuctionRoom() {
               );
             })}
 
-            {/* Squads */}
+            {/* Squads — always-visible roster per team */}
             {roomStage === "auction" && (
               <>
-                <p style={{ margin: "0.35rem 0 0", fontSize: "0.6rem", fontWeight: 700,
-                  letterSpacing: "0.12em", color: DIM, textTransform: "uppercase" }}>Squads</p>
-                {teams.map(team => (
-                  <div key={team.id} style={{ background: CARD, border: `1px solid ${BDR}`,
-                    borderRadius: 10, overflow: "hidden", marginBottom: "0.35rem" }}>
-                    <div onClick={() => setExpTeam(expandedTeam === team.id ? null : team.id)}
-                      style={{ padding: "0.55rem 0.75rem", cursor: "pointer",
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        borderBottom: expandedTeam === team.id ? `1px solid ${BDR}` : "none" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.38rem" }}>
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: team.color }} />
-                        <span style={{ fontSize: "0.73rem", fontWeight: 700, color: "#fff" }}>
-                          {team.name.split("'")[0]}
-                        </span>
-                      </div>
-                      <span style={{ fontSize: "0.6rem", color: DIM }}>
-                        {team.squad.length}p · {crFmt(team.budget)}
-                      </span>
-                    </div>
-                    <AnimatePresence>
-                      {expandedTeam === team.id && (
-                        <motion.div initial={{ height: 0 }} animate={{ height: "auto" }}
-                          exit={{ height: 0 }} transition={{ duration: 0.18 }}
-                          style={{ overflow: "hidden" }}>
-                          <div style={{ padding: "0.38rem 0.55rem", maxHeight: 180, overflowY: "auto",
-                            display: "flex", flexDirection: "column", gap: "0.22rem" }}>
-                            {team.squad.length === 0
-                              ? <span style={{ fontSize: "0.67rem", color: "rgba(255,255,255,0.2)", fontStyle: "italic" }}>Empty</span>
-                              : team.squad.map((p, i) => (
-                                <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.38rem",
-                                  padding: "0.22rem 0.38rem", borderRadius: 6, background: "rgba(255,255,255,0.03)" }}>
-                                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: TD[p.tier].color, display: "inline-block", flexShrink: 0 }} />
-                                  <span style={{ fontSize: "0.68rem", color: "#fff", flex: 1,
-                                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                    {p.name}
-                                  </span>
-                                  <span style={{ fontSize: "0.6rem", color: DIM, fontFamily: "monospace" }}>
-                                    {crFmt(p.price)}
-                                  </span>
-                                </div>
-                              ))
-                            }
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ))}
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between",
+                  margin: "0.45rem 0 0" }}>
+                  <p style={{ margin: 0, fontSize: "0.6rem", fontWeight: 700,
+                    letterSpacing: "0.12em", color: DIM, textTransform: "uppercase" }}>Squads</p>
+                  <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.3)" }}>
+                    of {config.maxPlayers}
+                  </span>
+                </div>
+                {teams.map(team => <SquadCard key={team.id} team={team} />)}
               </>
             )}
           </div>
@@ -2077,6 +2117,43 @@ export default function AuctionRoom() {
                           color: team.color, fontWeight: 700,
                           display: "flex", alignItems: "center", gap: "0.28rem" }}>
                           <Crown size={10} /> Leading — {crFmt(bidValue)}
+                        </div>
+                      )}
+                      {/* Mobile squad roster */}
+                      {roomStage === "auction" && (
+                        <div style={{ marginTop: "0.55rem", paddingTop: "0.55rem",
+                          borderTop: `1px dashed ${BDR}` }}>
+                          {team.squad.length === 0 ? (
+                            <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.25)",
+                              fontStyle: "italic" }}>
+                              No players yet
+                            </span>
+                          ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                              {team.squad.map((p, i) => (
+                                <div key={i} style={{ display: "flex", alignItems: "center",
+                                  gap: "0.4rem", padding: "0.25rem 0.4rem", borderRadius: 6,
+                                  background: "rgba(255,255,255,0.03)" }}>
+                                  <span style={{ width: 6, height: 6, borderRadius: "50%",
+                                    background: TD[p.tier].color, flexShrink: 0 }} />
+                                  <span style={{ fontSize: "0.74rem", color: "#fff", flex: 1,
+                                    overflow: "hidden", textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap" }}>
+                                    {p.name}
+                                  </span>
+                                  <span style={{ fontSize: "0.6rem",
+                                    color: ROLE_COLOR[p.role] ?? "#aaa",
+                                    fontWeight: 700, letterSpacing: "0.03em" }}>
+                                    {ROLE_ICON[p.role] ?? "BAT"}
+                                  </span>
+                                  <span style={{ fontSize: "0.66rem", color: "#22c55e",
+                                    fontFamily: "monospace", fontWeight: 700 }}>
+                                    {crFmt(p.price)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
