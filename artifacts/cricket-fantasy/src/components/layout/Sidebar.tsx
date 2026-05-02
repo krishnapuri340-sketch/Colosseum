@@ -27,9 +27,9 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
       <div title={collapsed ? label : undefined} className="press-sm"
         style={{
           display: "flex", alignItems: "center",
-          gap: collapsed ? 0 : 10,
-          padding: collapsed ? "0" : "0 10px",
-          height: 40,
+          gap: collapsed ? 0 : 12,
+          padding: collapsed ? "0" : "0 12px",
+          height: 46,
           justifyContent: collapsed ? "center" : "flex-start",
           borderRadius: 12, cursor: "pointer",
           transition: "background 0.18s",
@@ -43,19 +43,19 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
           if (!active) (e.currentTarget as HTMLDivElement).style.background = "transparent";
         }}>
         <div style={{
-          width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+          width: 34, height: 34, borderRadius: 10, flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
           background: active ? "rgba(124,111,247,0.22)" : "rgba(255,255,255,0.04)",
           transition: "all 0.18s",
         }}>
           <Icon style={{
-            width: 15, height: 15,
+            width: 16, height: 16,
             color: active ? "#a89ff9" : "rgba(255,255,255,0.38)",
           }} />
         </div>
         {!collapsed && (
           <span style={{
-            fontSize: "0.86rem", fontWeight: active ? 700 : 500,
+            fontSize: "0.88rem", fontWeight: active ? 700 : 500,
             color: active ? "#e0ddff" : "rgba(255,255,255,0.45)",
             whiteSpace: "nowrap", transition: "color 0.18s",
           }}>
@@ -145,11 +145,11 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
 
       {/* Nav */}
       <nav style={{
-        flex: 1, padding: "10px 10px", display: "flex",
-        flexDirection: "column", gap: 2, overflowY: "auto", overflowX: "hidden",
+        flex: 1, padding: "14px 12px", display: "flex",
+        flexDirection: "column", gap: 3, overflowY: "auto", overflowX: "hidden",
       }}>
         {!collapsed && !isMobile && (
-          <div className="section-label" style={{ padding: "8px 10px 4px" }}>Navigation</div>
+          <div className="section-label" style={{ padding: "4px 10px 8px" }}>Navigation</div>
         )}
         {NAV.map(item => (
           <NavItem key={item.href} href={item.href} label={item.label}
@@ -161,8 +161,8 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
 
       {/* Bottom */}
       <div style={{
-        padding: "10px", borderTop: "1px solid rgba(255,255,255,0.05)",
-        display: "flex", flexDirection: "column", gap: 2,
+        padding: "12px", borderTop: "1px solid rgba(255,255,255,0.05)",
+        display: "flex", flexDirection: "column", gap: 3,
       }}>
         <NavItem href="/profile" label="Profile" Icon={UserCircle}
           active={isActive("/profile")} collapsed={!isMobile && collapsed}
@@ -173,8 +173,8 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
           className="press-sm"
           style={{
             display: "flex", alignItems: "center",
-            gap: collapsed ? 0 : 10, padding: collapsed ? "0" : "0 10px",
-            height: 40, justifyContent: collapsed ? "center" : "flex-start",
+            gap: collapsed ? 0 : 12, padding: collapsed ? "0" : "0 12px",
+            height: 46, justifyContent: collapsed ? "center" : "flex-start",
             borderRadius: 12, cursor: "pointer", width: "100%",
             background: "transparent", border: "none", transition: "background 0.18s",
             WebkitTapHighlightColor: "transparent",
@@ -182,11 +182,11 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
           onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "rgba(220,38,38,0.08)"}
           onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "transparent"}>
           <div style={{
-            width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
             background: "rgba(255,255,255,0.04)",
           }}>
-            <LogOut size={14} style={{ color: "rgba(255,100,100,0.6)" }} />
+            <LogOut size={15} style={{ color: "rgba(255,100,100,0.6)" }} />
           </div>
           {(isMobile || !collapsed) && (
             <span style={{ fontSize: "0.86rem", fontWeight: 500, color: "rgba(255,100,100,0.6)" }}>
