@@ -1,306 +1,244 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "../context/AuthContext";
-import { Eye, EyeOff, Mail, User } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 
-const ACCENT = "#c0192c";
-const ACCENT_GLOW = "rgba(192,25,44,0.45)";
-const ACCENT_DIM = "rgba(192,25,44,0.35)";
-const focusBorder = "rgba(192,25,44,0.7)";
-const blurBorder = "rgba(255,255,255,0.12)";
+const VIOLET = "#7C6FF7";
+const VIOLET_DIM = "rgba(124,111,247,0.15)";
 
-function Field({
-  label, type, value, onChange, placeholder, icon, toggle,
+function FloatingInput({
+  label, type = "text", value, onChange, error
 }: {
-  label: string;
-  type: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  icon?: React.ReactNode;
-  toggle?: React.ReactNode;
+  label: string; type?: string; value: string;
+  onChange: (v: string) => void; error?: string;
 }) {
+  const [focused, setFocused] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
+  const raised = focused || value.length > 0;
+
   return (
-    <div>
-      <label style={{ display: "block", color: "rgba(255,255,255,0.45)", fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.4rem" }}>
+    <div style={{ position: "relative", marginBottom: error ? 4 : 0 }}>
+      <label style={{
+        position: "absolute", left: "1rem",
+        top: raised ? "0.4rem" : "50%",
+        transform: raised ? "none" : "translateY(-50%)",
+        fontSize: raised ? "0.65rem" : "0.9rem",
+        fontWeight: raised ? 700 : 500,
+        color: focused ? VIOLET : "rgba(255,255,255,0.35)",
+        transition: "all 0.18s cubic-bezier(0.4,0,0.2,1)",
+        pointerEvents: "none", letterSpacing: raised ? "0.06em" : "0",
+        textTransform: raised ? "uppercase" : "none",
+        zIndex: 1,
+      }}>
         {label}
       </label>
-      <div style={{ position: "relative" }}>
-        <input
-          type={type}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          required
-          placeholder={placeholder}
+      <input
+        type={type === "password" ? (showPwd ? "text" : "password") : type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={{
+          width: "100%", height: 58,
+          background: "rgba(255,255,255,0.04)",
+          border: `1.5px solid ${error ? "rgba(220,38,38,0.6)" : focused ? VIOLET : "rgba(255,255,255,0.1)"}`,
+          borderRadius: 14, paddingTop: "1.2rem",
+          paddingLeft: "1rem", paddingRight: type === "password" ? "3rem" : "1rem",
+          color: "#fff", fontSize: "0.95rem", outline: "none",
+          fontFamily: "inherit", transition: "border-color 0.2s",
+          boxSizing: "border-box",
+          boxShadow: focused ? `0 0 0 3px ${VIOLET}18` : "none",
+        }}
+      />
+      {type === "password" && (
+        <button type="button" onClick={() => setShowPwd(v => !v)}
           style={{
-            width: "100%",
-            padding: icon || toggle ? "0.85rem 2.5rem 0.85rem 1rem" : "0.85rem 1rem",
-            background: "rgba(255,255,255,0.06)",
-            border: `1.5px solid ${blurBorder}`,
-            borderRadius: 10,
-            color: "#fff",
-            fontSize: "0.92rem",
-            outline: "none",
-            boxSizing: "border-box",
-            transition: "border-color 0.2s, background 0.2s",
-          }}
-          onFocus={e => {
-            e.target.style.borderColor = focusBorder;
-            e.target.style.background = "rgba(255,255,255,0.09)";
-          }}
-          onBlur={e => {
-            e.target.style.borderColor = blurBorder;
-            e.target.style.background = "rgba(255,255,255,0.06)";
-          }}
-        />
-        {(icon || toggle) && (
-          <div style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.28)", display: "flex" }}>
-            {toggle ?? icon}
-          </div>
-        )}
-      </div>
+            position: "absolute", right: "0.9rem", top: "50%",
+            transform: "translateY(-50%)", background: "none", border: "none",
+            cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: 4,
+          }}>
+          {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      )}
+      {error && (
+        <div style={{ fontSize: "0.72rem", color: "#f87171", marginTop: 4, paddingLeft: 4 }}>
+          {error}
+        </div>
+      )}
     </div>
   );
 }
 
-function LoginForm({ onSwitch }: { onSwitch: () => void }) {
-  const { login } = useAuth();
-  const [, navigate] = useLocation();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+export default function Auth() {
+  const [mode, setMode]           = useState<"login" | "register">("login");
+  const [name, setName]           = useState("");
+  const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState("");
+  const [, navigate]              = useLocation();
+  const { login, register }       = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
+    setError(""); setLoading(true);
     try {
-      await login(email, password, rememberMe);
+      if (mode === "login") {
+        await login(email, password);
+      } else {
+        await register(name, email, password);
+      }
       navigate("/");
     } catch (err: any) {
-      setError(err.message ?? "Login failed");
+      setError(err.message ?? "Something went wrong");
     } finally {
       setLoading(false);
     }
-  };
-
-  return (
-    <>
-      <div style={{ marginBottom: "1.75rem" }}>
-        <p style={{ margin: 0, color: ACCENT, fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
-          Play for Free
-        </p>
-        <h1 style={{ margin: 0, fontSize: "2.1rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1, textTransform: "uppercase" }}>
-          Sign In
-        </h1>
-        <p style={{ margin: "0.55rem 0 0", color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>
-          Don't have an account?{" "}
-          <button onClick={onSwitch} style={{ background: "none", border: "none", color: ACCENT, fontWeight: 700, cursor: "pointer", fontSize: "0.875rem", padding: 0 }}>
-            Create Account
-          </button>
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        {error && <div style={{ padding: "0.7rem 1rem", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#f87171", fontSize: "0.83rem" }}>{error}</div>}
-        <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" icon={<Mail style={{ width: 15, height: 15 }} />} />
-        <Field
-          label="Password" type={showPw ? "text" : "password"} value={password} onChange={setPassword} placeholder="••••••••••••"
-          toggle={
-            <button type="button" onClick={() => setShowPw(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.28)", padding: 0, display: "flex" }}>
-              {showPw ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
-            </button>
-          }
-        />
-
-        {/* Keep me signed in */}
-        <label style={{ display: "flex", alignItems: "center", gap: "0.6rem", cursor: "pointer", userSelect: "none" }}>
-          <div
-            onClick={() => setRememberMe(v => !v)}
-            style={{
-              width: 18, height: 18, borderRadius: 5, flexShrink: 0,
-              background: rememberMe ? ACCENT : "rgba(255,255,255,0.06)",
-              border: rememberMe ? `1.5px solid ${ACCENT}` : "1.5px solid rgba(255,255,255,0.18)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "background 0.18s, border-color 0.18s",
-            }}
-          >
-            {rememberMe && (
-              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                <path d="M1 3.5L3.8 6.5L9 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-          </div>
-          <span style={{ fontSize: "0.83rem", color: "rgba(255,255,255,0.45)" }}>Keep me signed in</span>
-        </label>
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            padding: "0.9rem",
-            background: loading ? ACCENT_DIM : `linear-gradient(135deg, #c0192c 0%, #9b1222 100%)`,
-            border: "none",
-            borderRadius: 10,
-            color: "#fff",
-            fontSize: "0.9rem",
-            fontWeight: 800,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            cursor: loading ? "not-allowed" : "pointer",
-            marginTop: "0.35rem",
-            boxShadow: loading ? "none" : `0 4px 24px ${ACCENT_GLOW}`,
-            transition: "opacity 0.2s, box-shadow 0.2s",
-          }}
-          onMouseEnter={e => { if (!loading) { e.currentTarget.style.opacity = "0.88"; } }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
-        >
-          {loading ? "Signing in…" : "Login"}
-        </button>
-      </form>
-    </>
-  );
-}
-
-function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
-  const { signup } = useAuth();
-  const [, navigate] = useLocation();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (password !== confirm) { setError("Passwords don't match"); return; }
-    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
-    setLoading(true);
-    try {
-      await signup(name, email, password);
-      navigate("/");
-    } catch (err: any) {
-      setError(err.message ?? "Registration failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <div style={{ marginBottom: "1.75rem" }}>
-        <p style={{ margin: 0, color: ACCENT, fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
-          Start for Free
-        </p>
-        <h1 style={{ margin: 0, fontSize: "2.1rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1, textTransform: "uppercase" }}>
-          Create Account
-        </h1>
-        <p style={{ margin: "0.55rem 0 0", color: "rgba(255,255,255,0.4)", fontSize: "0.875rem" }}>
-          Already a member?{" "}
-          <button onClick={onSwitch} style={{ background: "none", border: "none", color: ACCENT, fontWeight: 700, cursor: "pointer", fontSize: "0.875rem", padding: 0 }}>
-            Log In
-          </button>
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
-        {error && <div style={{ padding: "0.7rem 1rem", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#f87171", fontSize: "0.83rem" }}>{error}</div>}
-        <Field label="Full Name" type="text" value={name} onChange={setName} placeholder="Rohit Sharma" icon={<User style={{ width: 15, height: 15 }} />} />
-        <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" icon={<Mail style={{ width: 15, height: 15 }} />} />
-        <Field
-          label="Password" type={showPw ? "text" : "password"} value={password} onChange={setPassword} placeholder="Min 8 characters"
-          toggle={
-            <button type="button" onClick={() => setShowPw(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.28)", padding: 0, display: "flex" }}>
-              {showPw ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
-            </button>
-          }
-        />
-        <Field label="Confirm Password" type="password" value={confirm} onChange={setConfirm} placeholder="Re-enter password" />
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            padding: "0.9rem",
-            background: loading ? ACCENT_DIM : `linear-gradient(135deg, #c0192c 0%, #9b1222 100%)`,
-            border: "none",
-            borderRadius: 10,
-            color: "#fff",
-            fontSize: "0.9rem",
-            fontWeight: 800,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            cursor: loading ? "not-allowed" : "pointer",
-            marginTop: "0.35rem",
-            boxShadow: loading ? "none" : `0 4px 24px ${ACCENT_GLOW}`,
-            transition: "opacity 0.2s, box-shadow 0.2s",
-          }}
-          onMouseEnter={e => { if (!loading) { e.currentTarget.style.opacity = "0.88"; } }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
-        >
-          {loading ? "Creating account…" : "Create Account"}
-        </button>
-      </form>
-    </>
-  );
-}
-
-export default function AuthPages({ mode }: { mode: "login" | "register" }) {
-  const [, navigate] = useLocation();
-  const [animating, setAnimating] = useState(false);
-
-  const switchTo = (next: "login" | "register") => {
-    setAnimating(true);
-    setTimeout(() => {
-      navigate(next === "login" ? "/login" : "/register");
-      setAnimating(false);
-    }, 160);
-  };
+  }
 
   return (
     <div style={{
-      minHeight: "100vh",
-      position: "relative",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "'Inter', sans-serif",
+      minHeight: "100vh", display: "flex", alignItems: "center",
+      justifyContent: "center", padding: "1.5rem",
+      background: "radial-gradient(ellipse 100% 60% at 50% -10%, rgba(124,111,247,0.18), transparent 65%), #090c18",
     }}>
-      {/* Card */}
-      <div
-        className="p-7 sm:p-11"
-        style={{
-        position: "relative",
-        zIndex: 2,
-        width: "100%",
-        maxWidth: 480,
-        margin: "0.75rem",
-        /* Premium glass layers */
-        background: "linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.04) 100%)",
-        border: "1px solid rgba(255,255,255,0.14)",
-        borderTop: "1px solid rgba(255,255,255,0.22)",
-        borderRadius: 22,
-        backdropFilter: "blur(32px) saturate(160%)",
-        WebkitBackdropFilter: "blur(32px) saturate(160%)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.3) inset",
-        transition: "opacity 0.16s ease",
-        opacity: animating ? 0 : 1,
+      {/* Background orbs */}
+      <div style={{
+        position: "fixed", inset: 0, overflow: "hidden", pointerEvents: "none",
       }}>
+        <div style={{
+          position: "absolute", width: 500, height: 500, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(124,111,247,0.12) 0%, transparent 70%)",
+          top: "-10%", left: "-10%",
+        }} />
+        <div style={{
+          position: "absolute", width: 400, height: 400, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(192,25,44,0.08) 0%, transparent 70%)",
+          bottom: "0%", right: "-5%",
+        }} />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          width: "100%", maxWidth: 400, position: "relative", zIndex: 1,
+        }}>
+
         {/* Logo */}
-        <div className="mb-6 sm:mb-9" style={{ marginBottom: undefined }}>
-          <div style={{ fontWeight: 900, fontSize: "1.05rem", color: "#fff", letterSpacing: "-0.01em", lineHeight: 1 }}>Colosseum</div>
-          <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.14em", textTransform: "uppercase" }}>IPL Fantasy</div>
+        <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 18, margin: "0 auto 1rem",
+            background: "linear-gradient(135deg, #7C6FF7, #6055d8)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 8px 32px rgba(124,111,247,0.45)",
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L3 7l9 5 9-5-9-5zM3 17l9 5 9-5M3 12l9 5 9-5"
+                stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>
+            Colosseum
+          </h1>
+          <p style={{ margin: "0.35rem 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.4)" }}>
+            IPL 2026 Fantasy Auction
+          </p>
         </div>
 
-        {mode === "login"
-          ? <LoginForm onSwitch={() => switchTo("register")} />
-          : <RegisterForm onSwitch={() => switchTo("login")} />
-        }
-      </div>
+        {/* Card */}
+        <div style={{
+          background: "rgba(19,23,38,0.8)",
+          backdropFilter: "blur(32px) saturate(200%)",
+          WebkitBackdropFilter: "blur(32px) saturate(200%)",
+          border: "1px solid rgba(255,255,255,0.09)",
+          borderRadius: 24, padding: "2rem",
+          boxShadow: "0 32px 80px rgba(0,0,0,0.4)",
+        }}>
+
+          {/* Mode tabs */}
+          <div className="tab-bar" style={{ marginBottom: "1.75rem" }}>
+            <button className={`tab-item ${mode === "login" ? "active" : ""}`}
+              onClick={() => { setMode("login"); setError(""); }}>
+              Sign In
+            </button>
+            <button className={`tab-item ${mode === "register" ? "active" : ""}`}
+              onClick={() => { setMode("register"); setError(""); }}>
+              Create Account
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+            <AnimatePresence mode="wait">
+              {mode === "register" && (
+                <motion.div key="name"
+                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.22 }}>
+                  <FloatingInput label="Full Name" value={name} onChange={setName} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <FloatingInput label="Email Address" type="email" value={email} onChange={setEmail} />
+            <FloatingInput label="Password" type="password" value={password} onChange={setPassword} />
+
+            {error && (
+              <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                style={{
+                  padding: "0.75rem 1rem", borderRadius: 12,
+                  background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.25)",
+                  fontSize: "0.82rem", color: "#f87171",
+                }}>
+                {error}
+              </motion.div>
+            )}
+
+            <button type="submit" disabled={loading}
+              className="btn-primary press"
+              style={{
+                width: "100%", height: 52, marginTop: "0.35rem",
+                fontSize: "0.95rem", borderRadius: 14,
+              }}>
+              {loading
+                ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+                : <>
+                    {mode === "login" ? "Sign In" : "Create Account"}
+                    <ArrowRight size={16} />
+                  </>}
+            </button>
+          </form>
+
+          {mode === "login" && (
+            <div style={{ textAlign: "center", marginTop: "1rem" }}>
+              <button style={{
+                background: "none", border: "none", cursor: "pointer",
+                fontSize: "0.8rem", color: "rgba(124,111,247,0.7)",
+                fontFamily: "inherit",
+              }}>
+                Forgot password?
+              </button>
+            </div>
+          )}
+        </div>
+
+        <p style={{ textAlign: "center", marginTop: "1.25rem", fontSize: "0.78rem", color: "rgba(255,255,255,0.25)" }}>
+          {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+          <button onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "rgba(124,111,247,0.8)", fontFamily: "inherit",
+              fontSize: "0.78rem", fontWeight: 700,
+            }}>
+            {mode === "login" ? "Sign up" : "Sign in"}
+          </button>
+        </p>
+      </motion.div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
