@@ -243,6 +243,12 @@ function MomDropdown({
   const c2 = TEAM_COLOR[team2] ?? "#aaa";
   const roleIcon: Record<string, string> = { BAT: "BAT", BWL: "BWL", AR: "AR", WK: "WK" };
 
+  // Colour the trigger based on the selected player's actual team
+  const selectedPlayer = value ? players.find(p => p.name === value) : null;
+  const triggerColor   = selectedPlayer
+    ? (TEAM_COLOR[selectedPlayer.team] ?? "#aaa")
+    : null;
+
   return (
     <div>
       {/* Trigger button */}
@@ -251,15 +257,15 @@ function MomDropdown({
         disabled={disabled}
         style={{
           width: "100%", padding: "0.6rem 0.9rem",
-          background: value ? "rgba(192,25,44,0.1)" : "rgba(255,255,255,0.04)",
-          border: `1.5px solid ${value ? "rgba(192,25,44,0.35)" : open ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.09)"}`,
+          background: triggerColor ? `${triggerColor}14` : "rgba(255,255,255,0.04)",
+          border: `1.5px solid ${triggerColor ? `${triggerColor}50` : open ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.09)"}`,
           borderRadius: open ? "13px 13px 0 0" : 13,
-          color: value ? "#e05572" : "rgba(255,255,255,0.35)",
-          fontSize: "0.85rem", fontWeight: value ? 700 : 400,
+          color: triggerColor ?? "rgba(255,255,255,0.35)",
+          fontSize: "0.85rem", fontWeight: triggerColor ? 700 : 400,
           display: "flex", alignItems: "center", justifyContent: "space-between",
           cursor: disabled ? "default" : "pointer", textAlign: "left",
           transition: "all 0.2s", opacity: disabled ? 0.6 : 1,
-          boxShadow: value ? "0 0 18px rgba(192,25,44,0.2)" : "none",
+          boxShadow: triggerColor ? `0 0 18px ${triggerColor}25` : "none",
         }}
       >
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
