@@ -225,12 +225,12 @@ export function Header() {
           <button onClick={() => { setShowProfile(v => !v); setShowNotifs(false); }}
             className="press-sm"
             style={{
-              width: 36, height: 36, borderRadius: "50%", cursor: "pointer",
+              width: 44, height: 44, borderRadius: "50%", cursor: "pointer",
               background: `linear-gradient(135deg, ${profile.avatarColor}50, ${profile.avatarColor}20)`,
               border: `2px solid ${profile.avatarColor}60`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "0.88rem", fontWeight: 800, color: "#fff",
-              boxShadow: `0 0 12px ${profile.avatarColor}30`,
+              fontSize: "1rem", fontWeight: 800, color: "#fff",
+              boxShadow: `0 0 16px ${profile.avatarColor}35`,
             }}>
             {profile.displayName.charAt(0).toUpperCase()}
           </button>
