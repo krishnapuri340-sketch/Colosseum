@@ -26,7 +26,7 @@ import {
   ArrowLeft, Gavel, CheckCircle, XCircle, Crown, Search,
   ChevronDown, ChevronUp, RotateCcw, Plus, Minus,
   Copy, TriangleAlert, Star, Users, Play,
-  SkipForward, BookOpen, ChevronRight,
+  SkipForward, BookOpen, ChevronRight, Trophy, Ban,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -109,10 +109,13 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function buildQueue(mode: AuctionMode): Player[] {
-  if (mode === "classic") return shuffle([...ALL_IPL_2026_PLAYERS]);
+function buildQueue(mode: AuctionMode, excl: string[] = []): Player[] {
+  const pool = excl.length
+    ? ALL_IPL_2026_PLAYERS.filter(p => !excl.includes(p.name))
+    : [...ALL_IPL_2026_PLAYERS];
+  if (mode === "classic") return shuffle([...pool]);
   return TIER_ORDER.flatMap(tier =>
-    shuffle(ALL_IPL_2026_PLAYERS.filter(p => getPlayerTier(p.credits) === tier))
+    shuffle(pool.filter(p => getPlayerTier(p.credits) === tier))
   );
 }
 
@@ -324,11 +327,183 @@ function WatchlistPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── Player Pool Panel (host-only exclusion manager) ───────────────────
+function PlayerPoolPanel({ excluded, onToggle, onClose }: {
+  excluded: string[];
+  onToggle: (name: string) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [roleF, setRoleF]   = useState("ALL");
+  const [tierF, setTierF]   = useState("ALL");
+
+  const filtered = useMemo(() =>
+    ALL_IPL_2026_PLAYERS
+      .filter(p =>
+        (roleF === "ALL" || p.role === roleF) &&
+        (tierF === "ALL" || getPlayerTier(p.credits) === tierF) &&
+        (!search || p.name.toLowerCase().includes(search.toLowerCase()) ||
+          p.team.toLowerCase().includes(search.toLowerCase()))
+      )
+      .sort((a, b) => b.credits - a.credits),
+    [search, roleF, tierF]
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 200,
+        background: "rgba(0,0,0,0.8)", backdropFilter: "blur(6px)",
+        display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.93, y: 20 }} animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+        onClick={e => e.stopPropagation()}
+        style={{ width: "100%", maxWidth: 600, maxHeight: "90vh",
+          background: "rgba(8,9,18,0.99)", border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.7)" }}>
+
+        {/* Header */}
+        <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid rgba(255,255,255,0.08)",
+          display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "#fff",
+              display: "flex", alignItems: "center", gap: 7 }}>
+              <Ban size={15} style={{ color: "#ef4444" }} />
+              Manage Player Pool
+            </span>
+            <p style={{ margin: "2px 0 0", fontSize: "0.72rem", color: DIM }}>
+              {ALL_IPL_2026_PLAYERS.length - excluded.length} of {ALL_IPL_2026_PLAYERS.length} players in auction
+              {excluded.length > 0 && <span style={{ color: "#ef4444", marginLeft: 8 }}>· {excluded.length} excluded</span>}
+            </p>
+          </div>
+          <button onClick={onClose}
+            style={{ background: "none", border: "none", cursor: "pointer",
+              color: DIM, fontSize: "1.1rem" }}>✕</button>
+        </div>
+
+        {/* Filters */}
+        <div style={{ padding: "0.6rem 1.25rem", borderBottom: "1px solid rgba(255,255,255,0.06)",
+          display: "flex", gap: 6, flexWrap: "wrap", background: "rgba(255,255,255,0.02)" }}>
+          <div style={{ position: "relative", flex: 1, minWidth: 140 }}>
+            <Search style={{ position: "absolute", left: "0.7rem", top: "50%",
+              transform: "translateY(-50%)", width: 12, height: 12, color: DIM, pointerEvents: "none" }} />
+            <input autoFocus value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search player or team…"
+              style={{ width: "100%", boxSizing: "border-box",
+                padding: "0.45rem 0.7rem 0.45rem 2rem",
+                background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8, color: "#fff", fontSize: "0.82rem", outline: "none" }} />
+          </div>
+          {["ALL", "BAT", "AR", "WK", "BWL"].map(r => (
+            <button key={r} onClick={() => setRoleF(r)}
+              style={{ padding: "0.3rem 0.55rem", borderRadius: 6, fontSize: "0.67rem",
+                fontWeight: 600, cursor: "pointer",
+                border: `1px solid ${roleF === r ? "rgba(255,255,255,0.2)" : BDR}`,
+                background: roleF === r ? "rgba(255,255,255,0.1)" : CARD,
+                color: roleF === r ? "#fff" : DIM }}>
+              {r}
+            </button>
+          ))}
+          {["ALL", "T1", "T2", "T3", "T4"].map(t => {
+            const tdObj = t === "ALL" ? null : TD[t as PlayerTier];
+            return (
+              <button key={t} onClick={() => setTierF(t)}
+                style={{ padding: "0.3rem 0.55rem", borderRadius: 6, fontSize: "0.67rem",
+                  fontWeight: 600, cursor: "pointer",
+                  border: `1px solid ${tierF === t ? (tdObj?.color ?? "rgba(255,255,255,0.2)") : BDR}`,
+                  background: tierF === t ? (tdObj ? `${tdObj.color}18` : "rgba(255,255,255,0.1)") : CARD,
+                  color: tierF === t ? (tdObj?.color ?? "#fff") : DIM }}>
+                {t === "ALL" ? "All Tiers" : tdObj?.label ?? t}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* List */}
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {filtered.map((p, i) => {
+            const tc  = TEAM_COLOR[p.team] ?? "#aaa";
+            const tier = getPlayerTier(p.credits);
+            const td  = TD[tier];
+            const isExcluded = excluded.includes(p.name);
+            return (
+              <div key={i} onClick={() => onToggle(p.name)}
+                style={{ display: "flex", alignItems: "center", gap: 10,
+                  padding: "0.58rem 1.25rem", cursor: "pointer",
+                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  background: isExcluded ? "rgba(239,68,68,0.06)" : "transparent",
+                  opacity: isExcluded ? 0.55 : 1,
+                  transition: "all 0.12s" }}>
+                <div style={{ width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+                  border: `1.5px solid ${isExcluded ? "#ef4444" : "rgba(255,255,255,0.2)"}`,
+                  background: isExcluded ? "rgba(239,68,68,0.2)" : "transparent",
+                  display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {isExcluded && <span style={{ fontSize: "0.6rem", color: "#ef4444" }}>✕</span>}
+                </div>
+                <span style={{ fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.04em",
+                  color: ROLE_COLOR[p.role] ?? "#aaa", flexShrink: 0,
+                  width: 26, textAlign: "center" }}>
+                  {ROLE_ICON[p.role] ?? "BAT"}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: "0.85rem",
+                    color: isExcluded ? "rgba(255,255,255,0.35)" : "#fff",
+                    textDecoration: isExcluded ? "line-through" : "none",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {p.name}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: tc }}>{p.team}</span>
+                    <span style={{ fontSize: "0.6rem", color: td.color,
+                      background: `${td.color}15`, padding: "1px 5px", borderRadius: 3 }}>
+                      {td.label}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontSize: "0.8rem", fontWeight: 700, color: isExcluded ? DIM : td.color,
+                    fontFamily: "monospace" }}>
+                    {p.credits}cr
+                  </div>
+                  <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.2)" }}>
+                    Base {crFmt(getTierBasePrice(p.credits))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        {excluded.length > 0 && (
+          <div style={{ padding: "0.75rem 1.25rem", borderTop: "1px solid rgba(255,255,255,0.08)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            background: "rgba(239,68,68,0.05)" }}>
+            <span style={{ fontSize: "0.75rem", color: "#ef4444", fontWeight: 600 }}>
+              {excluded.length} players excluded from auction pool
+            </span>
+            <button onClick={() => excluded.forEach(n => onToggle(n))}
+              style={{ padding: "0.35rem 0.85rem", borderRadius: 8, fontSize: "0.72rem",
+                fontWeight: 600, cursor: "pointer", background: "transparent",
+                border: "1px solid rgba(239,68,68,0.4)", color: "#ef4444" }}>
+              Clear all
+            </button>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── Prep Stage ───────────────────────────────────────────────────────
-function PrepStage({ mode, onStart, onSkip, canStart, teamCount }: {
+function PrepStage({ mode, onStart, onSkip, canStart, teamCount, excluded, onToggleExclude }: {
   mode: AuctionMode; onStart: () => void; onSkip: () => void; canStart: boolean; teamCount: number;
+  excluded: string[]; onToggleExclude: (name: string) => void;
 }) {
   const [showWL, setShowWL] = useState(false);
+  const [showPool, setShowPool] = useState(false);
   const wl = loadWL();
 
   const tierCounts = useMemo(() => {
@@ -381,26 +556,47 @@ function PrepStage({ mode, onStart, onSkip, canStart, teamCount }: {
         })}
       </div>
 
-      {/* Watchlist button */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-        <button onClick={() => setShowWL(true)}
-          style={{ display: "flex", alignItems: "center", gap: 8,
-            padding: "0.8rem 1.6rem", background: "rgba(245,158,11,0.15)",
-            border: "1px solid rgba(245,158,11,0.35)", borderRadius: 12,
-            color: "#f59e0b", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer",
-            transition: "all 0.15s" }}>
-          <Star size={16} style={{ fill: "#f59e0b" }} />
-          Open Watchlist
-          {wl.length > 0 && (
-            <span style={{ background: "#f59e0b", color: "#000", borderRadius: 20,
-              fontSize: "0.65rem", fontWeight: 800, padding: "0 6px" }}>
-              {wl.length}
-            </span>
-          )}
-        </button>
-        <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.25)" }}>
-          Star players you want to target
-        </span>
+      {/* Watchlist + Pool buttons */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <button onClick={() => setShowWL(true)}
+            style={{ display: "flex", alignItems: "center", gap: 8,
+              padding: "0.75rem 1.4rem", background: "rgba(245,158,11,0.15)",
+              border: "1px solid rgba(245,158,11,0.35)", borderRadius: 12,
+              color: "#f59e0b", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer",
+              transition: "all 0.15s" }}>
+            <Star size={15} style={{ fill: "#f59e0b" }} />
+            Watchlist
+            {wl.length > 0 && (
+              <span style={{ background: "#f59e0b", color: "#000", borderRadius: 20,
+                fontSize: "0.63rem", fontWeight: 800, padding: "0 6px" }}>
+                {wl.length}
+              </span>
+            )}
+          </button>
+          <span style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.22)" }}>Star your targets</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <button onClick={() => setShowPool(true)}
+            style={{ display: "flex", alignItems: "center", gap: 8,
+              padding: "0.75rem 1.4rem",
+              background: excluded.length > 0 ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.06)",
+              border: `1px solid ${excluded.length > 0 ? "rgba(239,68,68,0.4)" : BDR}`,
+              borderRadius: 12,
+              color: excluded.length > 0 ? "#ef4444" : DIM,
+              fontWeight: 700, fontSize: "0.88rem", cursor: "pointer",
+              transition: "all 0.15s" }}>
+            <Ban size={15} />
+            Manage Pool
+            {excluded.length > 0 && (
+              <span style={{ background: "#ef4444", color: "#fff", borderRadius: 20,
+                fontSize: "0.63rem", fontWeight: 800, padding: "0 6px" }}>
+                {excluded.length} out
+              </span>
+            )}
+          </button>
+          <span style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.22)" }}>Exclude players</span>
+        </div>
       </div>
 
       {/* Mode pill */}
@@ -444,6 +640,13 @@ function PrepStage({ mode, onStart, onSkip, canStart, teamCount }: {
 
       <AnimatePresence>
         {showWL && <WatchlistPanel onClose={() => setShowWL(false)} />}
+        {showPool && (
+          <PlayerPoolPanel
+            excluded={excluded}
+            onToggle={onToggleExclude}
+            onClose={() => setShowPool(false)}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
@@ -583,6 +786,12 @@ export default function AuctionRoom() {
     ? sessionStorage.getItem("auction_mode") : null) as AuctionMode | null;
   const [mode] = useState<AuctionMode>(savedMode ?? config.format ?? "classic");
 
+  // Excluded players (host-managed before auction starts)
+  const [excluded, setExcluded] = useState<string[]>([]);
+  function toggleExclude(name: string) {
+    setExcluded(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
+  }
+
   // Room stage: prep or auction
   const [roomStage, setRoomStage] = useState<RoomStage>("prep");
 
@@ -641,19 +850,52 @@ export default function AuctionRoom() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Fetch registered teams from API ──────────────────────────────
+  // ── Init: load saved state (rejoin) or fallback to API teams ────────
   useEffect(() => {
     const roomCode = config.roomCode;
-    if (!roomCode) return;
-    apiFetch(`/auction/rooms/${roomCode}/teams`)
-      .then(r => r.ok ? r.json() : null)
-      .then((data: { teams: RegisteredTeam[] } | null) => {
-        if (data) {
-          setTeams(makeInitTeams(startBudget, data.teams));
+    if (!roomCode) { setTeamsLoaded(true); return; }
+
+    (async () => {
+      // Try saved state first — restores full auction snapshot on rejoin
+      try {
+        const stateRes = await apiFetch(`/auction/rooms/${roomCode}/state`);
+        if (stateRes.ok) {
+          const { stateJson } = await stateRes.json() as { stateJson: string };
+          if (stateJson) {
+            const snap = JSON.parse(stateJson) as {
+              queue?: Player[]; queueIdx?: number; soldPlayers?: string[];
+              teams?: AucTeam[]; log?: LogEntry[]; phase?: AucPhase;
+              nominated?: Player | null; bidValue?: number; leadId?: string | null;
+              roomStage?: string; excludedPlayers?: string[];
+            };
+            if (snap.queue?.length) queueRef.current = snap.queue;
+            if (typeof snap.queueIdx === "number") queueIdx.current = snap.queueIdx;
+            if (snap.soldPlayers) soldRef.current = new Set(snap.soldPlayers);
+            if (snap.teams?.length) setTeams(snap.teams);
+            if (snap.log) setLog(snap.log.map(e => ({ ...e, snapshot: [] as AucTeam[] })));
+            if (snap.phase) setPhase(snap.phase);
+            if (snap.nominated !== undefined) setNominated(snap.nominated);
+            if (typeof snap.bidValue === "number") setBidValue(snap.bidValue);
+            if (snap.leadId !== undefined) setLeadId(snap.leadId);
+            if (snap.roomStage === "auction") setRoomStage("auction");
+            if (snap.excludedPlayers) setExcluded(snap.excludedPlayers);
+            setTeamsLoaded(true);
+            return; // State restored — skip API teams fetch
+          }
         }
-      })
-      .catch(() => { /* keep empty */ })
-      .finally(() => setTeamsLoaded(true));
+      } catch { /* no saved state yet */ }
+
+      // No saved state — load teams from API
+      try {
+        const r = await apiFetch(`/auction/rooms/${roomCode}/teams`);
+        if (r.ok) {
+          const data = await r.json() as { teams: RegisteredTeam[] };
+          if (data?.teams) setTeams(makeInitTeams(startBudget, data.teams));
+        }
+      } catch { /* keep empty */ }
+      setTeamsLoaded(true);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.roomCode, startBudget]);
 
   // ── WebSocket: connect and maintain live sync ─────────────────────
@@ -691,6 +933,7 @@ export default function AuctionRoom() {
             if (s.log       !== undefined) setLog(s.log);
             if (s.remaining !== undefined) setMemberRemaining(s.remaining);
             if (s.queueIdx  !== undefined) { queueIdx.current = s.queueIdx; }
+            if (s.excluded  !== undefined) setExcluded(s.excluded);
           }
         } catch { /* ignore */ }
       };
@@ -719,6 +962,8 @@ export default function AuctionRoom() {
       log: log.map(({ snapshot: _s, ...rest }) => rest),
       queueIdx:  queueIdx.current,
       remaining: queueRef.current.length - queueIdx.current,
+      excluded,
+      maxPlayers: config.maxPlayers,
     };
     ws.send(JSON.stringify({ type: "state", payload: snap }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -738,11 +983,71 @@ export default function AuctionRoom() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [handleKey]);
 
+  // ── Persist state to DB ───────────────────────────────────────────
+  async function saveSnap(overrides: {
+    teams?: AucTeam[]; log?: LogEntry[]; phase?: AucPhase;
+    nominated?: Player | null; bidValue?: number; leadId?: string | null;
+    roomStage?: RoomStage; excl?: string[];
+  } = {}) {
+    const roomCode = config.roomCode;
+    if (!roomCode) return;
+    const snap = {
+      queue:          queueRef.current,
+      queueIdx:       queueIdx.current,
+      soldPlayers:    Array.from(soldRef.current),
+      teams:          overrides.teams          ?? teams,
+      log:            (overrides.log           ?? log).map(({ snapshot: _s, ...rest }) => ({ ...rest, snapshot: [] })),
+      phase:          overrides.phase          ?? phase,
+      nominated:      overrides.nominated      !== undefined ? overrides.nominated : nominated,
+      bidValue:       overrides.bidValue       ?? bidValue,
+      leadId:         overrides.leadId         !== undefined ? overrides.leadId : leadId,
+      roomStage:      overrides.roomStage      ?? roomStage,
+      excludedPlayers: overrides.excl          ?? excluded,
+    };
+    try {
+      await apiFetch(`/auction/rooms/${roomCode}/state`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stateJson: JSON.stringify(snap) }),
+      });
+    } catch { /* non-fatal */ }
+  }
+
+  // ── Complete auction (host-only) ──────────────────────────────────
+  async function doComplete() {
+    const roomCode = config.roomCode;
+    const finalSnap = {
+      queue:           queueRef.current,
+      queueIdx:        queueIdx.current,
+      soldPlayers:     Array.from(soldRef.current),
+      teams,
+      log:             log.map(({ snapshot: _s, ...rest }) => ({ ...rest, snapshot: [] })),
+      phase,
+      nominated,
+      bidValue,
+      leadId,
+      roomStage:       "auction",
+      excludedPlayers: excluded,
+      completedAt:     Date.now(),
+    };
+    try {
+      if (roomCode) {
+        await apiFetch(`/auction/rooms/${roomCode}/complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stateJson: JSON.stringify(finalSnap) }),
+        });
+      }
+    } catch { /* navigate anyway */ }
+    navigate("/auction/complete");
+  }
+
   // ── Start auction — build queue ────────────────────────────────────
   function startAuction() {
-    queueRef.current = buildQueue(mode);
+    queueRef.current = buildQueue(mode, excluded);
     queueIdx.current = 0;
     setRoomStage("auction");
+    saveSnap({ roomStage: "auction", excl: excluded });
     advanceToNext(queueRef.current, 0);
   }
 
@@ -775,22 +1080,29 @@ export default function AuctionRoom() {
     if (!nominated || !leadTeam) return;
     soldRef.current.add(nominated.name);
     const tier = getPlayerTier(nominated.credits);
-    const snap = teams.map(t => ({ ...t, squad: [...t.squad] }));
-    setTeams(prev => prev.map(t =>
+    const snapTeams = teams.map(t => ({ ...t, squad: [...t.squad] }));
+    const newTeams = teams.map(t =>
       t.id === leadId
         ? { ...t, budget: parseFloat((t.budget - bidValue).toFixed(2)), squad: [...t.squad, { ...nominated, price: bidValue, tier }] }
         : t
-    ));
-    setLog(prev => [{ player: nominated, status: "sold", winner: leadTeam.name, winnerColor: leadTeam.color, price: bidValue, tier, snapshot: snap }, ...prev]);
+    );
+    const newEntry: LogEntry = { player: nominated, status: "sold", winner: leadTeam.name, winnerColor: leadTeam.color, price: bidValue, tier, snapshot: snapTeams };
+    const newLog = [newEntry, ...log];
+    setTeams(newTeams);
+    setLog(newLog);
     setPhase("sold");
+    saveSnap({ teams: newTeams, log: newLog, phase: "sold" });
   }
 
   function doUnsold() {
     if (!nominated) return;
     const tier = getPlayerTier(nominated.credits);
-    const snap = teams.map(t => ({ ...t, squad: [...t.squad] }));
-    setLog(prev => [{ player: nominated, status: "unsold", tier, snapshot: snap }, ...prev]);
+    const snapTeams = teams.map(t => ({ ...t, squad: [...t.squad] }));
+    const newEntry: LogEntry = { player: nominated, status: "unsold", tier, snapshot: snapTeams };
+    const newLog = [newEntry, ...log];
+    setLog(newLog);
     setPhase("unsold");
+    saveSnap({ log: newLog, phase: "unsold" });
   }
 
   function doUndo() {
@@ -853,7 +1165,15 @@ export default function AuctionRoom() {
         );
       }
       return (
-        <PrepStage mode={mode} onStart={startAuction} onSkip={startAuction} canStart={teams.length >= 2} teamCount={teams.length} />
+        <PrepStage
+          mode={mode}
+          onStart={startAuction}
+          onSkip={startAuction}
+          canStart={teams.length >= 2}
+          teamCount={teams.length}
+          excluded={excluded}
+          onToggleExclude={toggleExclude}
+        />
       );
     }
 
@@ -863,14 +1183,40 @@ export default function AuctionRoom() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center", gap: "1rem",
           textAlign: "center", padding: "2rem" }}>
-          <h2 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 900, color: "#fff" }}>
-            {done ? "Auction Complete!" : "Loading next player…"}
-          </h2>
-          {done && (
-            <p style={{ margin: 0, fontSize: "0.88rem", color: DIM }}>
-              {log.filter(e => e.status === "sold").length} players sold ·{" "}
-              {log.filter(e => e.status === "unsold").length} unsold
-            </p>
+          {done ? (
+            <>
+              <div style={{ width: 68, height: 68, borderRadius: "50%",
+                background: "rgba(192,25,44,0.12)", border: "2px solid rgba(192,25,44,0.35)",
+                display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Trophy size={30} style={{ color: ACCENT }} />
+              </div>
+              <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>
+                Auction Complete
+              </h2>
+              <p style={{ margin: 0, fontSize: "0.88rem", color: DIM }}>
+                {log.filter(e => e.status === "sold").length} players sold ·{" "}
+                {log.filter(e => e.status === "unsold").length} unsold
+              </p>
+              {isHost && (
+                <button onClick={doComplete}
+                  style={{ marginTop: "0.5rem", padding: "0.9rem 2.2rem",
+                    background: ACCENT, border: "none", borderRadius: 14,
+                    color: "#fff", fontWeight: 800, fontSize: "0.95rem", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: "0.5rem",
+                    boxShadow: `0 0 32px ${ACCENT}50` }}>
+                  <Trophy size={16} /> View Final Results
+                </button>
+              )}
+              {!isHost && (
+                <p style={{ margin: 0, fontSize: "0.8rem", color: DIM }}>
+                  Waiting for host to finalise…
+                </p>
+              )}
+            </>
+          ) : (
+            <h2 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 900, color: "#fff" }}>
+              Loading next player…
+            </h2>
           )}
         </div>
       );
@@ -1075,8 +1421,9 @@ export default function AuctionRoom() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.32rem" }}>
                 {teams.map(team => {
-                  const isLead = leadId === team.id;
-                  const ok     = team.budget >= bidValue;
+                  const isLead   = leadId === team.id;
+                  const teamFull = team.squad.length >= config.maxPlayers;
+                  const ok       = team.budget >= bidValue && !teamFull;
                   return (
                     <button key={team.id} onClick={() => ok && setLeadId(team.id)}
                       style={{ padding: "0.4rem 0.65rem", borderRadius: 9,
@@ -1417,8 +1764,9 @@ export default function AuctionRoom() {
               </div>
             )}
             {teams.map(team => {
-              const isLead = leadId === team.id;
-              const ok     = isHost && phase === "bidding" && team.budget >= bidValue;
+              const isLead   = leadId === team.id;
+              const teamFull = team.squad.length >= config.maxPlayers;
+              const ok       = isHost && phase === "bidding" && team.budget >= bidValue && !teamFull;
               return (
                 <div key={team.id}
                   onClick={() => ok && setLeadId(team.id)}
@@ -1577,8 +1925,9 @@ export default function AuctionRoom() {
                   </div>
                 )}
                 {teams.map(team => {
-                  const isLead = leadId === team.id;
-                  const ok     = isHost && phase === "bidding" && team.budget >= bidValue;
+                  const isLead   = leadId === team.id;
+                  const teamFull = team.squad.length >= config.maxPlayers;
+                  const ok       = isHost && phase === "bidding" && team.budget >= bidValue && !teamFull;
                   return (
                     <div key={team.id} onClick={() => ok && setLeadId(team.id)}
                       style={{ background: isLead ? `${team.color}12` : CARD,

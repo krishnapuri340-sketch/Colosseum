@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
-import { db, auctionRoomsTable, auctionRoomTeamsTable } from "@workspace/db";
+import { db, auctionRoomsTable, auctionRoomTeamsTable, auctionRoomStateTable } from "@workspace/db";
 import { getUserFromRequest } from "./auth";
 
 const router: IRouter = Router();
@@ -167,6 +167,83 @@ router.delete("/auction/rooms/:code/teams", async (req, res): Promise<void> => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to clear teams" });
+  }
+});
+
+// ── Auction state persistence ─────────────────────────────────────────
+
+// GET /api/auction/rooms/:code/state — load saved auction snapshot
+router.get("/auction/rooms/:code/state", async (req, res): Promise<void> => {
+  const code = (req.params.code ?? "").toUpperCase();
+  try {
+    const [row] = await db
+      .select()
+      .from(auctionRoomStateTable)
+      .where(eq(auctionRoomStateTable.roomCode, code));
+
+    if (!row) {
+      res.status(404).json({ error: "No saved state" });
+      return;
+    }
+    res.json({ stateJson: row.stateJson, updatedAt: row.updatedAt });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to load state" });
+  }
+});
+
+// PUT /api/auction/rooms/:code/state — save (upsert) auction snapshot
+router.put("/auction/rooms/:code/state", async (req, res): Promise<void> => {
+  const code = (req.params.code ?? "").toUpperCase();
+  const { stateJson } = req.body ?? {};
+
+  if (!stateJson || typeof stateJson !== "string") {
+    res.status(400).json({ error: "stateJson (string) is required" });
+    return;
+  }
+
+  try {
+    await db
+      .insert(auctionRoomStateTable)
+      .values({ roomCode: code, stateJson })
+      .onConflictDoUpdate({
+        target: auctionRoomStateTable.roomCode,
+        set: { stateJson, updatedAt: new Date() },
+      });
+    res.json({ ok: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to save state" });
+  }
+});
+
+// POST /api/auction/rooms/:code/complete — finalise auction, mark room complete
+router.post("/auction/rooms/:code/complete", async (req, res): Promise<void> => {
+  const code = (req.params.code ?? "").toUpperCase();
+  const { stateJson } = req.body ?? {};
+
+  try {
+    // Persist final state if provided
+    if (stateJson && typeof stateJson === "string") {
+      await db
+        .insert(auctionRoomStateTable)
+        .values({ roomCode: code, stateJson })
+        .onConflictDoUpdate({
+          target: auctionRoomStateTable.roomCode,
+          set: { stateJson, updatedAt: new Date() },
+        });
+    }
+
+    // Mark room as complete
+    await db
+      .update(auctionRoomsTable)
+      .set({ status: "complete" })
+      .where(eq(auctionRoomsTable.code, code));
+
+    res.json({ ok: true, code });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to complete auction" });
   }
 });
 

@@ -11,6 +11,7 @@ import Auction from "@/pages/Auction";
 import JoinAuction from "@/pages/JoinAuction";
 import CreateAuction from "@/pages/CreateAuction";
 import AuctionRoom from "@/pages/AuctionRoom";
+import AuctionComplete from "@/pages/AuctionComplete";
 import Predictions from "@/pages/Predictions";
 import Guide from "@/pages/Guide";
 import Leaderboard from "@/pages/Leaderboard";
@@ -66,7 +67,8 @@ function AppRoutes() {
       <Route path="/auction"        component={() => <ProtectedRoute component={Auction} />} />
       <Route path="/auction/join"   component={() => <ProtectedRoute component={JoinAuction} />} />
       <Route path="/auction/create" component={() => <ProtectedRoute component={CreateAuction} />} />
-      <Route path="/auction/room"   component={() => <ProtectedRoute component={AuctionRoom} />} />
+      <Route path="/auction/room"     component={() => <ProtectedRoute component={AuctionRoom} />} />
+      <Route path="/auction/complete" component={() => <ProtectedRoute component={AuctionComplete} />} />
       <Route path="/predictions"    component={() => <ProtectedRoute component={Predictions} />} />
       <Route path="/guide"          component={() => <ProtectedRoute component={Guide} />} />
       <Route path="/leaderboard"    component={() => <ProtectedRoute component={Leaderboard} />} />

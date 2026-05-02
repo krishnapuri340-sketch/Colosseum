@@ -5,3 +5,4 @@ export * from "./users";
 export * from "./predictions";
 export * from "./auction-rooms";
 export * from "./auction-room-teams";
+export * from "./auction-room-state";

@@ -11,6 +11,7 @@ export const auctionRoomsTable = pgTable("auction_rooms", {
   topScoring:      boolean("top_scoring").notNull().default(false),
   topScoringCount: integer("top_scoring_count").notNull().default(11),
   captainVC:       boolean("captain_vc").notNull().default(true),
+  status:          text("status").notNull().default("lobby"),
   createdAt:       timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

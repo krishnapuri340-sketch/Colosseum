@@ -45,12 +45,56 @@ IPL fantasy cricket platform. Dark space-themed UI. pnpm monorepo with a React+V
 - `/leaderboard` — Rankings table
 - `/guide` — Scoring rules, IPL team directory, how-to-play
 
+## Auction Module (Full)
+
+### Flow
+- **Create** (`/auction/create`) → host sets name/budget/maxPlayers/format → room code issued
+- **Join** (`/auction/join`) → member enters invite code → picks team name
+- **AuctionRoom** (`/auction/room`) — main live auction UI
+- **AuctionComplete** (`/auction/complete`) — final results page with rosters
+
+### AuctionRoom stages
+1. **Prep** — host manages player pool (exclude players) + watchlist; waits for ≥2 teams
+2. **Auction** — tile reveal → bidding → sold/unsold → next player cycle
+3. **Done** — host clicks "View Final Results" → navigates to AuctionComplete
+
+### Key features
+- `buildQueue(mode, excl[])` — shuffled player order respecting exclusions
+- `PlayerPoolPanel` — host-only modal to exclude players before auction (strikethrough UI)
+- `WatchlistPanel` — star players you want to target
+- `saveSnap()` — persists full auction state JSON to DB on every sold/unsold/start
+- Rejoin support: on mount, loads saved state from DB before falling back to teams API
+- `maxPlayersPerTeam` constraint — team bid buttons disabled when squad is full
+- `doComplete()` — host-only; POSTs final state, marks room `status=complete`, redirects
+- WS broadcast includes `excluded[]` + `maxPlayers` so members see accurate state
+
+### DB Tables
+- `auction_rooms` — room settings (budget, maxPlayers, format, status)
+- `auction_room_teams` — registered teams per room
+- `auction_room_state` — full JSON snapshot (upserted after each action)
+
+### API Endpoints (auction-rooms.ts)
+- `POST   /api/auction/rooms` — create/upsert room
+- `GET    /api/auction/rooms/:code` — look up room
+- `GET    /api/auction/rooms/:code/teams` — list teams
+- `POST   /api/auction/rooms/:code/teams` — register team
+- `GET    /api/auction/rooms/:code/state` — load saved snapshot
+- `PUT    /api/auction/rooms/:code/state` — upsert snapshot
+- `POST   /api/auction/rooms/:code/complete` — finalise auction
+
+### WS Hub (`/api/ws/auction`)
+- Host → server → members (in-memory broadcast, no persistence needed; state is in DB)
+- Payload includes: roomStage, phase, nominated, bidValue, leadId, teams, log, excluded, maxPlayers
+
 ## DB Schema (lib/db/src/schema/)
 
 - `users` — email, passwordHash, name, isAdmin
 - `matches` + `contests` — DB matches (legacy, seeded)
 - `players` + `teams` — fantasy players/teams
 - `leaderboard` + `activity` — stats tables
+- `auction_rooms` — auction room settings + status
+- `auction_room_teams` — per-room team registrations
+- `auction_room_state` — full JSON auction state snapshot
 
 ## Key Files
 
@@ -58,6 +102,9 @@ IPL fantasy cricket platform. Dark space-themed UI. pnpm monorepo with a React+V
 - `artifacts/cricket-fantasy/src/context/AuthContext.tsx` — auth state
 - `artifacts/api-server/src/routes/auth.ts` — JWT auth routes
 - `artifacts/api-server/src/routes/ipl.ts` — live IPL data proxy
+- `artifacts/cricket-fantasy/src/pages/AuctionRoom.tsx` — full auction UI (2000+ lines)
+- `artifacts/cricket-fantasy/src/pages/AuctionComplete.tsx` — final results page
+- `artifacts/api-server/src/routes/auction-rooms.ts` — all auction REST routes
 
 ## Key Commands
 
