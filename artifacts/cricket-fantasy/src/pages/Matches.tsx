@@ -155,14 +155,16 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
           alignItems: "center",
           padding: "13px 16px 13px 0",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
-          background: isTop3 ? "rgba(52,211,153,0.04)" : "transparent",
+          background: isTop3
+            ? "linear-gradient(90deg, rgba(52,211,153,0.055) 0%, rgba(52,211,153,0.018) 50%, transparent 100%)"
+            : "transparent",
           transition: "background 0.15s",
         }}
         onMouseEnter={e => (e.currentTarget.style.background = isTop3
-          ? "rgba(52,211,153,0.07)"
+          ? "linear-gradient(90deg, rgba(52,211,153,0.09) 0%, rgba(52,211,153,0.03) 50%, transparent 100%)"
           : "rgba(255,255,255,0.025)")}
         onMouseLeave={e => (e.currentTarget.style.background = isTop3
-          ? "rgba(52,211,153,0.04)"
+          ? "linear-gradient(90deg, rgba(52,211,153,0.055) 0%, rgba(52,211,153,0.018) 50%, transparent 100%)"
           : "transparent")}
       >
         {/* Col 1: Left accent bar */}
