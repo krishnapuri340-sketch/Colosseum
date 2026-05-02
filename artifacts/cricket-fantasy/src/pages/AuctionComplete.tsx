@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
-import { Trophy, Crown, ArrowLeft, Users, Gavel } from "lucide-react";
+import { Trophy, Crown, ArrowLeft, Users, Gavel, BarChart2, CheckCircle2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { TEAM_COLOR, ROLE_LABEL, ROLE_COLOR } from "@/lib/ipl-constants";
 import { getPlayerTier, TIER_CONFIG } from "@/lib/ipl-players-2026";
@@ -42,6 +42,12 @@ export default function AuctionComplete() {
   const [snap, setSnap] = useState<AuctionSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [leagueState, setLeagueState] = useState<
+    | { status: "idle" }
+    | { status: "creating" }
+    | { status: "ready"; leagueId: string; created: boolean }
+    | { status: "error"; message: string }
+  >({ status: "idle" });
 
   const config = useMemo(() => {
     try {
@@ -70,6 +76,28 @@ export default function AuctionComplete() {
       .catch(() => setError("Failed to load auction results."))
       .finally(() => setLoading(false));
   }, [config.roomCode]);
+
+  // Auto-create the league once results are loaded. Idempotent server-side, so
+  // safe to call even if the auction-complete endpoint already created one.
+  useEffect(() => {
+    const roomCode = config.roomCode;
+    if (!roomCode || !snap || leagueState.status !== "idle") return;
+    setLeagueState({ status: "creating" });
+    apiFetch(`/leagues/from-auction/${roomCode}`, { method: "POST" })
+      .then(async r => {
+        if (!r.ok) {
+          const j = await r.json().catch(() => ({}));
+          throw new Error(j.error ?? `Failed (${r.status})`);
+        }
+        return r.json() as Promise<{ league: { id: string }; created: boolean }>;
+      })
+      .then(data => {
+        setLeagueState({ status: "ready", leagueId: data.league.id, created: data.created });
+      })
+      .catch(err => {
+        setLeagueState({ status: "error", message: err?.message ?? "Could not create league" });
+      });
+  }, [snap, config.roomCode, leagueState.status]);
 
   const teams = snap?.teams ?? [];
   const totalSold = teams.reduce((s, t) => s + t.squad.length, 0);
@@ -103,12 +131,72 @@ export default function AuctionComplete() {
               </h1>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0.28rem 0.8rem",
-            background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: 20 }}>
-            <Trophy size={11} style={{ color: "#22c55e" }} />
-            <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#22c55e" }}>Final Results</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* League creation status pill */}
+            {leagueState.status === "creating" && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0.28rem 0.8rem",
+                background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.25)", borderRadius: 20 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#818cf8",
+                  animation: "livePulse 1.4s ease-in-out infinite" }} />
+                <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#818cf8" }}>Creating league…</span>
+              </div>
+            )}
+            {leagueState.status === "ready" && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0.28rem 0.8rem",
+                background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 20 }}>
+                <CheckCircle2 size={11} style={{ color: "#22c55e" }} />
+                <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#22c55e" }}>
+                  {leagueState.created ? "League created" : "League ready"}
+                </span>
+              </div>
+            )}
+            {leagueState.status === "error" && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0.28rem 0.8rem",
+                background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 20 }}>
+                <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#ef4444" }}>
+                  League: {leagueState.message}
+                </span>
+              </div>
+            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0.28rem 0.8rem",
+              background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: 20 }}>
+              <Trophy size={11} style={{ color: "#22c55e" }} />
+              <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#22c55e" }}>Final Results</span>
+            </div>
           </div>
         </div>
+
+        {/* CTA to view league leaderboard */}
+        {leagueState.status === "ready" && !loading && !error && snap && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+            background: "linear-gradient(135deg, rgba(192,25,44,0.15), rgba(192,25,44,0.04))",
+            border: "1px solid rgba(192,25,44,0.35)",
+            borderRadius: 14, padding: "0.85rem 1.1rem", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10,
+                background: "rgba(192,25,44,0.2)", border: "1px solid rgba(192,25,44,0.4)",
+                display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Trophy size={16} style={{ color: ACCENT }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "#fff" }}>
+                  Your league is live
+                </div>
+                <div style={{ fontSize: "0.7rem", color: DIM, marginTop: 1 }}>
+                  Track each squad's fantasy points throughout the season.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate("/leaderboard")}
+              style={{ padding: "0.55rem 1.1rem", background: ACCENT, border: "none",
+                borderRadius: 10, color: "#fff", fontWeight: 800, fontSize: "0.82rem",
+                cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem",
+                boxShadow: `0 0 24px ${ACCENT}40` }}>
+              <BarChart2 size={13} /> View Leaderboard
+            </button>
+          </div>
+        )}
 
         {loading && (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center",

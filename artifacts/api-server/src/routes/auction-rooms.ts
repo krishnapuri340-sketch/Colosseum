@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import { db, auctionRoomsTable, auctionRoomTeamsTable, auctionRoomStateTable } from "@workspace/db";
 import { getUserFromRequest } from "./auth";
+import { materialiseLeagueFromAuction } from "./leagues";
 
 const router: IRouter = Router();
 
@@ -217,9 +218,12 @@ router.put("/auction/rooms/:code/state", async (req, res): Promise<void> => {
   }
 });
 
-// POST /api/auction/rooms/:code/complete — finalise auction, mark room complete
+// POST /api/auction/rooms/:code/complete — finalise auction, mark room complete,
+// and atomically materialise the resulting league + members so the room becomes
+// a real, persisted entity visible on the Leaderboard.
 router.post("/auction/rooms/:code/complete", async (req, res): Promise<void> => {
   const code = (req.params.code ?? "").toUpperCase();
+  const userId = getUserFromRequest(req);
   const { stateJson } = req.body ?? {};
 
   try {
@@ -240,7 +244,18 @@ router.post("/auction/rooms/:code/complete", async (req, res): Promise<void> => 
       .set({ status: "complete" })
       .where(eq(auctionRoomsTable.code, code));
 
-    res.json({ ok: true, code });
+    // Materialise the league record (idempotent — safe to call again).
+    let leagueId: number | null = null;
+    try {
+      const result = await materialiseLeagueFromAuction(code, userId);
+      if (result) leagueId = result.league.id;
+    } catch (e) {
+      // Don't fail the auction completion if league creation has a hiccup —
+      // the dedicated /leagues/from-auction/:code endpoint can be retried.
+      req.log.error({ err: e }, "Failed to materialise league on complete");
+    }
+
+    res.json({ ok: true, code, leagueId });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to complete auction" });

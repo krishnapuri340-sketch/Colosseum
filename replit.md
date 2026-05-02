@@ -72,6 +72,7 @@ IPL fantasy cricket platform. Dark space-themed UI. pnpm monorepo with a React+V
 - `auction_rooms` — room settings (budget, maxPlayers, format, status)
 - `auction_room_teams` — registered teams per room
 - `auction_room_state` — full JSON snapshot (upserted after each action)
+- `leagues` + `league_members` — persisted league records auto-materialised from a completed auction (`squad_json` jsonb on each member)
 
 ### API Endpoints (auction-rooms.ts)
 - `POST   /api/auction/rooms` — create/upsert room
@@ -80,7 +81,13 @@ IPL fantasy cricket platform. Dark space-themed UI. pnpm monorepo with a React+V
 - `POST   /api/auction/rooms/:code/teams` — register team
 - `GET    /api/auction/rooms/:code/state` — load saved snapshot
 - `PUT    /api/auction/rooms/:code/state` — upsert snapshot
-- `POST   /api/auction/rooms/:code/complete` — finalise auction
+- `POST   /api/auction/rooms/:code/complete` — finalise auction; also materialises the league record (idempotent, non-fatal)
+
+### League API Endpoints (leagues.ts)
+- `POST   /api/leagues/from-auction/:code` — race-safe upsert (onConflictDoNothing) that turns a completed auction into a persisted league + members
+- `GET    /api/leagues` — list current user's leagues (member or host)
+- `GET    /api/leagues/:id` — single league detail; access gated to host or members only
+- Per-player fantasy points are joined from `players.points` at read time, with a deterministic credits/role fallback for unseeded players (only when the name isn't found in `players` at all)
 
 ### WS Hub (`/api/ws/auction`)
 - Host → server → members (in-memory broadcast, no persistence needed; state is in DB)

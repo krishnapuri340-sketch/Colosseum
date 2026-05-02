@@ -16,6 +16,7 @@
  */
 
 import { Layout } from "@/components/layout/Layout";
+import { useLocation } from "wouter";
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -66,11 +67,6 @@ interface League {
   members: LeagueMember[];
   auctionDate: string;
 }
-
-// ── Mock data ─────────────────────────────────────────────────────────────────
-// Points are per-player season fantasy totals — based on their role/credits
-
-const LEAGUES: League[] = [];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -451,11 +447,85 @@ function LeagueCard({ league }: { league: League }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 
+// API response shape from GET /api/leagues
+interface ApiLeague {
+  id: string;
+  code: string;
+  name: string;
+  format: "classic" | "tier" | string;
+  budget: number;
+  squadSize: number;
+  captainVC: boolean;
+  createdAt: string;
+  members: Array<{
+    id: string;
+    userId: number | null;
+    teamName: string;
+    color: string;
+    isHost: boolean;
+    isMe: boolean;
+    squad: Array<{
+      name: string;
+      team: string;
+      role: string;
+      purchasePrice: number;
+      fantasyPts: number;
+    }>;
+    totalPts: number;
+    budgetSpent: number;
+    rank: number;
+  }>;
+}
+
+const LEAGUE_PALETTE = ["#c0192c", "#818cf8", "#34d399", "#f59e0b", "#ec4899", "#06b6d4", "#a855f7", "#f97316"];
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function adaptLeague(api: ApiLeague, idx: number): League {
+  const color = LEAGUE_PALETTE[idx % LEAGUE_PALETTE.length];
+  const date = new Date(api.createdAt);
+  const auctionDate = isNaN(date.getTime())
+    ? "recently"
+    : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+  const members: LeagueMember[] = api.members.map(m => ({
+    id:          m.id,
+    username:    m.teamName,
+    initials:    initialsOf(m.teamName),
+    color:       m.color || color,
+    isMe:        m.isMe,
+    teamName:    m.teamName,
+    squad:       m.squad,
+    totalPts:    m.totalPts,
+    rank:        m.rank,
+    budgetSpent: Math.round(m.budgetSpent * 10) / 10,
+  }));
+
+  return {
+    id:        api.id,
+    name:      api.name,
+    color,
+    format:    (api.format === "tier" ? "tier" : "classic"),
+    squadSize: api.squadSize,
+    budget:    api.budget,
+    captainVC: api.captainVC,
+    members,
+    auctionDate,
+  };
+}
+
 export default function Leaderboard() {
   const [standings,   setStandings]   = useState<Standing[]>([]);
   const [loadingStandings, setLoadingS] = useState(true);
-  const [activeLeague, setActiveLeague] = useState<string>("l1");
+  const [leagues, setLeagues]           = useState<League[]>([]);
+  const [loadingLeagues, setLoadingLeagues] = useState(true);
+  const [activeLeague, setActiveLeague] = useState<string>("");
   const [mainTab, setMainTab]           = useState<"fantasy" | "ipl">("fantasy");
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     apiFetch("/ipl/standings")
@@ -465,20 +535,32 @@ export default function Leaderboard() {
       .finally(() => setLoadingS(false));
   }, []);
 
-  const selectedLeague = LEAGUES.find(l => l.id === activeLeague) ?? LEAGUES[0] ?? null;
+  useEffect(() => {
+    apiFetch("/leagues")
+      .then(r => r.ok ? r.json() : { leagues: [] })
+      .then((d: { leagues?: ApiLeague[] }) => {
+        const list = (d.leagues ?? []).map(adaptLeague);
+        setLeagues(list);
+        if (list.length > 0 && !activeLeague) setActiveLeague(list[0].id);
+      })
+      .catch(() => setLeagues([]))
+      .finally(() => setLoadingLeagues(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const selectedLeague = leagues.find(l => l.id === activeLeague) ?? leagues[0] ?? null;
   const top3 = standings.slice(0, 3);
   const podiumDisplay = top3.length === 3 ? [top3[1], top3[0], top3[2]] : top3;
   const podiumHeights = ["h-28", "h-36", "h-24"];
 
   // My overall stats across all leagues
   const myStats = useMemo(() => {
-    if (LEAGUES.length === 0) return { leagues: 0, bestRank: 0, topPts: 0 };
-    const myRows = LEAGUES.flatMap(l => l.members.filter(m => m.isMe));
-    if (myRows.length === 0) return { leagues: 0, bestRank: 0, topPts: 0 };
+    if (leagues.length === 0) return { leagues: 0, bestRank: 0, topPts: 0 };
+    const myRows = leagues.flatMap(l => l.members.filter(m => m.isMe));
+    if (myRows.length === 0) return { leagues: leagues.length, bestRank: 0, topPts: 0 };
     const bestRank = Math.min(...myRows.map(m => m.rank));
     const topPts   = Math.max(...myRows.map(m => m.totalPts));
-    return { leagues: myRows.length, bestRank, topPts };
-  }, []);
+    return { leagues: leagues.length, bestRank, topPts };
+  }, [leagues]);
 
   return (
     <Layout>
@@ -548,35 +630,73 @@ export default function Leaderboard() {
         {/* ══ FANTASY LEAGUES TAB ══ */}
         {mainTab === "fantasy" && (
           <>
+            {/* Loading skeleton */}
+            {loadingLeagues && (
+              <div className="space-y-3">
+                <Skeleton className="h-10 w-64 bg-white/5 rounded-xl" />
+                <Skeleton className="h-64 w-full bg-white/5 rounded-2xl" />
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!loadingLeagues && leagues.length === 0 && (
+              <div style={{
+                background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.1)",
+                borderRadius: 18, padding: "2.5rem 1.5rem", textAlign: "center",
+              }}>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", margin: "0 auto 0.75rem",
+                  background: "rgba(192,25,44,0.12)", border: "1px solid rgba(192,25,44,0.3)",
+                  display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Gavel size={22} style={{ color: "#c0192c" }} />
+                </div>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "#fff" }}>
+                  No leagues yet
+                </h3>
+                <p style={{ margin: "0.4rem 0 1rem", fontSize: "0.82rem", color: "rgba(255,255,255,0.4)" }}>
+                  Run an auction and complete it to create your first league.
+                </p>
+                <button
+                  onClick={() => navigate("/auction")}
+                  style={{ padding: "0.6rem 1.4rem", background: "#c0192c", border: "none",
+                    borderRadius: 10, color: "#fff", fontWeight: 800, fontSize: "0.85rem",
+                    cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8,
+                    boxShadow: "0 0 28px rgba(192,25,44,0.35)" }}>
+                  <Gavel size={14} /> Start an Auction
+                </button>
+              </div>
+            )}
+
             {/* League selector pills */}
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.1em",
-                color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>
-                Your leagues
-              </span>
-              {LEAGUES.map(l => {
-                const me = l.members.find(m => m.isMe);
-                return (
-                  <button key={l.id} onClick={() => setActiveLeague(l.id)}
-                    style={{
-                      padding: "0.4rem 0.9rem", borderRadius: 20, cursor: "pointer",
-                      background: activeLeague === l.id ? `${l.color}22` : "rgba(255,255,255,0.04)",
-                      border: `1.5px solid ${activeLeague === l.id ? l.color : "rgba(255,255,255,0.09)"}`,
-                      color: activeLeague === l.id ? l.color : "rgba(255,255,255,0.45)",
-                      fontSize: "0.78rem", fontWeight: 600, transition: "all 0.15s",
-                      display: "flex", alignItems: "center", gap: 7,
-                    }}>
-                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: l.color }} />
-                    {l.name}
-                    {me && (
-                      <span style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.3)" }}>
-                        #{me.rank}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {!loadingLeagues && leagues.length > 0 && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.1em",
+                  color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>
+                  Your leagues
+                </span>
+                {leagues.map(l => {
+                  const me = l.members.find(m => m.isMe);
+                  return (
+                    <button key={l.id} onClick={() => setActiveLeague(l.id)}
+                      style={{
+                        padding: "0.4rem 0.9rem", borderRadius: 20, cursor: "pointer",
+                        background: activeLeague === l.id ? `${l.color}22` : "rgba(255,255,255,0.04)",
+                        border: `1.5px solid ${activeLeague === l.id ? l.color : "rgba(255,255,255,0.09)"}`,
+                        color: activeLeague === l.id ? l.color : "rgba(255,255,255,0.45)",
+                        fontSize: "0.78rem", fontWeight: 600, transition: "all 0.15s",
+                        display: "flex", alignItems: "center", gap: 7,
+                      }}>
+                      <div style={{ width: 7, height: 7, borderRadius: "50%", background: l.color }} />
+                      {l.name}
+                      {me && (
+                        <span style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.3)" }}>
+                          #{me.rank}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Active league card */}
             {selectedLeague && (
@@ -594,16 +714,18 @@ export default function Leaderboard() {
             )}
 
             {/* Info note */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8,
-              padding: "0.65rem 1rem", borderRadius: 10,
-              background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <Info size={13} style={{ color: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
-              <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
-                Points are calculated from real IPL 2026 match performances of each player in your squad,
-                using the scoring rules configured for this league. Captain earns 2×, Vice-Captain 1.5×
-                {selectedLeague && !selectedLeague.captainVC && " (C/VC disabled for this league)"}.
-              </span>
-            </div>
+            {!loadingLeagues && leagues.length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8,
+                padding: "0.65rem 1rem", borderRadius: 10,
+                background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <Info size={13} style={{ color: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
+                <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
+                  Points are calculated from real IPL 2026 match performances of each player in your squad,
+                  using the scoring rules configured for this league. Captain earns 2×, Vice-Captain 1.5×
+                  {selectedLeague && !selectedLeague.captainVC && " (C/VC disabled for this league)"}.
+                </span>
+              </div>
+            )}
           </>
         )}
 
