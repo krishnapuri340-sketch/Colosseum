@@ -320,7 +320,6 @@ function MomDropdown({
                       background: `${tc}0e`,
                       borderBottom: "1px solid rgba(255,255,255,0.05)",
                       display: "flex", alignItems: "center", gap: 7,
-                      position: "sticky", top: 0, zIndex: 1,
                     }}>
                       <TeamLogo code={team} size={16} />
                       <span style={{ fontSize: "0.65rem", fontWeight: 800,
