@@ -139,7 +139,7 @@ export default function MyTeams() {
                           {team.status.toUpperCase()}
                         </span>
                       </div>
-                      <p className="text-slate-400 text-sm mb-3">{team.match}</p>
+                      <p className="text-slate-400 text-sm mb-3">{team.matchId}</p>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs text-slate-500">C</span>

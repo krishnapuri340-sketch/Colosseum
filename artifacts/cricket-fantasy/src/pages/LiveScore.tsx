@@ -242,7 +242,7 @@ export default function LiveScore() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [filter, setFilter] = useState<"all"|"mysquad">("all");
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
-  const pollRef = useRef<ReturnType<typeof setInterval>>();
+  const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const mySquadTotalPts = 0; // Will come from live API
 

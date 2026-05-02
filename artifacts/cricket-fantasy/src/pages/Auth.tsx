@@ -70,15 +70,15 @@ function FloatingInput({
   );
 }
 
-export default function Auth() {
-  const [mode, setMode]           = useState<"login" | "register">("login");
+export default function Auth({ mode: initialMode = "login" }: { mode?: "login" | "register" }) {
+  const [mode, setMode]           = useState<"login" | "register">(initialMode);
   const [name, setName]           = useState("");
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState("");
   const [, navigate]              = useLocation();
-  const { login, register }       = useAuth();
+  const { login, signup: register } = useAuth();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
