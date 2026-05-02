@@ -130,15 +130,11 @@ export default function Auth({ mode: initialMode = "login" }: { mode?: "login" |
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
           <div style={{
-            width: 56, height: 56, borderRadius: 18, margin: "0 auto 1rem",
-            background: "linear-gradient(135deg, #c0192c, #8c0f1e)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 8px 32px rgba(192,25,44,0.45)",
+            width: 72, height: 72, borderRadius: 20, margin: "0 auto 1rem",
+            overflow: "hidden",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.55)",
           }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L3 7l9 5 9-5-9-5zM3 17l9 5 9-5M3 12l9 5 9-5"
-                stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <img src="/logo.png" alt="Colosseum" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
           <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>
             Colosseum
