@@ -44,42 +44,47 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
           borderRadius: 14,
           cursor: "pointer",
           WebkitTapHighlightColor: "transparent",
-          transition: "background 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease",
-          /* Active = bold crimson gradient pill */
+          transition: "background 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
+          /* Active = glassmorphic crimson-tinted pill (subtle) */
           background: active
-            ? "linear-gradient(135deg, #c0192c 0%, #9a1424 55%, #7a0f1d 100%)"
+            ? "linear-gradient(135deg, rgba(192,25,44,0.18) 0%, rgba(192,25,44,0.10) 60%, rgba(192,25,44,0.06) 100%)"
             : "transparent",
+          backdropFilter: active ? "blur(20px) saturate(180%)" : undefined,
+          WebkitBackdropFilter: active ? "blur(20px) saturate(180%)" : undefined,
+          border: active
+            ? "1px solid rgba(192,25,44,0.28)"
+            : "1px solid transparent",
           boxShadow: active
-            ? "0 8px 22px rgba(192,25,44,0.42), 0 1px 0 rgba(255,255,255,0.18) inset, 0 -1px 0 rgba(0,0,0,0.25) inset"
+            ? "0 1px 0 rgba(255,255,255,0.06) inset, 0 4px 16px rgba(192,25,44,0.10)"
             : "none",
         }}
         onMouseEnter={e => {
-          if (!active) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)";
+          if (!active) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)";
         }}
         onMouseLeave={e => {
           if (!active) (e.currentTarget as HTMLDivElement).style.background = "transparent";
         }}
       >
-        {/* Icon orb: circular & glowy when active, soft tile when not */}
+        {/* Icon orb: tinted crimson glass when active, soft tile when not */}
         <div style={{
           width: 38, height: 38,
           borderRadius: active ? "50%" : 11,
           flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
           background: active
-            ? "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.05) 100%)"
+            ? "linear-gradient(135deg, rgba(192,25,44,0.30) 0%, rgba(192,25,44,0.12) 100%)"
             : "rgba(255,255,255,0.04)",
           border: active
-            ? "1px solid rgba(255,255,255,0.25)"
+            ? "1px solid rgba(192,25,44,0.35)"
             : "1px solid rgba(255,255,255,0.06)",
           boxShadow: active
-            ? "0 4px 12px rgba(0,0,0,0.35), 0 0 0 3px rgba(255,255,255,0.04) inset"
+            ? "0 1px 0 rgba(255,255,255,0.10) inset"
             : "none",
           transition: "all 0.22s ease",
         }}>
           <Icon style={{
             width: 17, height: 17,
-            color: active ? "#fff" : "rgba(255,255,255,0.42)",
+            color: active ? "#ff8a99" : "rgba(255,255,255,0.42)",
             transition: "color 0.22s ease",
           }} />
         </div>
@@ -87,8 +92,8 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
         {!collapsed && (
           <span style={{
             fontSize: "0.92rem",
-            fontWeight: active ? 800 : 500,
-            color: active ? "#fff" : "rgba(255,255,255,0.55)",
+            fontWeight: active ? 700 : 500,
+            color: active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
             whiteSpace: "nowrap",
             letterSpacing: active ? "-0.01em" : "normal",
             transition: "color 0.22s ease",
@@ -97,13 +102,13 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
           </span>
         )}
 
-        {/* Subtle right-side glow dot when active (reference has a soft accent) */}
+        {/* Subtle right-side accent dot when active */}
         {active && !collapsed && (
           <div style={{
             marginLeft: "auto",
-            width: 6, height: 6, borderRadius: "50%",
-            background: "rgba(255,255,255,0.85)",
-            boxShadow: "0 0 8px rgba(255,255,255,0.6)",
+            width: 5, height: 5, borderRadius: "50%",
+            background: "rgba(224,85,114,0.85)",
+            boxShadow: "0 0 8px rgba(192,25,44,0.5)",
           }} />
         )}
       </div>
@@ -175,20 +180,13 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
       }}>
         {(isMobile || !collapsed) && (
           <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-            <div style={{
+            <img src="/logo.png" alt="Colosseum" style={{
               width: 42, height: 42,
               borderRadius: "50%",
               flexShrink: 0,
-              overflow: "hidden",
-              padding: 2,
-              background: "linear-gradient(135deg, #c0192c 0%, #7a0f1d 100%)",
-              boxShadow: "0 6px 20px rgba(192,25,44,0.45), 0 0 0 1px rgba(255,255,255,0.10) inset",
-            }}>
-              <img src="/logo.png" alt="Colosseum" style={{
-                width: "100%", height: "100%",
-                objectFit: "cover", borderRadius: "50%",
-              }} />
-            </div>
+              objectFit: "cover",
+              filter: "drop-shadow(0 6px 18px rgba(192,25,44,0.35))",
+            }} />
             <div>
               <div style={{
                 fontWeight: 900,
@@ -209,15 +207,12 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
           </div>
         )}
         {!isMobile && collapsed && (
-          <div style={{
-            width: 42, height: 42, borderRadius: "50%", overflow: "hidden", padding: 2,
-            background: "linear-gradient(135deg, #c0192c 0%, #7a0f1d 100%)",
-            boxShadow: "0 6px 20px rgba(192,25,44,0.45), 0 0 0 1px rgba(255,255,255,0.10) inset",
-          }}>
-            <img src="/logo.png" alt="Colosseum" style={{
-              width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%",
-            }} />
-          </div>
+          <img src="/logo.png" alt="Colosseum" style={{
+            width: 42, height: 42,
+            borderRadius: "50%",
+            objectFit: "cover",
+            filter: "drop-shadow(0 6px 18px rgba(192,25,44,0.35))",
+          }} />
         )}
         {isMobile && onClose && (
           <button onClick={onClose} aria-label="Close menu" style={{
