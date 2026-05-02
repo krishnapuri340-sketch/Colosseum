@@ -636,3 +636,160 @@ select {
   -webkit-text-fill-color: transparent;
   color: transparent;
 }
+
+/* ── Headline split gradient — for hero "Welcome back," ──────── */
+.headline-grad-crimson {
+  background: linear-gradient(120deg, #ff3854 0%, #c0192c 45%, #7b1024 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 2px 18px rgba(192, 25, 44, 0.35));
+}
+
+/* ── Filter chips (segmented control) ───────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 9999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s, border-color 0.18s, transform 0.1s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.chip:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.13);
+}
+.chip:active { transform: scale(0.97); }
+.chip-active {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(192, 25, 44, 0.95), rgba(155, 19, 35, 0.85));
+  border-color: rgba(255, 100, 120, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(192, 25, 44, 0.3),
+    0 4px 16px rgba(192, 25, 44, 0.32),
+    0 1px 0 rgba(255, 255, 255, 0.18) inset;
+}
+.chip-active:hover {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(210, 40, 60, 1), rgba(170, 25, 40, 0.95));
+  border-color: rgba(255, 120, 140, 0.55);
+}
+.chip-today {
+  color: #6ee7b7;
+  background: rgba(110, 231, 183, 0.08);
+  border-color: rgba(110, 231, 183, 0.2);
+}
+.chip-today::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.7);
+  animation: pulseDot 2.4s ease-in-out infinite;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(0.85); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chip-today::before { animation: none; }
+}
+
+/* ── Avatar stack ───────────────────────────────────────────── */
+.avatar-stack {
+  display: inline-flex;
+  align-items: center;
+}
+.avatar-stack > * {
+  margin-left: -10px;
+  border: 2px solid rgba(7, 9, 26, 0.95);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: transform 0.18s, z-index 0s;
+  position: relative;
+}
+.avatar-stack > *:first-child { margin-left: 0; }
+.avatar-stack > *:hover { transform: translateY(-3px); z-index: 5; }
+
+/* ── Featured spotlight card — for highlighted live match ───── */
+.featured-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.featured-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 56, 84, 0.55) 0%,
+    rgba(192, 25, 44, 0.2) 35%,
+    rgba(129, 140, 248, 0.15) 70%,
+    rgba(255, 56, 84, 0.45) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: featuredBorder 8s linear infinite;
+  pointer-events: none;
+}
+@keyframes featuredBorder {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .featured-card::before { animation: none; }
+}
+
+/* ── Status pill (Live / Upcoming / Completed) ──────────────── */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: inherit;
+}
+.status-pill-live {
+  color: #6ee7b7;
+  background: rgba(34, 197, 94, 0.13);
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.18);
+}
+.status-pill-live::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%; background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+.status-pill-upcoming {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.10);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+.status-pill-completed {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}

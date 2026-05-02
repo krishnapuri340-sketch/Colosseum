@@ -37,7 +37,7 @@ IPL fantasy cricket platform. Dark space-themed UI. pnpm monorepo with a React+V
 
 ## Pages
 
-- `/` — Dashboard (stats widgets, upcoming matches)
+- `/` — Dashboard. Redesigned in the "Virtus / G.Take" vibe: split-gradient hero headline, breadcrumb-style Today + date chips, avatar-stack with Invite, filter chips for matches (All / Live / Upcoming / Completed) with active state and counts, big "Host Auction" pill CTA, featured live-match card with animated gradient border, right rail with Today's Spotlight + My Squads + Activity sparkline + Season progress. Brand color stays crimson #c0192c.
 - `/matches` — Live Match Centre (real IPL data from S3 feed)
 - `/contests` — Contest browser
 - `/players` — Player browser with role/team filters
