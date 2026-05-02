@@ -314,14 +314,23 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
               <>
                 <ColHeaders />
                 {qualifiers.map((row, i) => <TeamRow key={row.team} row={row} idx={i} />)}
-                <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "0 16px",
-                  position: "relative" }}>
+                <div style={{ position: "relative", margin: "4px 0", height: 20,
+                  display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {/* Glowing line */}
+                  <div style={{
+                    position: "absolute", left: 0, right: 0, top: "50%",
+                    transform: "translateY(-50%)",
+                    height: 1,
+                    background: "linear-gradient(90deg, transparent 0%, #34d399 30%, #34d399 70%, transparent 100%)",
+                    boxShadow: "0 0 6px 1px rgba(52,211,153,0.5)",
+                  }} />
+                  {/* Label */}
                   <span style={{
-                    position: "absolute", left: "50%", top: "50%",
-                    transform: "translate(-50%, -50%)",
-                    fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.1em",
-                    textTransform: "uppercase", color: "rgba(255,255,255,0.25)",
-                    background: "rgba(9,12,24,1)", padding: "0 8px", whiteSpace: "nowrap",
+                    position: "relative", zIndex: 1,
+                    fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.12em",
+                    textTransform: "uppercase", color: "#34d399",
+                    background: "rgba(9,12,24,1)", padding: "0 10px", whiteSpace: "nowrap",
+                    opacity: 0.7,
                   }}>
                     Playoff cutoff
                   </span>
