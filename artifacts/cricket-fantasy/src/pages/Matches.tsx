@@ -445,7 +445,7 @@ function MatchCard({ match }: { match: IplMatch }) {
 }
 
 export default function Matches() {
-  // Shared cache with Dashboard / LiveTicker / LiveScore — no duplicate fetches.
+  // Shared cache with Dashboard / LiveScore — no duplicate fetches.
   const { data: matches = [], isLoading: loading, error: matchesError } = useIplMatches();
   const { data: standings = [], isLoading: standingsLoading } = useIplStandings();
 

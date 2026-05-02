@@ -583,19 +583,6 @@ select {
   .ambient-blob-a, .ambient-blob-b, .floodlight-beam { animation: none; }
 }
 
-/* ── Live ticker marquee ─────────────────────────────────────── */
-@keyframes tickerScroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-.ticker-track {
-  animation: tickerScroll 60s linear infinite;
-}
-.ticker-track:hover { animation-play-state: paused; }
-@media (prefers-reduced-motion: reduce) {
-  .ticker-track { animation: none; transform: none; }
-}
-
 /* ── Spotlight card — cursor-tracking radial glow ────────────── */
 .spotlight-card {
   position: relative;
