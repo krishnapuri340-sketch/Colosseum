@@ -1,625 +1,616 @@
 import { Layout } from "@/components/layout/Layout";
-import { useState, useMemo } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useMemo, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import {
-  ArrowRight, Trophy, Flame, TrendingUp, Gavel,
-  Target, Users, Zap, ChevronRight, Star, Radio,
-  Sparkles, UserPlus, SlidersHorizontal, Calendar,
-  ArrowUpRight, Plus,
+  ArrowUpRight, Gavel, Radio, Users, Target, Trophy,
+  ChevronDown, Sparkles, Clock, Flame, ArrowRight, TrendingUp,
 } from "lucide-react";
 import { Link } from "wouter";
-import { TEAM_COLOR, TEAM_LOGO } from "@/lib/ipl-constants";
+import { TEAM_LOGO, TEAM_COLOR, ALL_TEAMS } from "@/lib/ipl-constants";
 import { useApp } from "@/context/AppContext";
 import { useIplMatches, type IplMatch } from "@/hooks/use-ipl-data";
-import { AnimatedNumber } from "@/components/effects/AnimatedNumber";
-import { SpotlightCard } from "@/components/effects/SpotlightCard";
 
-/** Convert "#aabbcc" or "rgb(a,b,c)" to "r,g,b" for the spotlight var. */
-function toRgbCsv(hex: string): string {
-  if (hex.startsWith("rgb")) {
-    return hex.replace(/rgba?\(([^)]+)\)/, "$1").split(",").slice(0,3).map(s => s.trim()).join(",");
-  }
-  const h = hex.replace("#","");
-  const v = h.length === 3
-    ? h.split("").map(c => parseInt(c+c, 16))
-    : [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
-  return `${v[0]},${v[1]},${v[2]}`;
-}
-
-type FilterKey = "all" | "live" | "upcoming" | "completed";
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all",       label: "All matches" },
-  { key: "live",      label: "Live" },
-  { key: "upcoming",  label: "Upcoming" },
-  { key: "completed", label: "Completed" },
-];
-
-const QUICK_ACTIONS = [
-  { label:"Join Room",     href:"/auction/join",   icon:Users,  color:"#818cf8", bg:"rgba(129,140,248,0.12)", border:"rgba(129,140,248,0.25)" },
-  { label:"Predictions",   href:"/predictions",    icon:Target, color:"#34d399", bg:"rgba(52,211,153,0.11)", border:"rgba(52,211,153,0.24)" },
-  { label:"My Teams",      href:"/my-teams",       icon:Star,   color:"#f59e0b", bg:"rgba(245,158,11,0.11)", border:"rgba(245,158,11,0.24)" },
-];
-
-/* Decorative cricket ball with seam */
-function CricketBallDecor({ size = 120, opacity = 0.12 }: { size?: number; opacity?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 120 120" fill="none"
-      style={{ opacity, pointerEvents: "none" }}>
-      <circle cx="60" cy="60" r="56" stroke="rgba(192,25,44,0.6)" strokeWidth="1.5" fill="rgba(192,25,44,0.05)" />
-      <path d="M60 4 C80 20, 80 100, 60 116" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" fill="none" />
-      <path d="M60 4 C40 20, 40 100, 60 116" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" fill="none" />
-      {[25,35,45,55,65,75,85,95].map((y, i) => (
-        <g key={i}>
-          <line x1="52" y1={y} x2="48" y2={y + 4} stroke="rgba(255,255,255,0.35)" strokeWidth="1" />
-          <line x1="68" y1={y} x2="72" y2={y + 4} stroke="rgba(255,255,255,0.35)" strokeWidth="1" />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-function StumpsDecor({ opacity = 0.08 }: { opacity?: number }) {
-  return (
-    <svg width="60" height="80" viewBox="0 0 60 80" fill="none" style={{ opacity, pointerEvents: "none" }}>
-      <rect x="10" y="20" width="4" height="55" rx="2" fill="rgba(255,255,255,0.8)" />
-      <rect x="28" y="20" width="4" height="55" rx="2" fill="rgba(255,255,255,0.8)" />
-      <rect x="46" y="20" width="4" height="55" rx="2" fill="rgba(255,255,255,0.8)" />
-      <rect x="8" y="17" width="12" height="4" rx="2" fill="rgba(255,255,255,0.8)" />
-      <rect x="26" y="17" width="12" height="4" rx="2" fill="rgba(255,255,255,0.8)" />
-      <line x1="4" y1="75" x2="56" y2="75" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
-    </svg>
-  );
-}
+/* ───────── motion ───────── */
 
 const fade: Variants = {
-  hidden:  { opacity:0, y:16 },
-  visible: { opacity:1, y:0, transition:{ type:"spring", stiffness:280, damping:24 } },
+  hidden: { opacity: 0, y: 14 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
 };
 
-function TeamLogo({ code, size=44 }: { code:string; size?:number }) {
-  const logo  = TEAM_LOGO[code];
-  const color = TEAM_COLOR[code] ?? "#aaa";
-  if (logo) return <img src={logo} alt={code} style={{ width:size, height:size, objectFit:"contain" }} />;
-  return (
-    <div style={{ width:size, height:size, borderRadius:"50%",
-      background:`${color}22`, border:`1.5px solid ${color}50`,
-      display:"flex", alignItems:"center", justifyContent:"center",
-      fontWeight:800, fontSize:size*0.28, color }}>
-      {code}
-    </div>
-  );
-}
+/* ───────── shared bits ───────── */
 
-/** Mock "rivals" avatar stack — renders top 3 most-popular team colors as initial bubbles */
-const RIVAL_AVATARS = [
-  { initial: "RK", color: "#fcd34d" },
-  { initial: "AS", color: "#a78bfa" },
-  { initial: "MJ", color: "#34d399" },
-];
-
-function AvatarBubble({ initial, color, size = 32 }: { initial: string; color: string; size?: number }) {
+/** Floating "↗" pill in the top-right corner of every clickable card. */
+function CornerArrow() {
   return (
     <div style={{
-      width: size, height: size, borderRadius: "50%",
-      background: `linear-gradient(135deg, ${color}, ${color}88)`,
-      color: "#0b0e1f",
-      fontSize: size * 0.4, fontWeight: 900,
+      position: "absolute", top: 14, right: 14,
+      width: 30, height: 30, borderRadius: "50%",
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.08)",
       display: "flex", alignItems: "center", justifyContent: "center",
-      letterSpacing: "-0.02em",
-    }}>
-      {initial}
+      transition: "all 0.2s",
+      zIndex: 2,
+    }} className="card-arrow">
+      <ArrowUpRight size={14} style={{ color: "rgba(255,255,255,0.7)" }} />
     </div>
   );
 }
 
-function StatusPill({ status }: { status: "live" | "upcoming" | "completed" }) {
-  const cls = `status-pill status-pill-${status}`;
-  const label = status === "live" ? "Live" : status === "upcoming" ? "Upcoming" : "Completed";
-  return <span className={cls}>{label}</span>;
+/** Glassy bento card. The wrapping <Link> handles navigation. */
+function BentoCard({
+  href, children, padding = "20px", style, glow,
+}: {
+  href?: string;
+  children: React.ReactNode;
+  padding?: string;
+  style?: React.CSSProperties;
+  /** "rgba(...)" background tint for the inner top-left glow. */
+  glow?: string;
+}) {
+  const inner = (
+    <div
+      className="bento-card"
+      style={{
+        position: "relative",
+        height: "100%",
+        background:
+          "linear-gradient(180deg, rgba(20,22,40,0.72) 0%, rgba(11,13,28,0.78) 100%)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 24,
+        padding,
+        overflow: "hidden",
+        cursor: href ? "pointer" : "default",
+        transition: "transform 0.22s ease, border-color 0.22s ease",
+        ...style,
+      }}
+    >
+      {glow && (
+        <div aria-hidden style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: `radial-gradient(ellipse 60% 70% at 100% 0%, ${glow}, transparent 70%)`,
+        }} />
+      )}
+      <div style={{ position: "relative", zIndex: 1, height: "100%" }}>
+        {children}
+      </div>
+    </div>
+  );
+  return href ? <Link href={href}>{inner}</Link> : inner;
 }
 
-function todayLabel() {
-  const d = new Date();
-  return d.toLocaleDateString(undefined, { day: "2-digit", month: "short" });
+/* ───────── countdown widget ───────── */
+
+function parseMatchDate(m: IplMatch): Date | null {
+  if (!m?.matchDate) return null;
+  // Try common formats: "Mar 22, 2026" + "7:30 PM"
+  const candidates = [
+    `${m.matchDate} ${m.matchTime ?? ""}`.trim(),
+    m.matchDate,
+  ];
+  for (const c of candidates) {
+    const d = new Date(c);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return null;
 }
+
+function useCountdown(target: Date | null) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  if (!target) return { days: 0, hours: 0, mins: 0, secs: 0, expired: true };
+  const diff = Math.max(0, target.getTime() - now);
+  const days  = Math.floor(diff / 86_400_000);
+  const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+  const mins  = Math.floor((diff % 3_600_000) / 60_000);
+  const secs  = Math.floor((diff % 60_000) / 1000);
+  return { days, hours, mins, secs, expired: diff === 0 };
+}
+
+function CountdownCell({ value, label }: { value: number; label: string }) {
+  const v = String(value).padStart(2, "0");
+  return (
+    <div style={{
+      flex: 1, minWidth: 0,
+      background: "linear-gradient(180deg, rgba(139,92,246,0.10), rgba(192,25,44,0.08))",
+      border: "1px solid rgba(255,255,255,0.07)",
+      borderRadius: 12,
+      padding: "10px 6px",
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+    }}>
+      <div style={{
+        fontSize: "1.55rem", fontWeight: 900, color: "#fff",
+        letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums",
+      }}>{v}</div>
+      <div style={{
+        fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.14em",
+        color: "rgba(255,255,255,0.4)", textTransform: "uppercase",
+      }}>{label}</div>
+    </div>
+  );
+}
+
+/* ───────── form gauge (semi-circle SVG) ───────── */
+
+function FormGauge({ value, label }: { value: number; label: string }) {
+  // value 0–100 → angle 0..π
+  const v = Math.max(0, Math.min(100, value));
+  const r = 70;
+  const cx = 90, cy = 88;
+  const angle = Math.PI * (1 - v / 100);
+  const x = cx + r * Math.cos(angle);
+  const y = cy - r * Math.sin(angle);
+  const largeArc = v > 50 ? 1 : 0;
+  const arcPath = `M ${cx - r} ${cy} A ${r} ${r} 0 ${largeArc} 1 ${x} ${y}`;
+  const trackPath = `M ${cx - r} ${cy} A ${r} ${r} 0 1 1 ${cx + r} ${cy}`;
+  const tone =
+    v >= 70 ? "#22c55e" :
+    v >= 45 ? "#fbbf24" :
+              "#f87171";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <svg width="180" height="100" viewBox="0 0 180 100">
+        <defs>
+          <linearGradient id="formGrad" x1="0" x2="1">
+            <stop offset="0%" stopColor="#f87171" />
+            <stop offset="50%" stopColor="#fbbf24" />
+            <stop offset="100%" stopColor="#22c55e" />
+          </linearGradient>
+        </defs>
+        <path d={trackPath} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" strokeLinecap="round" />
+        <path d={arcPath}   fill="none" stroke="url(#formGrad)" strokeWidth="10" strokeLinecap="round" />
+        <circle cx={x} cy={y} r="6" fill="#fff" />
+      </svg>
+      <div style={{ marginTop: -8, textAlign: "center" }}>
+        <div style={{
+          fontSize: "2.1rem", fontWeight: 900, color: "#fff",
+          letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums",
+        }}>{Math.round(v)}</div>
+        <div style={{ fontSize: "0.7rem", color: tone, fontWeight: 700, marginTop: 2 }}>
+          {label}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ───────── feature tiles (top row) ───────── */
+
+const FEATURE_TILES: {
+  href: string; label: string; tag: string;
+  icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+  glow: string; iconColor: string;
+}[] = [
+  { href: "/auction",     label: "Auction",      tag: "Build your squad",
+    icon: Gavel,    glow: "rgba(192,25,44,0.28)",  iconColor: "#f87171" },
+  { href: "/live",        label: "Live Scoring", tag: "Watch it tick up",
+    icon: Radio,    glow: "rgba(34,197,94,0.22)",  iconColor: "#4ade80" },
+  { href: "/players",     label: "Players",      tag: "Stats & form",
+    icon: Users,    glow: "rgba(99,102,241,0.22)", iconColor: "#a5b4fc" },
+  { href: "/predictions", label: "Predictions",  tag: "Call the winner",
+    icon: Target,   glow: "rgba(139,92,246,0.24)", iconColor: "#c4b5fd" },
+];
+
+function FeatureTile({ tile }: { tile: typeof FEATURE_TILES[number] }) {
+  return (
+    <BentoCard href={tile.href} glow={tile.glow} padding="22px" style={{ minHeight: 180 }}>
+      <CornerArrow />
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: 16,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: `linear-gradient(135deg, ${tile.glow}, transparent)`,
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: `0 6px 24px ${tile.glow}`,
+        }}>
+          <tile.icon size={26} style={{ color: tile.iconColor }} />
+        </div>
+        <div>
+          <div style={{
+            fontSize: "1.5rem", fontWeight: 900, color: "#fff",
+            letterSpacing: "-0.03em", lineHeight: 1.05,
+          }}>{tile.label}</div>
+          <div style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
+            {tile.tag}
+          </div>
+        </div>
+      </div>
+    </BentoCard>
+  );
+}
+
+/* ───────── page ───────── */
 
 export default function Dashboard() {
-  const [filter, setFilter]   = useState<FilterKey>("all");
-  const { profile, totalPts, currentRank, myTeams, predAccuracy, notifications } = useApp();
-  const { data: matches = [], isLoading: loading } = useIplMatches();
+  const { profile, totalPts, currentRank, myTeams } = useApp();
+  const { data: matches = [] } = useIplMatches();
 
-  const { live, upcoming, completed } = useMemo(() => ({
-    live:      matches.filter(m => m.isLive),
-    upcoming:  matches.filter(m => m.isUpcoming),
-    completed: matches.filter(m => m.isCompleted),
-  }), [matches]);
+  const live      = useMemo(() => matches.filter(m => m.isLive),      [matches]);
+  const upcoming  = useMemo(() => matches.filter(m => m.isUpcoming),  [matches]);
+  const completed = useMemo(() => matches.filter(m => m.isCompleted), [matches]);
+  const featured  = live[0] ?? upcoming[0] ?? null;
 
-  const featured = live[0] ?? upcoming[0] ?? null;
+  const featuredDate = featured ? parseMatchDate(featured) : null;
+  const countdown    = useCountdown(featuredDate);
 
-  const filtered = useMemo<IplMatch[]>(() => {
-    const list =
-      filter === "live"      ? live
-      : filter === "upcoming" ? upcoming
-      : filter === "completed" ? completed
-      : [...live, ...upcoming, ...completed];
-    // Drop the featured card from the list to avoid duplication
-    return list.filter(m => m.iplId !== featured?.iplId).slice(0, 4);
-  }, [filter, live, upcoming, completed, featured]);
-
-  const filterCount = (k: FilterKey) =>
-    k === "live" ? live.length :
-    k === "upcoming" ? upcoming.length :
-    k === "completed" ? completed.length :
-    matches.length;
+  // "Form" score: rough 0–100 derived from prediction accuracy + rank,
+  // wholly cosmetic — falls back gracefully when stats are missing.
+  const formScore = useMemo(() => {
+    const rankPart = currentRank > 0 ? Math.max(0, 100 - currentRank) : 50;
+    return Math.round(rankPart * 0.6 + 40 * 0.4);
+  }, [currentRank]);
 
   return (
     <Layout>
       <motion.div
-        className="space-y-5"
+        className="space-y-4"
         initial="hidden"
         animate="visible"
-        variants={{ visible:{ transition:{ staggerChildren:0.07 } } }}
+        variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+        style={{ paddingBottom: 8 }}
       >
 
         {/* ═════════ HERO ═════════ */}
-        <motion.div variants={fade}
-          className="relative rounded-3xl overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, rgba(192,25,44,0.20) 0%, rgba(129,140,248,0.08) 55%, rgba(7,9,26,0.92) 100%)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            boxShadow: "0 1px 0 rgba(255,255,255,0.07) inset, 0 8px 40px rgba(0,0,0,0.32)",
-          }}>
+        <motion.div variants={fade} style={{
+          position: "relative",
+          background:
+            "linear-gradient(135deg, rgba(192,25,44,0.18) 0%, rgba(139,92,246,0.10) 55%, rgba(11,13,28,0.85) 100%)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 28,
+          padding: "26px 28px",
+          overflow: "hidden",
+        }}>
+          {/* aurora */}
+          <div aria-hidden style={{
+            position: "absolute", top: "-40%", left: "55%", width: "55%", height: "200%",
+            background: "radial-gradient(ellipse at center, rgba(139,92,246,0.35), transparent 60%)",
+            filter: "blur(40px)", pointerEvents: "none",
+          }} />
+          <div aria-hidden style={{
+            position: "absolute", top: "-30%", right: "-10%", width: "40%", height: "180%",
+            background: "radial-gradient(ellipse at center, rgba(192,25,44,0.30), transparent 60%)",
+            filter: "blur(50px)", pointerEvents: "none",
+          }} />
 
-          {/* Background glows */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div style={{
-              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-              background: "radial-gradient(ellipse 70% 80% at 12% 60%, rgba(192,25,44,0.24), transparent)",
-            }} />
-            <div style={{
-              position: "absolute", top: 0, right: 0, bottom: 0,
-              width: "55%",
-              background: "radial-gradient(ellipse 80% 60% at 80% 20%, rgba(129,140,248,0.10), transparent)",
-            }} />
-          </div>
-
-          {/* Decorative cricket ball */}
-          <div style={{ position: "absolute", top: -30, right: -30, pointerEvents: "none" }} className="ball-spin">
-            <CricketBallDecor size={180} opacity={0.10} />
-          </div>
-
-          <div className="relative z-10 p-6 md:p-8">
-            {/* Top chip row — Today + date */}
-            <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-              <div className="flex items-center gap-2">
-                <span className="chip chip-today">Today</span>
-                <span className="chip">
-                  <Calendar className="w-3 h-3" />
-                  {todayLabel()}
-                </span>
-                {live.length > 0 && (
-                  <span className="status-pill status-pill-live">
-                    {live.length} match{live.length > 1 ? "es" : ""} live
-                  </span>
-                )}
-              </div>
-
-              {/* Avatar stack + Invite */}
-              <div className="flex items-center gap-3">
-                <div className="avatar-stack">
-                  {RIVAL_AVATARS.map(r => (
-                    <AvatarBubble key={r.initial} initial={r.initial} color={r.color} size={30} />
-                  ))}
-                  <div style={{
-                    width: 30, height: 30, borderRadius: "50%",
-                    background: "rgba(255,255,255,0.08)",
-                    color: "rgba(255,255,255,0.6)",
-                    fontSize: 11, fontWeight: 800,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    letterSpacing: "-0.02em",
-                  }}>+12</div>
-                </div>
-                <button className="chip" style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <UserPlus className="w-3 h-3" />
-                  Invite
-                </button>
-              </div>
-            </div>
-
-            {/* Big split gradient headline */}
-            <h1
-              className="font-black mb-2 leading-[1.05]"
-              style={{
-                fontSize: "clamp(2.1rem, 4.6vw, 3.6rem)",
-                letterSpacing: "-0.035em",
-              }}
-            >
-              <span className="headline-grad-crimson">Welcome back,</span>
-              <span className="text-white"> {profile.displayName}</span>
-              <span className="inline-block ml-2" style={{ transform: "translateY(-4px)" }}>🏏</span>
-            </h1>
-            <p className="text-white/55 text-[0.92rem] mb-6 max-w-xl">
-              {loading
-                ? "Loading IPL 2026 fixtures…"
-                : "Your fantasy command center. Track live action, host an auction, and outsmart your league."}
-            </p>
-
-            {/* Filter chips + sort */}
-            <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
-              <div role="group" aria-label="Filter matches by status" className="flex items-center gap-1.5 flex-wrap">
-                {FILTERS.map(f => (
-                  <button
-                    key={f.key}
-                    onClick={() => setFilter(f.key)}
-                    aria-pressed={filter === f.key}
-                    aria-label={`${f.label}, ${filterCount(f.key)} matches`}
-                    className={"chip " + (filter === f.key ? "chip-active" : "")}
-                  >
-                    {f.label}
-                    <span aria-hidden="true" style={{
-                      marginLeft: 4,
-                      padding: "1px 7px",
-                      borderRadius: 9999,
-                      fontSize: "0.62rem",
-                      fontWeight: 800,
-                      background: filter === f.key ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.07)",
-                      color: filter === f.key ? "#fff" : "rgba(255,255,255,0.5)",
-                    }}>{filterCount(f.key)}</span>
-                  </button>
-                ))}
-                <button className="chip" aria-label="Sort and filter options" title="Sort & filter">
-                  <SlidersHorizontal className="w-3 h-3" />
-                </button>
-              </div>
-
-              {/* Big primary CTA — "New task" equivalent */}
-              <Link href="/auction/create">
-                <button
-                  className="press-sm flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white"
-                  style={{
-                    background: "linear-gradient(135deg, #c0192c 0%, #8b1020 100%)",
-                    border: "1px solid rgba(255,120,140,0.4)",
-                    boxShadow: "0 8px 24px rgba(192,25,44,0.35), 0 1px 0 rgba(255,255,255,0.18) inset",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  <Gavel className="w-4 h-4" />
-                  Host Auction
-                </button>
-              </Link>
-            </div>
-
-            {/* Quick action pills (secondary) */}
-            <div className="flex flex-wrap gap-2">
-              {QUICK_ACTIONS.map(a => (
-                <Link key={a.href} href={a.href}>
-                  <SpotlightCard
-                    color={toRgbCsv(a.color)}
-                    radius={220}
-                    className="press-sm flex items-center gap-2 px-3.5 py-2 rounded-full cursor-pointer transition-transform"
-                    style={{
-                      background: a.bg,
-                      border: `1px solid ${a.border}`,
-                    }}
-                  >
-                    <a.icon className="w-3 h-3" style={{ color: a.color }} />
-                    <span className="text-xs font-bold text-white/90">{a.label}</span>
-                  </SpotlightCard>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ═════════ STATS — featured + 3 mini ═════════ */}
-        <motion.div variants={fade}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3">
-
-          {/* Featured big stat — Total Points (spans 2 cols on mobile for impact) */}
-          <Link href="/leaderboard" className="col-span-2 md:col-span-1">
-            <div className="featured-card relative rounded-2xl p-5 cursor-pointer"
-              style={{
-                background: "linear-gradient(135deg, rgba(192,25,44,0.32) 0%, rgba(123,16,36,0.18) 60%, rgba(9,12,30,0.85) 100%)",
-                boxShadow: "0 1px 0 rgba(255,255,255,0.08) inset, 0 8px 32px rgba(192,25,44,0.18)",
-                minHeight: 132,
+          <div style={{
+            position: "relative", display: "grid",
+            gridTemplateColumns: "minmax(260px, 1.4fr) auto minmax(220px, 1fr)",
+            alignItems: "center", gap: 24,
+          }} className="hero-grid">
+            <div>
+              <div style={{
+                fontSize: "clamp(2.4rem, 4vw, 3.4rem)", fontWeight: 900, color: "#fff",
+                letterSpacing: "-0.045em", lineHeight: 1,
               }}>
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="text-[0.66rem] font-black tracking-widest uppercase text-white/55 mb-1">Season Points</div>
-                  <div className="text-xs text-white/40">IPL 2026 fantasy</div>
-                </div>
-                <ArrowUpRight className="w-4 h-4 text-white/40" />
+                Colosseum
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-5xl font-black text-white tabular-nums leading-none"
-                  style={{ letterSpacing: "-0.04em" }}>
-                  <AnimatedNumber value={totalPts} />
-                </span>
-                <span className="text-sm text-white/45 font-bold">pts</span>
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <div className="flex-1 h-1.5 rounded-full bg-white/8 overflow-hidden">
-                  <div className="h-full rounded-full"
-                    style={{
-                      width: `${Math.min(100, (totalPts / 5000) * 100)}%`,
-                      background: "linear-gradient(90deg, #ff3854, #c0192c)",
-                      boxShadow: "0 0 10px rgba(192,25,44,0.6)",
-                    }} />
-                </div>
-                <span className="text-xs text-white/35 font-bold">Goal 5K</span>
+              <div style={{
+                marginTop: 6, fontSize: "0.92rem", color: "rgba(255,255,255,0.55)",
+                fontWeight: 500,
+              }}>
+                IPL 2026 — Fantasy Auction League
               </div>
             </div>
-          </Link>
 
-          {[
-            { label:"Current Rank",  value:<><span>#</span><AnimatedNumber value={currentRank} /></>, sub:"Fantasy league", color:"#f59e0b", icon:<Trophy className="w-4 h-4" /> },
-            { label:"Teams Active",  value:<AnimatedNumber value={myTeams.length} />, sub:`${myTeams.filter(t=>t.status==="live").length} live`, color:"#34d399", icon:<Users className="w-4 h-4" /> },
-            { label:"Predictions",   value:<><AnimatedNumber value={predAccuracy} /><span>%</span></>, sub:"Accuracy",  color:"#818cf8", icon:<Target className="w-4 h-4" /> },
-          ].map(s => (
-            <SpotlightCard
-              key={s.label}
-              color={toRgbCsv(s.color)}
-              radius={300}
-              className="glass-elevated rounded-2xl p-4 flex flex-col justify-between cursor-default"
-              style={{ minHeight: 132 }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${s.color}26, ${s.color}10)`,
-                    border: `1px solid ${s.color}30`,
-                    color: s.color,
-                  }}>
-                  {s.icon}
-                </div>
-                <Sparkles className="w-3 h-3 text-white/15" />
-              </div>
-              <div>
-                <div className="text-2xl font-black text-white tabular-nums leading-none"
-                  style={{ letterSpacing: "-0.025em" }}>{s.value}</div>
-                <div className="text-xs font-bold text-white/55 mt-1.5">{s.label}</div>
-                <div className="text-[0.66rem] text-white/30 mt-0.5">{s.sub}</div>
-              </div>
-            </SpotlightCard>
-          ))}
+            {/* Season pill */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "10px 16px",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 999,
+              color: "rgba(255,255,255,0.85)", fontWeight: 700, fontSize: "0.82rem",
+              whiteSpace: "nowrap",
+            }} className="hero-pill">
+              <Sparkles size={14} style={{ color: "#fbbf24" }} />
+              Season 19
+              <ChevronDown size={14} style={{ opacity: 0.6 }} />
+            </div>
+
+            <div style={{
+              fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.5,
+              textAlign: "right", maxWidth: 320, justifySelf: "end",
+            }} className="hero-tagline">
+              Run your private auction, draft your dream squad, and chase the
+              orange&nbsp;cap on the only fantasy table that matters.
+            </div>
+          </div>
         </motion.div>
 
-        {/* ═════════ MAIN GRID ═════════ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* ═════════ FEATURE TILES ═════════ */}
+        <motion.div variants={fade} style={{
+          display: "grid", gap: 14,
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        }}>
+          {FEATURE_TILES.map(t => <FeatureTile key={t.href} tile={t} />)}
+        </motion.div>
 
-          {/* LEFT/MIDDLE — featured match + filtered list */}
-          <motion.div variants={fade} className="lg:col-span-2 space-y-4">
-
-            {/* Section header */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-black flex items-center gap-2" style={{ letterSpacing: "-0.01em" }}>
-                <Flame className="w-4.5 h-4.5 text-orange-500" />
-                Match Centre
-              </h2>
-              <Link href="/matches" className="flex items-center gap-1 text-xs font-semibold text-white/40 hover:text-white transition-colors">
-                All matches <ChevronRight className="w-3.5 h-3.5" />
+        {/* ═════════ BENTO ROW 2 — Bonus / Featured / Countdown ═════════ */}
+        <motion.div variants={fade} style={{
+          display: "grid", gap: 14,
+          gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.85fr)",
+        }} className="bento-row-2">
+          {/* Host Auction "bonus" card */}
+          <BentoCard href="/auction/create" glow="rgba(192,25,44,0.30)" padding="26px"
+            style={{ minHeight: 240 }}>
+            <CornerArrow />
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "5px 10px",
+              background: "rgba(192,25,44,0.22)",
+              border: "1px solid rgba(192,25,44,0.36)",
+              borderRadius: 999, color: "#f87171",
+              fontSize: "0.65rem", fontWeight: 800, letterSpacing: "0.10em",
+              textTransform: "uppercase",
+            }}>
+              <Flame size={11} /> Brand new
+            </div>
+            <div style={{
+              fontSize: "0.85rem", color: "rgba(255,255,255,0.6)",
+              marginTop: 18,
+            }}>
+              Sign up &amp; get up to <span style={{ color: "#fff", fontWeight: 800 }}>₹2,000 in coins</span>
+            </div>
+            <div style={{
+              fontSize: "clamp(2rem, 3.6vw, 2.85rem)", fontWeight: 900, color: "#fff",
+              letterSpacing: "-0.045em", lineHeight: 1.05, marginTop: 6,
+            }}>
+              Your Auction<br />Awaits!
+            </div>
+            <div style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "10px 18px",
+                background: "linear-gradient(135deg, #c0192c, #8b1023)",
+                color: "#fff", borderRadius: 999, fontWeight: 800, fontSize: "0.82rem",
+                boxShadow: "0 8px 24px rgba(192,25,44,0.4)",
+              }}>
+                Host now <ArrowRight size={14} />
+              </div>
+              <Link href="/auction/join">
+                <div style={{
+                  padding: "10px 16px",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  color: "rgba(255,255,255,0.75)",
+                  borderRadius: 999, fontWeight: 700, fontSize: "0.78rem",
+                  cursor: "pointer",
+                }}>
+                  Or join one →
+                </div>
               </Link>
             </div>
+          </BentoCard>
 
-            {/* Featured match — gradient hero card (G.Take "Design System" pattern) */}
-            {loading ? (
-              <Skeleton className="h-44 rounded-2xl bg-white/5" />
-            ) : featured ? (
-              <FeaturedMatch match={featured} />
+          {/* Featured match */}
+          {featured ? (
+            <BentoCard href="/matches" glow="rgba(99,102,241,0.22)" padding="22px" style={{ minHeight: 240 }}>
+              <CornerArrow />
+              <div style={{
+                fontSize: "0.62rem", letterSpacing: "0.16em", textTransform: "uppercase",
+                color: featured.isLive ? "#4ade80" : "rgba(255,255,255,0.45)",
+                fontWeight: 800,
+              }}>
+                {featured.isLive ? "● Live" : "Featured Match"}
+              </div>
+
+              <div style={{
+                marginTop: 18, display: "flex", alignItems: "center",
+                gap: 14, justifyContent: "space-between",
+              }}>
+                <TeamAvatar code={featured.homeTeam} />
+                <div style={{
+                  fontSize: "1.2rem", fontWeight: 900,
+                  color: "rgba(255,255,255,0.35)", letterSpacing: "-0.02em",
+                }}>VS</div>
+                <TeamAvatar code={featured.awayTeam} />
+              </div>
+
+              <div style={{ marginTop: 18 }}>
+                <div style={{
+                  fontSize: "1.05rem", fontWeight: 800, color: "#fff",
+                  letterSpacing: "-0.02em",
+                }}>
+                  M{featured.matchNumber} · {featured.homeTeam} vs {featured.awayTeam}
+                </div>
+                <div style={{
+                  fontSize: "0.74rem", color: "rgba(255,255,255,0.45)", marginTop: 4,
+                  display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
+                }}>
+                  <Clock size={11} /> {featured.matchDate} · {featured.matchTime}
+                  <span style={{ opacity: 0.5 }}>·</span>
+                  {featured.venue}
+                </div>
+              </div>
+            </BentoCard>
+          ) : (
+            <BentoCard padding="22px" style={{ minHeight: 240 }}>
+              <div style={{
+                height: "100%", display: "flex", alignItems: "center",
+                justifyContent: "center", color: "rgba(255,255,255,0.35)",
+                fontSize: "0.85rem", textAlign: "center",
+              }}>
+                Fixtures will appear here once the season opens.
+              </div>
+            </BentoCard>
+          )}
+
+          {/* Countdown */}
+          <BentoCard glow="rgba(139,92,246,0.24)" padding="20px" style={{ minHeight: 240 }}>
+            <CornerArrow />
+            <div style={{
+              fontSize: "0.62rem", letterSpacing: "0.16em", textTransform: "uppercase",
+              color: "rgba(255,255,255,0.45)", fontWeight: 800,
+            }}>
+              {featuredDate && !countdown.expired ? "Starts In" : "Festive Race"}
+            </div>
+            {featuredDate && !countdown.expired ? (
+              <>
+                <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
+                  <CountdownCell value={countdown.days}  label="Day" />
+                  <CountdownCell value={countdown.hours} label="Hour" />
+                </div>
+                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                  <CountdownCell value={countdown.mins}  label="Min" />
+                  <CountdownCell value={countdown.secs}  label="Sec" />
+                </div>
+                <div style={{
+                  marginTop: 18, fontSize: "1.15rem", fontWeight: 900,
+                  color: "#fff", letterSpacing: "-0.025em", lineHeight: 1.1,
+                }}>
+                  Festive Race
+                </div>
+                <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
+                  Top 100 fantasy bosses win exclusive gear.
+                </div>
+              </>
             ) : (
-              <div className="glass-elevated rounded-2xl p-8 text-center">
-                <div className="text-4xl mb-2">🏟️</div>
-                <div className="text-sm font-bold text-white/50">No matches scheduled</div>
-                <div className="text-xs text-white/28 mt-1">Check back soon for IPL 2026 fixtures</div>
+              <div style={{
+                marginTop: 18,
+                fontSize: "1.15rem", fontWeight: 900, color: "#fff",
+                letterSpacing: "-0.025em", lineHeight: 1.1,
+              }}>
+                Festive Race
+                <div style={{
+                  marginTop: 8, fontSize: "0.78rem", fontWeight: 500,
+                  color: "rgba(255,255,255,0.5)",
+                }}>
+                  The season's running now. Check back when the next match locks in.
+                </div>
               </div>
             )}
+          </BentoCard>
+        </motion.div>
 
-            {/* Filtered match list */}
-            <div className="space-y-2.5">
-              {loading ? (
-                [1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-2xl bg-white/5" />)
-              ) : filtered.length === 0 ? (
-                <div className="glass-elevated rounded-2xl p-8 text-center">
-                  <div className="text-sm text-white/40 font-medium">
-                    No {filter === "all" ? "additional" : filter} matches
-                  </div>
+        {/* ═════════ BENTO ROW 3 — My Teams / Franchises / Form ═════════ */}
+        <motion.div variants={fade} style={{
+          display: "grid", gap: 14,
+          gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1.3fr) minmax(0, 0.8fr)",
+        }} className="bento-row-3">
+          {/* My Teams */}
+          <BentoCard href="/my-teams" padding="20px" style={{ minHeight: 220 }}>
+            <CornerArrow />
+            <div style={{
+              fontSize: "0.62rem", letterSpacing: "0.16em", textTransform: "uppercase",
+              color: "rgba(255,255,255,0.45)", fontWeight: 800,
+            }}>
+              My Squads
+            </div>
+
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
+              {myTeams.length === 0 ? (
+                <div style={{
+                  padding: "18px 4px", color: "rgba(255,255,255,0.4)",
+                  fontSize: "0.85rem",
+                }}>
+                  No squads yet — host an auction to build your first.
                 </div>
               ) : (
-                filtered.map(match => (
-                  <MatchRow key={match.iplId} match={match} />
+                myTeams.slice(0, 3).map((t, i) => (
+                  <SquadRow key={t.id ?? i} initial={(t.name?.[0] ?? "T").toUpperCase()}
+                    name={t.name ?? `Squad ${i + 1}`}
+                    sub={`${t.players?.length ?? 0} players · ${t.credits ?? 0} cr left`} />
                 ))
               )}
             </div>
-          </motion.div>
+          </BentoCard>
 
-          {/* RIGHT RAIL — Today spotlight, My Squads, Activity (G.Take pattern) */}
-          <motion.div variants={fade} className="space-y-4">
-
-            {/* Today's spotlight — like G.Take "Today note" */}
-            <div className="glass-elevated rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-[0.7rem] font-black tracking-widest uppercase text-white/55">
-                  Today's Spotlight
-                </div>
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{
-                    background: "rgba(192,25,44,0.18)",
-                    border: "1px solid rgba(192,25,44,0.32)",
+          {/* Franchise rail */}
+          <BentoCard padding="22px" style={{ minHeight: 220 }}>
+            <div style={{
+              fontSize: "0.62rem", letterSpacing: "0.16em", textTransform: "uppercase",
+              color: "rgba(255,255,255,0.45)", fontWeight: 800,
+            }}>
+              IPL Franchises
+            </div>
+            <div style={{
+              marginTop: 18,
+              display: "grid",
+              gridTemplateColumns: "repeat(5, 1fr)",
+              gap: 12,
+            }}>
+              {ALL_TEAMS.map(code => (
+                <Link key={code} href="/players">
+                  <div className="franchise-chip" style={{
+                    aspectRatio: "1 / 1",
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 14,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    padding: 8, cursor: "pointer",
+                    transition: "all 0.2s",
                   }}>
-                  <Flame className="w-3.5 h-3.5 text-red-400" />
-                </div>
-              </div>
-              {featured ? (
-                <>
-                  <div className="text-sm text-white/85 font-semibold leading-snug mb-3">
-                    {featured.isLive ? "Live now: " : "Up next: "}
-                    <span className="text-white font-black">{featured.homeTeam}</span>
-                    <span className="text-white/35 mx-1.5">vs</span>
-                    <span className="text-white font-black">{featured.awayTeam}</span>
+                    {TEAM_LOGO[code] ? (
+                      <img src={TEAM_LOGO[code]} alt={code}
+                        style={{ width: "100%", height: "100%", objectFit: "contain", opacity: 0.85 }} />
+                    ) : (
+                      <span style={{
+                        fontSize: "0.85rem", fontWeight: 900,
+                        color: TEAM_COLOR[code] ?? "#fff",
+                      }}>{code}</span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 text-[0.7rem] text-white/45 mb-4">
-                    <Calendar className="w-3 h-3" />
-                    {featured.matchDate} · {featured.matchTime}
-                    <span className="text-white/15">·</span>
-                    <span className="truncate">{featured.city}</span>
-                  </div>
-                  <Link href="/predictions">
-                    <button className="press-sm w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-white"
-                      style={{
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        cursor: "pointer", fontFamily: "inherit",
-                      }}>
-                      <Target className="w-3.5 h-3.5" />
-                      Lock prediction
-                    </button>
-                  </Link>
-                </>
-              ) : (
-                <div className="text-sm text-white/40 py-3">No active fixture today.</div>
-              )}
-            </div>
-
-            {/* My Squads — like "My files" empty/list */}
-            <div className="glass-elevated rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-[0.7rem] font-black tracking-widest uppercase text-white/55">
-                  My Squads
-                </div>
-                <Link href="/auction/create">
-                  <button className="press-sm flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.66rem] font-bold text-white/60"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.10)",
-                      cursor: "pointer", fontFamily: "inherit",
-                    }}>
-                    <Plus className="w-3 h-3" /> New
-                  </button>
                 </Link>
-              </div>
-
-              {myTeams.length === 0 ? (
-                <div className="text-center py-3">
-                  <div className="w-12 h-12 mx-auto mb-2 rounded-2xl flex items-center justify-center"
-                    style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px dashed rgba(255,255,255,0.12)",
-                    }}>
-                    <span className="text-xl">🏏</span>
-                  </div>
-                  <div className="text-sm font-bold text-white/55">No squads yet</div>
-                  <div className="text-[0.7rem] text-white/30 mt-0.5">Host or join an auction to build one</div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {myTeams.slice(0, 3).map(t => (
-                    <div key={t.id} className="flex items-center gap-3 p-2 rounded-xl"
-                      style={{ background: "rgba(255,255,255,0.03)" }}>
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
-                        style={{
-                          background: "rgba(192,25,44,0.18)",
-                          border: "1px solid rgba(192,25,44,0.30)",
-                          color: "#ff7a8a",
-                        }}>
-                        {t.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-white truncate">{t.name}</div>
-                        <div className="text-[0.66rem] text-white/35">{t.captain ?? "No captain"}</div>
-                      </div>
-                      <StatusPill status={t.status === "live" ? "live" : "upcoming"} />
-                    </div>
-                  ))}
-                </div>
-              )}
+              ))}
             </div>
-
-            {/* Activity mini — sparkline progress */}
-            <div className="glass-elevated rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="text-[0.7rem] font-black tracking-widest uppercase text-white/55">Activity</div>
-                  <div className="text-xs text-white/40 mt-0.5">{notifications.length} events this week</div>
-                </div>
-                <Link href="/leaderboard">
-                  <button className="press-sm flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.7rem] font-bold text-white"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(192,25,44,0.85), rgba(155,19,35,0.7))",
-                      border: "1px solid rgba(255,120,140,0.32)",
-                      boxShadow: "0 4px 12px rgba(192,25,44,0.25)",
-                      cursor: "pointer", fontFamily: "inherit",
-                    }}>
-                    Get the report <ArrowUpRight className="w-3 h-3" />
-                  </button>
-                </Link>
-              </div>
-
-              {/* Mini bar sparkline (deterministic mock by week-day) */}
-              <div className="flex items-end gap-1.5 h-14 mb-2">
-                {[40, 65, 35, 80, 50, 90, 70].map((h, i) => (
-                  <div key={i} className="flex-1 rounded-t-md"
-                    style={{
-                      height: `${h}%`,
-                      background: i === 5
-                        ? "linear-gradient(180deg, #ff3854, #c0192c)"
-                        : "linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))",
-                      boxShadow: i === 5 ? "0 0 12px rgba(192,25,44,0.5)" : "none",
-                    }} />
-                ))}
-              </div>
-              <div className="flex justify-between text-[0.62rem] text-white/30 font-bold tracking-wider">
-                {["M","T","W","T","F","S","S"].map((d, i) => (
-                  <span key={i} style={{ color: i === 5 ? "rgba(255,255,255,0.7)" : undefined }}>{d}</span>
-                ))}
-              </div>
+            <div style={{
+              marginTop: 16, fontSize: "0.72rem", color: "rgba(255,255,255,0.4)",
+              display: "flex", alignItems: "center", gap: 6,
+            }}>
+              <TrendingUp size={11} />
+              {completed.length} played · {live.length} live · {upcoming.length} upcoming
             </div>
+          </BentoCard>
 
-            {/* Season progress — kept from previous version */}
-            <div className="glass-elevated rounded-2xl p-4">
-              <div className="text-[0.7rem] font-black tracking-widest uppercase text-white/55 mb-3">IPL 2026 Season</div>
-              <div className="space-y-2.5">
-                {[
-                  { label: "Matches Played", value: `${completed.length}/70`, pct: (completed.length / 70) * 100, color: "#818cf8" },
-                  { label: "Live Right Now",  value: `${live.length}`, pct: live.length > 0 ? 100 : 0, color: "#34d399" },
-                  { label: "Your Accuracy",   value: `${predAccuracy}%`, pct: predAccuracy, color: "#f59e0b" },
-                ].map(item => (
-                  <div key={item.label}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-white/50 font-medium">{item.label}</span>
-                      <span className="text-xs font-black text-white tabular-nums">{item.value}</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: `${Math.max(2, Math.min(100, item.pct))}%`,
-                          background: `linear-gradient(90deg, ${item.color}cc, ${item.color})`,
-                          boxShadow: `0 0 8px ${item.color}60`,
-                        }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {/* Form gauge */}
+          <BentoCard href="/leaderboard" glow="rgba(34,197,94,0.18)" padding="20px" style={{ minHeight: 220 }}>
+            <CornerArrow />
+            <div style={{
+              fontSize: "0.62rem", letterSpacing: "0.16em", textTransform: "uppercase",
+              color: "rgba(255,255,255,0.45)", fontWeight: 800,
+            }}>
+              Form Index
             </div>
-          </motion.div>
-        </div>
+            <div style={{
+              marginTop: 18,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <FormGauge value={formScore} label={
+                formScore >= 70 ? "On fire" :
+                formScore >= 45 ? "Steady" :
+                                  "Needs work"
+              } />
+            </div>
+            <div style={{
+              marginTop: 8, fontSize: "0.72rem",
+              color: "rgba(255,255,255,0.5)", textAlign: "center",
+            }}>
+              Rank #{currentRank || "—"} · {totalPts.toLocaleString()} pts
+            </div>
+          </BentoCard>
+        </motion.div>
 
-        {/* ═════════ DIFFERENTIAL PICKS — bottom strip ═════════ */}
-        <motion.div variants={fade}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-black flex items-center gap-2" style={{ letterSpacing: "-0.01em" }}>
-              <TrendingUp className="w-4.5 h-4.5 text-emerald-400" />
-              Differential Picks
-            </h2>
-            <Link href="/players" className="flex items-center gap-1 text-xs font-semibold text-white/40 hover:text-white transition-colors">
-              All players <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
+        {/* ═════════ FOOTER STRIP ═════════ */}
+        <motion.div variants={fade} style={{
+          marginTop: 6,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexWrap: "wrap", gap: 12,
+          padding: "16px 18px",
+          borderTop: "1px solid rgba(255,255,255,0.05)",
+          color: "rgba(255,255,255,0.4)", fontSize: "0.72rem",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700 }}>
+            <Trophy size={13} style={{ color: "#fbbf24" }} />
+            Colosseum · {profile?.username ?? "Guest"}
           </div>
-          <div className="glass-elevated rounded-2xl p-6 text-center"
-            style={{ border: "1px dashed rgba(255,255,255,0.10)" }}>
-            <div className="text-sm font-semibold text-white/45">Differentials update during live matches</div>
-            <div className="text-xs text-white/25 mt-1">Players outperforming average ownership appear here</div>
+          <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+            <FooterLink href="/matches">Matches</FooterLink>
+            <FooterLink href="/auction">Auction</FooterLink>
+            <FooterLink href="/leaderboard">Leaderboard</FooterLink>
+            <FooterLink href="/guide">Guide</FooterLink>
+            <FooterLink href="/profile">Profile</FooterLink>
           </div>
         </motion.div>
       </motion.div>
@@ -627,162 +618,64 @@ export default function Dashboard() {
   );
 }
 
-/* ═════════════════════════════════════════════════════════════
-   FEATURED MATCH CARD — gradient hero (G.Take "Design System")
-   ═════════════════════════════════════════════════════════════ */
-function FeaturedMatch({ match }: { match: IplMatch }) {
-  const c1 = TEAM_COLOR[match.homeTeam] ?? "#aaa";
-  const c2 = TEAM_COLOR[match.awayTeam] ?? "#aaa";
-  const status = match.isLive ? "live" : match.isUpcoming ? "upcoming" : "completed";
+/* ───────── small subcomponents ───────── */
+
+function TeamAvatar({ code }: { code: string }) {
+  const color = TEAM_COLOR[code] ?? "#fff";
+  const logo = TEAM_LOGO[code];
   return (
-    <Link href="/matches">
-      <div className="featured-card rounded-2xl p-5 cursor-pointer relative overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${c1}28 0%, rgba(7,9,26,0.6) 50%, ${c2}24 100%)`,
-          boxShadow: "0 1px 0 rgba(255,255,255,0.08) inset, 0 12px 40px rgba(0,0,0,0.35)",
-          minHeight: 175,
-        }}>
-
-        {/* Top row: status + match meta */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <StatusPill status={status} />
-            <span className="text-[0.7rem] font-bold text-white/45 px-2 py-0.5 rounded-md"
-              style={{ background: "rgba(255,255,255,0.06)" }}>
-              Match {match.matchNumber}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-[0.72rem] text-white/55 font-medium">
-            <Calendar className="w-3 h-3" />
-            {match.matchDate} · {match.matchTime}
-          </div>
-        </div>
-
-        {/* Teams */}
-        <div className="flex items-center justify-between gap-2 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <div className="shrink-0" style={{ filter: `drop-shadow(0 4px 14px ${c1}55)` }}>
-              <TeamLogo code={match.homeTeam} size={48} />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xl font-black truncate" style={{ color: c1, letterSpacing: "-0.02em" }}>
-                {match.homeTeam}
-              </div>
-              {match.firstInningsScore && (
-                <div className="text-base font-mono font-bold text-white tabular-nums leading-tight">
-                  {match.firstInningsScore}
-                </div>
-              )}
-              {!match.firstInningsScore && (
-                <div className="text-xs text-white/40 truncate">{match.homeTeamFull}</div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-1.5 shrink-0">
-            <div className="text-xs text-white/30 font-mono font-black tracking-widest">VS</div>
-            <div style={{
-              width: 44, height: 3, borderRadius: 9999,
-              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)",
-            }} />
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 flex-row-reverse">
-            <div className="shrink-0" style={{ filter: `drop-shadow(0 4px 14px ${c2}55)` }}>
-              <TeamLogo code={match.awayTeam} size={48} />
-            </div>
-            <div className="min-w-0 text-right">
-              <div className="text-xl font-black truncate" style={{ color: c2, letterSpacing: "-0.02em" }}>
-                {match.awayTeam}
-              </div>
-              {match.secondInningsScore && (
-                <div className="text-base font-mono font-bold text-white tabular-nums leading-tight">
-                  {match.secondInningsScore}
-                </div>
-              )}
-              {!match.secondInningsScore && (
-                <div className="text-xs text-white/40 truncate">{match.awayTeamFull}</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Footer: result OR predict CTA + "predicting" stack */}
-        <div className="mt-5 pt-4 flex items-center justify-between gap-3"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          {match.result ? (
-            <div className="text-xs font-bold" style={{
-              color: match.winningTeamCode ? (TEAM_COLOR[match.winningTeamCode] ?? "#34d399") : "#34d399",
-            }}>
-              🏆 {match.result}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-xs text-white/55">
-              <div className="avatar-stack">
-                {RIVAL_AVATARS.slice(0, 3).map(r => (
-                  <AvatarBubble key={r.initial} initial={r.initial} color={r.color} size={22} />
-                ))}
-              </div>
-              <span><span className="text-white font-bold">+128</span> predicting</span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-            View match centre
-            <ArrowRight className="w-3.5 h-3.5" />
-          </div>
-        </div>
-      </div>
-    </Link>
+    <div style={{
+      width: 56, height: 56, borderRadius: "50%",
+      background: `radial-gradient(circle at 30% 30%, ${color}33, rgba(255,255,255,0.04))`,
+      border: `1px solid ${color}55`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      flexShrink: 0,
+    }}>
+      {logo ? (
+        <img src={logo} alt={code} style={{ width: 38, height: 38, objectFit: "contain" }} />
+      ) : (
+        <span style={{ fontSize: "0.85rem", fontWeight: 900, color }}>{code}</span>
+      )}
+    </div>
   );
 }
 
-/* ═════════════════════════════════════════════════════════════
-   COMPACT MATCH ROW — for the filtered list
-   ═════════════════════════════════════════════════════════════ */
-function MatchRow({ match }: { match: IplMatch }) {
-  const c1 = TEAM_COLOR[match.homeTeam] ?? "#aaa";
-  const c2 = TEAM_COLOR[match.awayTeam] ?? "#aaa";
-  const status = match.isLive ? "live" : match.isUpcoming ? "upcoming" : "completed";
+function SquadRow({ initial, name, sub }: { initial: string; name: string; sub: string }) {
   return (
-    <Link href="/matches">
-      <div className="glass-elevated rounded-2xl p-3.5 cursor-pointer transition-all hover:-translate-y-px"
-        style={{ "--team-color": c1 } as React.CSSProperties}>
-        <div className="flex items-center gap-3">
-          {/* Left: status + match number */}
-          <div className="flex flex-col items-center gap-1 shrink-0 w-14">
-            <StatusPill status={status} />
-            <div className="text-[0.62rem] text-white/30 font-bold">M{match.matchNumber}</div>
-          </div>
-
-          {/* Middle: teams */}
-          <div className="flex-1 min-w-0 flex items-center gap-2.5">
-            <TeamLogo code={match.homeTeam} size={28} />
-            <div className="min-w-0">
-              <div className="text-sm font-black truncate" style={{ color: c1 }}>{match.homeTeam}</div>
-              {match.firstInningsScore && (
-                <div className="text-[0.7rem] font-mono text-white/70 truncate">{match.firstInningsScore}</div>
-              )}
-            </div>
-            <span className="text-[0.62rem] text-white/22 font-mono mx-1">vs</span>
-            <TeamLogo code={match.awayTeam} size={28} />
-            <div className="min-w-0">
-              <div className="text-sm font-black truncate" style={{ color: c2 }}>{match.awayTeam}</div>
-              {match.secondInningsScore && (
-                <div className="text-[0.7rem] font-mono text-white/70 truncate">{match.secondInningsScore}</div>
-              )}
-            </div>
-          </div>
-
-          {/* Right: time/venue */}
-          <div className="text-right shrink-0 hidden sm:block">
-            <div className="text-[0.7rem] text-white/55 font-bold">{match.matchTime}</div>
-            <div className="text-[0.62rem] text-white/28 truncate max-w-[110px]">{match.city}</div>
-          </div>
-
-          <ChevronRight className="w-3.5 h-3.5 text-white/25 shrink-0" />
-        </div>
+    <div style={{
+      display: "flex", alignItems: "center", gap: 12,
+      padding: "10px 12px",
+      background: "rgba(255,255,255,0.03)",
+      border: "1px solid rgba(255,255,255,0.05)",
+      borderRadius: 14,
+    }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: "50%",
+        background: "linear-gradient(135deg, #c0192c, #8b1023)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: "#fff", fontWeight: 900, fontSize: "0.85rem",
+      }}>{initial}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: "0.85rem", fontWeight: 700, color: "#fff",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>{name}</div>
+        <div style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.45)" }}>{sub}</div>
       </div>
+      <ArrowUpRight size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
+    </div>
+  );
+}
+
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href}>
+      <span style={{
+        cursor: "pointer", fontWeight: 700, letterSpacing: "0.04em",
+        textTransform: "uppercase", transition: "color 0.2s",
+      }} className="footer-link">
+        {children}
+      </span>
     </Link>
   );
 }
