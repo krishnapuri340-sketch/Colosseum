@@ -396,8 +396,8 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
   const deadlineMins = computeDeadlineMins(match.date, match.time);
 
   const pts = isSettled && match.result
-    ? (picks.winner === match.result.winner ? 50 : 0) +
-      (picks.mom    === match.result.mom    ? 30 : 0)
+    ? (picks.winner === match.result.winner ? 30 : 0) +
+      (picks.mom    === match.result.mom    ? 50 : 0)
     : null;
 
   const friendWinnerPct = useMemo(() => {
@@ -651,7 +651,7 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                 <div>
                   <div style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.1em",
                     color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>
-                    Match Winner <span style={{ color: "#f59e0b" }}>+50 pts</span>
+                    Match Winner <span style={{ color: "#f59e0b" }}>+30 pts</span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     {[match.team1, match.team2].map(t => {
@@ -693,7 +693,7 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                 <div>
                   <div style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.1em",
                     color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>
-                    Man of the Match <span style={{ color: "#f59e0b" }}>+30 pts</span>
+                    Man of the Match <span style={{ color: "#f59e0b" }}>+50 pts</span>
                   </div>
                   <MomDropdown
                     team1={match.team1} team2={match.team2}
