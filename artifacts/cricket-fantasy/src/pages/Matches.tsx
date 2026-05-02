@@ -100,8 +100,8 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
     );
   }
 
-  // Shared grid: accent-bar | pos | logo | team-name | P | W | L | gap | NRR | PTS
-  const GRID_COLS = "3px 22px 34px 1fr 32px 32px 32px 18px 44px 48px";
+  // Shared grid: accent-bar | pos | logo | team-name | P | W | L | gap | NRR | gap | PTS
+  const GRID_COLS = "3px 22px 34px 1fr 32px 32px 32px 18px 48px 14px 52px";
 
   function ColHeaders() {
     const lbl = (t: string) => (
@@ -122,7 +122,7 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
         background: "rgba(255,255,255,0.02)",
       }}>
         <div /><div /><div /><div />
-        {lbl("P")}{lbl("W")}{lbl("L")}<div />{lbl("NRR")}{lbl("PTS")}
+        {lbl("P")}{lbl("W")}{lbl("L")}<div />{lbl("NRR")}<div />{lbl("PTS")}
       </div>
     );
   }
@@ -229,8 +229,9 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
         {statVal(row.lost)}
         <div />
         {statVal(nrr.label, nrr.color)}
+        <div />
 
-        {/* Col 9: Points */}
+        {/* Points */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{
             padding: "3px 8px", borderRadius: 7,
