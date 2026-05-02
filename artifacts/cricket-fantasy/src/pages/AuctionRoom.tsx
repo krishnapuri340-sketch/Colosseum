@@ -23,7 +23,7 @@ import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import {
-  ArrowLeft, Gavel, CheckCircle, XCircle, Crown, Search,
+  ArrowLeft, Gavel, XCircle, Crown, Search,
   ChevronDown, ChevronUp, RotateCcw, Plus, Minus,
   Copy, TriangleAlert, Star, Users, Play,
   SkipForward, BookOpen, ChevronRight, Trophy, Ban,
@@ -1330,223 +1330,318 @@ export default function AuctionRoom() {
     }
 
     if (phase === "bidding" && nominated) {
-      const tc   = TEAM_COLOR[nominated.team] ?? "#aaa";
-      const tier = getPlayerTier(nominated.credits);
-      const td   = TD[tier];
-      const cfg  = TIER_CONFIG[tier];
-      const bidColor = leadTeam?.color ?? td.color;
+      const tc        = TEAM_COLOR[nominated.team] ?? "#aaa";
+      const tier      = getPlayerTier(nominated.credits);
+      const td        = TD[tier];
+      const cfg       = TIER_CONFIG[tier];
+      const bidColor  = leadTeam?.color ?? td.color;
+      const aboveBase = parseFloat((bidValue - cfg.basePrice).toFixed(2));
 
       return (
         <div style={{ flex: 1, display: "flex", flexDirection: "column",
-          gap: "0.7rem", overflow: "hidden", padding: "0.75rem" }}>
+          gap: "0.85rem", overflowY: "auto", overflowX: "hidden",
+          padding: "0.95rem", position: "relative" }}>
 
-          {/* Player card */}
-          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-            style={{ background: leadTeam ? `${leadTeam.color}0c` : td.glow,
-              border: `2px solid ${leadTeam ? `${leadTeam.color}50` : `${td.color}40`}`,
-              borderRadius: 14, padding: "0.85rem 1rem",
-              display: "flex", flexDirection: "column", alignItems: "center",
-              position: "relative", overflow: "hidden", flexShrink: 0,
-              transition: "border-color 0.25s, background 0.25s" }}>
+          {/* Ambient stage glow — picks up tier color */}
+          <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none",
+            background: `radial-gradient(ellipse 90% 55% at 50% 0%, ${td.glow} 0%, transparent 65%)` }} />
 
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3,
-              background: td.color }} />
-            <div style={{ position: "absolute", top: 9, left: 10 }}>
-              <TierBadge tier={tier} size="sm" />
-            </div>
-            <div style={{ position: "absolute", top: 9, right: 10,
-              fontSize: "0.6rem", fontWeight: 700, color: tc,
-              background: `${tc}18`, padding: "2px 8px", borderRadius: 20 }}>
-              {nominated.team}
-            </div>
+          {/* ── HERO PLAYER CARD ── */}
+          <motion.div
+            key={nominated.name}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 220, damping: 22 }}
+            style={{
+              position: "relative", zIndex: 1, flexShrink: 0,
+              background: `linear-gradient(180deg, ${td.glow} 0%, transparent 100%), ${CARD}`,
+              border: `2px solid ${bidColor}55`,
+              borderRadius: 18, padding: "1rem 1.1rem",
+              boxShadow: `0 0 0 1px ${td.color}22 inset, 0 22px 50px -22px ${bidColor}55`,
+              display: "flex", alignItems: "center", gap: "0.95rem",
+              transition: "border-color 0.3s, box-shadow 0.3s",
+            }}>
 
-            <div style={{ width: 48, height: 48, borderRadius: "50%",
-              background: `${tc}20`, border: `2px solid ${tc}40`,
+            {/* Role medallion */}
+            <div style={{
+              width: 68, height: 68, borderRadius: "50%",
+              background: `radial-gradient(circle at 30% 30%, ${tc}55, ${tc}15 70%)`,
+              border: `2px solid ${tc}60`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "0.65rem", fontWeight: 800, letterSpacing: "0.04em",
+              fontSize: "0.74rem", fontWeight: 900, letterSpacing: "0.06em",
               color: ROLE_COLOR[nominated.role] ?? "#aaa",
-              marginBottom: "0.5rem", marginTop: "0.9rem" }}>
+              flexShrink: 0,
+              boxShadow: `0 0 22px ${tc}40 inset, 0 6px 18px -6px ${tc}60`,
+            }}>
               {ROLE_ICON[nominated.role] ?? "BAT"}
             </div>
-            <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, color: "#fff",
-              textAlign: "center", lineHeight: 1.1 }}>{nominated.name}</p>
-            <p style={{ margin: "0.2rem 0 0", fontSize: "0.7rem", color: DIM }}>
-              {ROLE_LABEL[nominated.role]} · {nominated.credits}cr
-              {!nominated.capped && " · UC"}
-              {" "}· Base {crFmt(cfg.basePrice)} · +{crFmt(cfg.increment)} step
-            </p>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
+                <TierBadge tier={tier} size="sm" />
+                <span style={{ fontSize: "0.62rem", fontWeight: 700, color: tc,
+                  background: `${tc}18`, border: `1px solid ${tc}40`,
+                  padding: "1px 8px", borderRadius: 20 }}>
+                  {nominated.team}
+                </span>
+                {!nominated.capped && (
+                  <span style={{ fontSize: "0.56rem", fontWeight: 800, color: DIM,
+                    background: "rgba(255,255,255,0.04)", border: `1px solid ${BDR}`,
+                    padding: "1px 7px", borderRadius: 4, letterSpacing: "0.08em" }}>
+                    UNCAPPED
+                  </span>
+                )}
+              </div>
+              <h2 style={{ margin: 0, fontSize: "1.55rem", fontWeight: 900, color: "#fff",
+                letterSpacing: "-0.03em", lineHeight: 1.05,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {nominated.name}
+              </h2>
+              <p style={{ margin: "0.28rem 0 0", fontSize: "0.7rem", color: DIM }}>
+                {ROLE_LABEL[nominated.role]} · Base {crFmt(cfg.basePrice)} · +{crFmt(cfg.increment)} step
+              </p>
+            </div>
           </motion.div>
 
-          {/* ── Bid controls (host) / live display (member) ── */}
+          {/* ── Bid podium / member view ── */}
           {!isHost ? (
-            /* ── Member read-only view ── */
-            <div style={{ background: CARD, border: `1px solid ${BDR}`,
-              borderRadius: 12, padding: "0.85rem 0.9rem",
-              display: "flex", flexDirection: "column", gap: "0.65rem", flexShrink: 0 }}>
-              <div style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.12em",
+            /* Member: large bid display only — interaction handled by host */
+            <div style={{ flex: 1, display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center", gap: "0.7rem",
+              background: CARD, border: `1px solid ${BDR}`, borderRadius: 16,
+              padding: "1.5rem 1rem", position: "relative", zIndex: 1 }}>
+              <div style={{ fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.18em",
                 color: DIM, textTransform: "uppercase" }}>Current Bid</div>
-              <div style={{ textAlign: "center", fontFamily: "monospace",
-                fontSize: "2.4rem", fontWeight: 900, color: bidColor,
-                padding: "0.25rem 0", letterSpacing: "-0.02em" }}>
-                {bidValue > 0 ? crFmt(bidValue) : crFmt(cfg.basePrice)}
+              <div style={{ fontSize: "3.4rem", fontWeight: 900, fontFamily: "monospace",
+                color: bidColor, letterSpacing: "-0.04em", lineHeight: 1,
+                textShadow: `0 0 38px ${bidColor}55` }}>
+                {crFmt(bidValue > 0 ? bidValue : cfg.basePrice)}
               </div>
-              <div>
-                <div style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em",
-                  color: DIM, textTransform: "uppercase", marginBottom: "0.4rem" }}>Teams</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.32rem" }}>
-                  {teams.map(team => {
-                    const isLead = leadId === team.id;
-                    return (
-                      <div key={team.id} style={{ padding: "0.4rem 0.65rem", borderRadius: 9,
-                        border: `1.5px solid ${isLead ? team.color : BDR}`,
-                        background: isLead ? `${team.color}20` : CARD,
-                        display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                        {isLead && <Crown size={9} style={{ color: team.color, flexShrink: 0 }} />}
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                          fontSize: "0.75rem", fontWeight: isLead ? 800 : 500,
-                          color: isLead ? team.color : "#fff", flex: 1 }}>
-                          {team.name.split("'")[0]}
-                        </span>
-                        <span style={{ fontSize: "0.6rem", opacity: 0.5, fontFamily: "monospace" }}>
-                          {crFmt(team.budget)}
-                        </span>
-                      </div>
-                    );
-                  })}
+              {leadTeam ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 6,
+                  padding: "0.35rem 0.95rem", borderRadius: 20,
+                  background: `${leadTeam.color}20`, border: `1px solid ${leadTeam.color}45` }}>
+                  <Crown size={11} style={{ color: leadTeam.color }} />
+                  <span style={{ fontSize: "0.72rem", fontWeight: 800, color: leadTeam.color }}>
+                    {leadTeam.name} leading
+                  </span>
                 </div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-                padding: "0.5rem", borderRadius: 9,
-                background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.18)" }}>
+              ) : (
+                <span style={{ fontSize: "0.72rem", color: DIM }}>Awaiting first bid…</span>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: "0.4rem",
+                fontSize: "0.65rem", color: DIM }}>
                 <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e",
                   animation: "livePulse 1.4s ease-in-out infinite" }} />
-                <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#22c55e" }}>
-                  Watching live
-                </span>
+                Watching live
               </div>
             </div>
           ) : (
-          /* ── Host bid controls ── */
-          <div style={{ background: CARD, border: `1px solid ${BDR}`,
-            borderRadius: 12, padding: "0.85rem 0.9rem",
-            display: "flex", flexDirection: "column", gap: "0.65rem", flexShrink: 0 }}>
+            /* Host bid podium */
+            <>
+              {/* Big bid display with –/+ steppers */}
+              <div style={{ position: "relative", zIndex: 1, flexShrink: 0,
+                background: `linear-gradient(180deg, ${bidColor}0a, transparent), ${CARD}`,
+                border: `1.5px solid ${bidColor}40`, borderRadius: 16,
+                padding: "0.85rem 0.95rem",
+                display: "flex", alignItems: "center", gap: "0.7rem",
+                boxShadow: leadTeam ? `0 10px 28px -14px ${bidColor}70` : "none",
+                transition: "border-color 0.25s, box-shadow 0.25s" }}>
 
-            <div style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.12em",
-              color: DIM, textTransform: "uppercase" }}>Current Bid</div>
+                <button
+                  onMouseDown={() => setBidValue(v => parseFloat(Math.max(0, v - cfg.increment).toFixed(2)))}
+                  disabled={bidValue <= 0}
+                  aria-label={`Decrease bid by ${crFmt(cfg.increment)}`}
+                  style={{ width: 46, height: 46, borderRadius: 12,
+                    background: "rgba(255,255,255,0.05)", border: `1px solid ${BDR}`,
+                    color: bidValue > 0 ? "#fff" : "rgba(255,255,255,0.18)",
+                    cursor: bidValue > 0 ? "pointer" : "not-allowed",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0 }}>
+                  <Minus size={17} />
+                </button>
 
-            <BidInput
-              value={bidValue}
-              onChange={setBidValue}
-              color={bidColor}
-              basePrice={cfg.basePrice}
-              increment={cfg.increment}
-            />
+                <div style={{ flex: 1, textAlign: "center", padding: "0 0.4rem", minWidth: 0 }}>
+                  <div style={{ fontSize: "0.58rem", fontWeight: 800, letterSpacing: "0.16em",
+                    color: leadTeam ? leadTeam.color : DIM, textTransform: "uppercase",
+                    marginBottom: 2,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {leadTeam ? `${leadTeam.name.split("'")[0]} leads` : "Pick a team to bid"}
+                  </div>
+                  <div style={{ fontSize: "2.6rem", fontWeight: 900, fontFamily: "monospace",
+                    color: bidColor, letterSpacing: "-0.04em", lineHeight: 1,
+                    textShadow: `0 0 28px ${bidColor}45` }}>
+                    {crFmt(bidValue > 0 ? bidValue : cfg.basePrice)}
+                  </div>
+                  {aboveBase > 0 && (
+                    <div style={{ fontSize: "0.62rem", color: "#34d399", fontWeight: 700,
+                      marginTop: 3 }}>
+                      +{crFmt(aboveBase)} above base
+                    </div>
+                  )}
+                </div>
 
-            {/* Who bid */}
-            <div>
-              <div style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em",
-                color: DIM, textTransform: "uppercase", marginBottom: "0.32rem" }}>
-                Who bid?
+                <button
+                  onMouseDown={() => setBidValue(v => parseFloat((v + cfg.increment).toFixed(2)))}
+                  aria-label={`Increase bid by ${crFmt(cfg.increment)}`}
+                  style={{ width: 46, height: 46, borderRadius: 12,
+                    background: `${bidColor}25`, border: `1px solid ${bidColor}55`,
+                    color: bidColor, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                    boxShadow: `0 0 18px -4px ${bidColor}70` }}>
+                  <Plus size={17} />
+                </button>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.32rem" }}>
-                {teams.map(team => {
-                  const isLead   = leadId === team.id;
-                  const teamFull = team.squad.length >= config.maxPlayers;
-                  const ok       = team.budget >= bidValue && !teamFull;
-                  return (
-                    <button key={team.id} onClick={() => ok && setLeadId(team.id)}
-                      style={{ padding: "0.4rem 0.65rem", borderRadius: 9,
-                        border: `1.5px solid ${isLead ? team.color : ok ? BDR : "rgba(255,255,255,0.03)"}`,
-                        background: isLead ? `${team.color}20` : CARD,
-                        color: isLead ? team.color : ok ? "#fff" : "rgba(255,255,255,0.18)",
-                        fontWeight: isLead ? 800 : 500, fontSize: "0.75rem",
-                        cursor: ok ? "pointer" : "not-allowed",
-                        display: "flex", alignItems: "center", gap: "0.3rem",
-                        transition: "all 0.15s" }}>
-                      {isLead && <Crown size={9} style={{ flexShrink: 0 }} />}
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {team.name.split("'")[0]}
-                      </span>
-                      <span style={{ marginLeft: "auto", fontSize: "0.6rem",
-                        opacity: 0.5, fontFamily: "monospace" }}>
-                        {crFmt(team.budget)}
-                      </span>
-                    </button>
-                  );
-                })}
+
+              {/* Manual entry — fine-grained typing fallback */}
+              <div style={{ position: "relative", zIndex: 1, flexShrink: 0 }}>
+                <BidInput
+                  value={bidValue}
+                  onChange={setBidValue}
+                  color={bidColor}
+                  basePrice={cfg.basePrice}
+                  increment={cfg.increment}
+                />
               </div>
-            </div>
 
-            {/* Action buttons */}
-            <div style={{ display: "flex", gap: "0.45rem" }}>
-              <button onClick={doSold} disabled={!leadTeam || bidValue <= 0}
-                style={{ flex: 1, padding: "0.75rem", borderRadius: 11, border: "none",
-                  background: (leadTeam && bidValue > 0) ? "#16a34a" : "rgba(22,163,74,0.12)",
-                  color: (leadTeam && bidValue > 0) ? "#fff" : "rgba(255,255,255,0.2)",
-                  fontWeight: 800, fontSize: "0.88rem",
-                  cursor: (leadTeam && bidValue > 0) ? "pointer" : "not-allowed",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
-                <CheckCircle size={15} />
-                {leadTeam && bidValue > 0 ? `Sold — ${crFmt(bidValue)}` : "Sold"}
-              </button>
-              <button onClick={doUnsold}
-                style={{ padding: "0.75rem 1rem", borderRadius: 11,
-                  border: `1px solid ${BDR}`, background: CARD,
-                  color: DIM, fontWeight: 700, fontSize: "0.82rem", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                <XCircle size={12} /> Unsold
-              </button>
-            </div>
+              {/* Hint — pick team via left panel */}
+              {!leadTeam && (
+                <div style={{ position: "relative", zIndex: 1, flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  padding: "0.45rem 0.85rem", borderRadius: 10,
+                  background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.22)",
+                  fontSize: "0.7rem", color: "#a5b4fc", fontWeight: 600 }}>
+                  <ChevronRight size={11} />
+                  Tap a team in the left panel to set the leading bidder
+                </div>
+              )}
 
-            <p style={{ margin: 0, fontSize: "0.6rem", color: "rgba(255,255,255,0.18)", textAlign: "center" }}>
-              <kbd style={{ background: "rgba(255,255,255,0.08)", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" }}>Space</kbd> +{crFmt(cfg.increment)} ·{" "}
-              <kbd style={{ background: "rgba(255,255,255,0.08)", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" }}>Enter</kbd> confirm sold
-            </p>
-          </div>
+              {/* Action row */}
+              <div style={{ display: "flex", gap: "0.55rem", position: "relative", zIndex: 1, flexShrink: 0 }}>
+                <button onClick={doSold} disabled={!leadTeam || bidValue <= 0}
+                  style={{ flex: 1, padding: "0.95rem", borderRadius: 14, border: "none",
+                    background: (leadTeam && bidValue > 0)
+                      ? "linear-gradient(135deg, #22c55e 0%, #15803d 100%)"
+                      : "rgba(34,197,94,0.10)",
+                    color: (leadTeam && bidValue > 0) ? "#fff" : "rgba(255,255,255,0.2)",
+                    fontWeight: 900, fontSize: "0.95rem", letterSpacing: "0.02em",
+                    cursor: (leadTeam && bidValue > 0) ? "pointer" : "not-allowed",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+                    boxShadow: (leadTeam && bidValue > 0)
+                      ? "0 14px 30px -10px rgba(34,197,94,0.55), 0 1px 0 rgba(255,255,255,0.22) inset"
+                      : "none",
+                    transition: "transform 0.08s ease",
+                    fontFamily: "inherit" }}
+                  onMouseDown={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.98)"}
+                  onMouseUp={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"}>
+                  <Gavel size={16} />
+                  {leadTeam && bidValue > 0 ? `SOLD — ${crFmt(bidValue)}` : "SOLD"}
+                </button>
+                <button onClick={doUnsold}
+                  style={{ padding: "0.95rem 1.25rem", borderRadius: 14,
+                    border: `1px solid ${BDR}`, background: CARD,
+                    color: DIM, fontWeight: 800, fontSize: "0.85rem", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: "0.4rem",
+                    fontFamily: "inherit" }}>
+                  <Ban size={13} /> Unsold
+                </button>
+              </div>
+
+              <p style={{ margin: 0, fontSize: "0.6rem", color: "rgba(255,255,255,0.22)",
+                textAlign: "center", flexShrink: 0, position: "relative", zIndex: 1 }}>
+                <kbd style={{ background: "rgba(255,255,255,0.08)", padding: "1px 5px",
+                  borderRadius: 3, fontFamily: "monospace" }}>Space</kbd> +{crFmt(cfg.increment)}
+                {" · "}
+                <kbd style={{ background: "rgba(255,255,255,0.08)", padding: "1px 5px",
+                  borderRadius: 3, fontFamily: "monospace" }}>Enter</kbd> confirm sold
+              </p>
+            </>
           )}
         </div>
       );
     }
 
     if (phase === "sold" && nominated && leadTeam) {
-      const tier = getPlayerTier(nominated.credits);
-      const td   = TD[tier];
+      const tier  = getPlayerTier(nominated.credits);
+      const above = parseFloat((bidValue - TIER_CONFIG[tier].basePrice).toFixed(2));
       return (
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           style={{ flex: 1, display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: "0.6rem" }}>
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
-            style={{ width: 64, height: 64, borderRadius: "50%",
-              background: "rgba(34,197,94,0.12)", border: "2px solid rgba(34,197,94,0.4)",
-              display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <CheckCircle size={30} style={{ color: "#22c55e" }} />
+            alignItems: "center", justifyContent: "center", gap: "0.85rem",
+            position: "relative", overflow: "hidden",
+            background: `radial-gradient(ellipse 65% 55% at 50% 50%, ${leadTeam.color}28, transparent 70%)` }}>
+
+          {/* Conic ray glow */}
+          <motion.div aria-hidden="true"
+            initial={{ opacity: 0, rotate: -20 }} animate={{ opacity: 0.55, rotate: 0 }}
+            transition={{ delay: 0.05, duration: 0.6 }}
+            style={{ position: "absolute", inset: "-20%", pointerEvents: "none",
+              background: `conic-gradient(from 0deg at 50% 50%, ${leadTeam.color}10, transparent 22%, ${leadTeam.color}1c, transparent 48%, ${leadTeam.color}10, transparent 74%, ${leadTeam.color}1c, transparent)` }} />
+
+          <motion.div
+            initial={{ scale: 0, rotate: -45 }} animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 180, delay: 0.08 }}
+            style={{ width: 80, height: 80, borderRadius: "50%",
+              background: "linear-gradient(135deg, #22c55e 0%, #15803d 100%)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 0 56px rgba(34,197,94,0.65), 0 1px 0 rgba(255,255,255,0.22) inset",
+              zIndex: 1 }}>
+            <Gavel size={36} style={{ color: "#fff" }} />
           </motion.div>
-          <TierBadge tier={tier} size="lg" />
-          <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 900, color: "#fff",
-            textAlign: "center", lineHeight: 1.15 }}>
-            {nominated.name}
-          </p>
-          <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 700, color: leadTeam.color }}>
-            → {leadTeam.name}
-          </p>
-          <p style={{ margin: 0, fontSize: "2.5rem", fontWeight: 900,
-            color: "#22c55e", fontFamily: "monospace" }}>
-            {crFmt(bidValue)}
-          </p>
-          {bidValue > TIER_CONFIG[tier].basePrice && (
-            <p style={{ margin: 0, fontSize: "0.72rem", color: DIM }}>
-              {crFmt(parseFloat((bidValue - TIER_CONFIG[tier].basePrice).toFixed(2)))} above base
-            </p>
-          )}
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18 }}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center",
+              gap: "0.4rem", zIndex: 1 }}>
+            <span style={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.22em",
+              textTransform: "uppercase", color: "#22c55e" }}>SOLD</span>
+            <h2 style={{ margin: 0, fontSize: "1.95rem", fontWeight: 900, color: "#fff",
+              textAlign: "center", letterSpacing: "-0.03em", lineHeight: 1 }}>
+              {nominated.name}
+            </h2>
+            <div style={{ display: "flex", alignItems: "center", gap: 7,
+              padding: "0.4rem 1rem", borderRadius: 20,
+              background: `${leadTeam.color}25`, border: `1px solid ${leadTeam.color}55` }}>
+              <Crown size={13} style={{ color: leadTeam.color }} />
+              <span style={{ fontSize: "0.85rem", fontWeight: 800, color: leadTeam.color }}>
+                {leadTeam.name}
+              </span>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.32, type: "spring", stiffness: 220 }}
+            style={{ zIndex: 1, textAlign: "center" }}>
+            <div style={{ fontSize: "3.4rem", fontWeight: 900, fontFamily: "monospace",
+              color: "#22c55e", letterSpacing: "-0.04em", lineHeight: 1,
+              textShadow: "0 0 40px rgba(34,197,94,0.55)" }}>
+              {crFmt(bidValue)}
+            </div>
+            {above > 0 && (
+              <div style={{ fontSize: "0.72rem", color: DIM, marginTop: 5, fontWeight: 600 }}>
+                +{crFmt(above)} above base
+              </div>
+            )}
+          </motion.div>
+
           {isHost && (
-            <button onClick={doNext}
-              style={{ marginTop: "0.5rem", padding: "0.8rem 2rem",
-                background: ACCENT, border: "none", borderRadius: 12,
+            <motion.button
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+              onClick={doNext}
+              style={{ marginTop: "0.4rem", padding: "0.85rem 2rem",
+                background: `linear-gradient(135deg, ${ACCENT}, #8b1020)`,
+                border: "none", borderRadius: 14,
                 color: "#fff", fontWeight: 800, fontSize: "0.9rem", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                display: "flex", alignItems: "center", gap: "0.5rem", zIndex: 1,
+                fontFamily: "inherit",
+                boxShadow: `0 14px 32px -10px ${ACCENT}, 0 1px 0 rgba(255,255,255,0.18) inset` }}>
               Next Player <ChevronRight size={15} />
-            </button>
+            </motion.button>
           )}
           {!isHost && (
             <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: "0.3rem",
@@ -1639,76 +1734,60 @@ export default function AuctionRoom() {
 
         {/* Topbar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-          flexShrink: 0, gap: "0.5rem" }}>
+          flexShrink: 0, gap: "0.75rem", padding: "0.55rem 0.85rem",
+          background: "rgba(255,255,255,0.025)", border: `1px solid ${BDR}`, borderRadius: 14 }}>
+
+          {/* Left: back + title */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", minWidth: 0 }}>
             <button onClick={() => navigate("/auction")}
-              style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 9,
-                padding: "0.38rem 0.65rem", color: DIM, cursor: "pointer",
-                display: "flex", alignItems: "center", gap: "0.3rem",
-                fontSize: "0.78rem", fontWeight: 600, flexShrink: 0 }}>
-              <ArrowLeft size={12} />
-              <span className="hidden sm:inline">Back</span>
+              aria-label="Back to auction lobby"
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BDR}`,
+                borderRadius: 10, width: 32, height: 32, color: DIM, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                fontFamily: "inherit" }}>
+              <ArrowLeft size={14} />
             </button>
             <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.15em",
-                  textTransform: "uppercase", color: ACCENT }}>Verbal Auction</span>
-                <span style={{ fontSize: "0.62rem", fontWeight: 700,
-                  color: mode === "tier" ? "#e8a020" : DIM,
-                  background: mode === "tier" ? "rgba(232,160,32,0.12)" : "rgba(255,255,255,0.06)",
-                  border: `1px solid ${mode === "tier" ? "rgba(232,160,32,0.25)" : BDR}`,
-                  padding: "1px 7px", borderRadius: 20 }}>
-                  {mode === "tier" ? "Tier" : "Classic"}
-                </span>
-                <span style={{ fontSize: "0.62rem", fontWeight: 700,
-                  color: "#34d399", background: "rgba(52,211,153,0.1)",
-                  border: "1px solid rgba(52,211,153,0.22)",
-                  padding: "1px 7px", borderRadius: 20 }}>
-                  ₹{startBudget}Cr each
-                </span>
-                {roomStage === "prep" && (
-                  <span style={{ fontSize: "0.62rem", fontWeight: 700,
-                    color: "#818cf8", background: "rgba(129,140,248,0.12)",
-                    border: "1px solid rgba(129,140,248,0.25)",
-                    padding: "1px 7px", borderRadius: 20 }}>
-                    Prep
-                  </span>
-                )}
-              </div>
-              <h1 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 900, color: "#fff",
-                letterSpacing: "-0.03em", lineHeight: 1,
+              <h1 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 900, color: "#fff",
+                letterSpacing: "-0.025em", lineHeight: 1.1,
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {config.name || "Auction Room"}
               </h1>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.45rem",
+                marginTop: 3, fontSize: "0.66rem", color: DIM, fontWeight: 600 }}>
+                <span style={{ color: mode === "tier" ? "#e8a020" : DIM, fontWeight: 700 }}>
+                  {mode === "tier" ? "Tier mode" : "Classic mode"}
+                </span>
+                <span style={{ opacity: 0.4 }}>·</span>
+                <span>₹{startBudget}Cr each</span>
+                {roomStage === "prep" && (
+                  <>
+                    <span style={{ opacity: 0.4 }}>·</span>
+                    <span style={{ color: "#818cf8", fontWeight: 700 }}>Prep stage</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexShrink: 0 }}>
-            {/* Watchlist button always available */}
-            <button onClick={() => setShowWL(true)}
-              style={{ display: "flex", alignItems: "center", gap: "0.28rem",
-                padding: "0.38rem 0.65rem", background: "rgba(245,158,11,0.1)",
-                border: "1px solid rgba(245,158,11,0.25)", borderRadius: 9,
-                color: "#f59e0b", fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
-              <Star size={11} style={{ fill: "#f59e0b" }} />
-              <span className="hidden sm:inline">Watchlist</span>
-            </button>
+          {/* Right: status + icon toolbar + live counter */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
 
-            {/* Member count (host) / connection status (member) */}
+            {/* Connection / member count */}
             {config.roomCode && isHost && memberCount > 0 && (
               <div style={{ display: "flex", alignItems: "center", gap: 5,
-                padding: "0.28rem 0.65rem",
+                padding: "0.32rem 0.65rem",
                 background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.2)",
                 borderRadius: 20 }}>
                 <Users size={10} style={{ color: "#818cf8" }} />
                 <span style={{ fontSize: "0.63rem", fontWeight: 700, color: "#818cf8" }}>
-                  {memberCount} watching
+                  {memberCount}
                 </span>
               </div>
             )}
             {config.roomCode && !isHost && (
               <div style={{ display: "flex", alignItems: "center", gap: 5,
-                padding: "0.28rem 0.65rem",
+                padding: "0.32rem 0.65rem",
                 background: wsConnected ? "rgba(34,197,94,0.1)" : "rgba(245,158,11,0.1)",
                 border: `1px solid ${wsConnected ? "rgba(34,197,94,0.2)" : "rgba(245,158,11,0.2)"}`,
                 borderRadius: 20 }}>
@@ -1717,49 +1796,65 @@ export default function AuctionRoom() {
                   animation: "livePulse 1.4s ease-in-out infinite" }} />
                 <span style={{ fontSize: "0.63rem", fontWeight: 700,
                   color: wsConnected ? "#22c55e" : "#f59e0b" }}>
-                  {wsConnected ? "Live" : "Reconnecting…"}
+                  {wsConnected ? "Live" : "Reconnecting"}
                 </span>
               </div>
             )}
 
-            {/* Undo (host only) */}
+            {/* Watchlist (icon) */}
+            <button onClick={() => setShowWL(true)} title="Watchlist · Prep targets"
+              aria-label="Open watchlist"
+              style={{ width: 32, height: 32, borderRadius: 9,
+                background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)",
+                color: "#f59e0b", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "inherit" }}>
+              <Star size={13} style={{ fill: "#f59e0b" }} />
+            </button>
+
+            {/* Undo (host) */}
             {isHost && log.length > 0 && roomStage === "auction" && (
-              <button onClick={doUndo}
-                style={{ display: "flex", alignItems: "center", gap: "0.28rem",
-                  padding: "0.38rem 0.65rem", background: "rgba(255,255,255,0.05)",
-                  border: `1px solid ${BDR}`, borderRadius: 9,
-                  color: DIM, fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
-                <RotateCcw size={10} />
-                <span className="hidden sm:inline">Undo</span>
+              <button onClick={doUndo} title="Undo last sale" aria-label="Undo last sale"
+                style={{ width: 32, height: 32, borderRadius: 9,
+                  background: "rgba(255,255,255,0.04)", border: `1px solid ${BDR}`,
+                  color: DIM, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "inherit" }}>
+                <RotateCcw size={13} />
               </button>
             )}
 
             {/* Copy log */}
             {log.length > 0 && (
-              <button onClick={() => navigator.clipboard?.writeText(
-                log.map(e => e.status === "sold"
-                  ? `[${TD[e.tier].label}] ${e.player.name} → ${e.winner} ${crFmt(e.price!)}`
-                  : `[${TD[e.tier].label}] ${e.player.name} → UNSOLD`
-                ).join("\n")
-              )}
-                style={{ display: "flex", alignItems: "center", gap: "0.28rem",
-                  padding: "0.38rem 0.65rem", background: "rgba(255,255,255,0.05)",
-                  border: `1px solid ${BDR}`, borderRadius: 9,
-                  color: DIM, fontSize: "0.7rem", fontWeight: 600, cursor: "pointer" }}>
-                <Copy size={10} />
-                <span className="hidden sm:inline">Log</span>
+              <button title="Copy auction log to clipboard" aria-label="Copy auction log"
+                onClick={() => navigator.clipboard?.writeText(
+                  log.map(e => e.status === "sold"
+                    ? `[${TD[e.tier].label}] ${e.player.name} → ${e.winner} ${crFmt(e.price!)}`
+                    : `[${TD[e.tier].label}] ${e.player.name} → UNSOLD`
+                  ).join("\n")
+                )}
+                style={{ width: 32, height: 32, borderRadius: 9,
+                  background: "rgba(255,255,255,0.04)", border: `1px solid ${BDR}`,
+                  color: DIM, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "inherit" }}>
+                <Copy size={13} />
               </button>
             )}
 
-            {/* Live badge */}
+            {/* Live counter — hero pill */}
             {roomStage === "auction" && (
-              <div style={{ padding: "0.28rem 0.7rem", background: "rgba(34,197,94,0.1)",
-                border: "1px solid rgba(34,197,94,0.2)", borderRadius: 20,
-                display: "flex", alignItems: "center", gap: "0.32rem" }}>
-                <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e",
-                  animation: "livePulse 1.4s ease-in-out infinite" }} />
-                <span style={{ fontSize: "0.63rem", fontWeight: 700, color: "#22c55e" }}>
-                  {remaining} left
+              <div style={{ padding: "0.36rem 0.85rem",
+                background: "linear-gradient(135deg, rgba(34,197,94,0.20), rgba(34,197,94,0.06))",
+                border: "1px solid rgba(34,197,94,0.32)", borderRadius: 20,
+                display: "flex", alignItems: "center", gap: "0.4rem",
+                marginLeft: "0.2rem" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e",
+                  animation: "livePulse 1.4s ease-in-out infinite",
+                  boxShadow: "0 0 10px #22c55e" }} />
+                <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "#22c55e",
+                  letterSpacing: "0.02em" }}>
+                  {remaining} <span style={{ opacity: 0.7, fontWeight: 600 }}>left</span>
                 </span>
               </div>
             )}
@@ -1899,24 +1994,36 @@ export default function AuctionRoom() {
             <CentreStage />
           </div>
 
-          {/* Right: budgets + log */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", overflowY: "auto" }}>
-            {teams.length > 0 && (
-              <div style={{ background: CARD, border: `1px solid ${BDR}`, borderRadius: 11,
-                padding: "0.7rem 0.8rem", flexShrink: 0 }}>
-                <p style={{ margin: "0 0 0.5rem", fontSize: "0.58rem", fontWeight: 700,
-                  letterSpacing: "0.12em", color: DIM, textTransform: "uppercase" }}>Budgets</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
-                  {teams.map(t => <BudgetBar key={t.id} team={t} mini startBudget={startBudget} />)}
-                </div>
-              </div>
-            )}
-            <p style={{ margin: 0, fontSize: "0.58rem", fontWeight: 700,
-              letterSpacing: "0.12em", color: DIM, textTransform: "uppercase", flexShrink: 0 }}>
-              Log ({log.length})
-            </p>
+          {/* Right: sales log */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem", overflowY: "auto" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between",
+              flexShrink: 0 }}>
+              <p style={{ margin: 0, fontSize: "0.58rem", fontWeight: 700,
+                letterSpacing: "0.12em", color: DIM, textTransform: "uppercase" }}>
+                Sales Log
+              </p>
+              {log.length > 0 && (
+                <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#22c55e",
+                  background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.22)",
+                  padding: "1px 7px", borderRadius: 20 }}>
+                  {log.filter(e => e.status === "sold").length} sold
+                </span>
+              )}
+            </div>
             {log.length === 0
-              ? <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.2)", fontStyle: "italic" }}>No sales yet</p>
+              ? (
+                <div style={{ background: CARD, border: `1px dashed ${BDR}`, borderRadius: 12,
+                  padding: "1.5rem 0.85rem", textAlign: "center" }}>
+                  <Gavel size={18} style={{ color: DIM, marginBottom: "0.5rem" }} />
+                  <p style={{ margin: 0, fontSize: "0.74rem", color: DIM, fontWeight: 600 }}>
+                    No sales yet
+                  </p>
+                  <p style={{ margin: "0.25rem 0 0", fontSize: "0.65rem",
+                    color: "rgba(255,255,255,0.2)" }}>
+                    Sold &amp; unsold lots will appear here
+                  </p>
+                </div>
+              )
               : log.map((e, i) => <LogRow key={i} entry={e} />)
             }
           </div>
