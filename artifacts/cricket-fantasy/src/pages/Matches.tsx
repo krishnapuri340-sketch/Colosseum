@@ -89,16 +89,46 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
     };
   }
 
-  function Stat({ label, value, highlight }: { label: string; value: string | number; highlight?: string }) {
+  function Stat({ value, highlight }: { label: string; value: string | number; highlight?: string }) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 32 }}>
-        <span style={{ fontSize: "0.55rem", fontWeight: 600, color: "rgba(255,255,255,0.25)",
-          letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 2 }}>
-          {label}
-        </span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minWidth: 32 }}>
         <span style={{ fontSize: "0.82rem", fontWeight: 700, color: highlight ?? "rgba(255,255,255,0.75)",
           fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
           {value === 0 ? <span style={{ color: "rgba(255,255,255,0.2)" }}>0</span> : value}
+        </span>
+      </div>
+    );
+  }
+
+  function ColHeaders() {
+    return (
+      <div style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "5px 16px 5px 0",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(255,255,255,0.015)",
+      }}>
+        <div style={{ width: 3, flexShrink: 0 }} />
+        <div style={{ width: 18, flexShrink: 0 }} />
+        <div style={{ width: 34, flexShrink: 0 }} />
+        <div style={{ flex: 1 }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
+          {["P", "W", "L", "NRR"].map(h => (
+            <span key={h} style={{
+              minWidth: 32, textAlign: "center", display: "block",
+              fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.08em",
+              textTransform: "uppercase", color: "rgba(255,255,255,0.25)",
+            }}>
+              {h}
+            </span>
+          ))}
+        </div>
+        <span style={{
+          flexShrink: 0, marginLeft: 8, minWidth: 44, textAlign: "center", display: "block",
+          fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.08em",
+          textTransform: "uppercase", color: "rgba(255,255,255,0.25)",
+        }}>
+          PTS
         </span>
       </div>
     );
@@ -295,6 +325,7 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
               </div>
             ) : (
               <>
+                <ColHeaders />
                 {qualifiers.map((row, i) => <TeamRow key={row.team} row={row} idx={i} />)}
                 <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "0 16px",
                   position: "relative" }}>
