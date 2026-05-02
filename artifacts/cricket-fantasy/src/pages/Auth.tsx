@@ -4,8 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 
-const VIOLET = "#7C6FF7";
-const VIOLET_DIM = "rgba(124,111,247,0.15)";
+const ACCENT = "#c0192c";
+const ACCENT_DIM = "rgba(192,25,44,0.15)";
 
 function FloatingInput({
   label, type = "text", value, onChange, error
@@ -25,7 +25,7 @@ function FloatingInput({
         transform: raised ? "none" : "translateY(-50%)",
         fontSize: raised ? "0.65rem" : "0.9rem",
         fontWeight: raised ? 700 : 500,
-        color: focused ? VIOLET : "rgba(255,255,255,0.35)",
+        color: focused ? ACCENT : "rgba(255,255,255,0.35)",
         transition: "all 0.18s cubic-bezier(0.4,0,0.2,1)",
         pointerEvents: "none", letterSpacing: raised ? "0.06em" : "0",
         textTransform: raised ? "uppercase" : "none",
@@ -42,13 +42,13 @@ function FloatingInput({
         style={{
           width: "100%", height: 58,
           background: "rgba(255,255,255,0.04)",
-          border: `1.5px solid ${error ? "rgba(220,38,38,0.6)" : focused ? VIOLET : "rgba(255,255,255,0.1)"}`,
+          border: `1.5px solid ${error ? "rgba(220,38,38,0.6)" : focused ? ACCENT : "rgba(255,255,255,0.1)"}`,
           borderRadius: 14, paddingTop: "1.2rem",
           paddingLeft: "1rem", paddingRight: type === "password" ? "3rem" : "1rem",
           color: "#fff", fontSize: "0.95rem", outline: "none",
           fontFamily: "inherit", transition: "border-color 0.2s",
           boxSizing: "border-box",
-          boxShadow: focused ? `0 0 0 3px ${VIOLET}18` : "none",
+          boxShadow: focused ? `0 0 0 3px ${ACCENT}22` : "none",
         }}
       />
       {type === "password" && (
@@ -101,7 +101,7 @@ export default function Auth() {
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "center",
       justifyContent: "center", padding: "1.5rem",
-      background: "radial-gradient(ellipse 100% 60% at 50% -10%, rgba(124,111,247,0.18), transparent 65%), #090c18",
+      background: "radial-gradient(ellipse 100% 60% at 50% -10%, rgba(192,25,44,0.18), transparent 65%), #090c18",
     }}>
       {/* Background orbs */}
       <div style={{
@@ -109,7 +109,7 @@ export default function Auth() {
       }}>
         <div style={{
           position: "absolute", width: 500, height: 500, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(124,111,247,0.12) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(192,25,44,0.12) 0%, transparent 70%)",
           top: "-10%", left: "-10%",
         }} />
         <div style={{
@@ -131,9 +131,9 @@ export default function Auth() {
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
           <div style={{
             width: 56, height: 56, borderRadius: 18, margin: "0 auto 1rem",
-            background: "linear-gradient(135deg, #7C6FF7, #6055d8)",
+            background: "linear-gradient(135deg, #c0192c, #8c0f1e)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 8px 32px rgba(124,111,247,0.45)",
+            boxShadow: "0 8px 32px rgba(192,25,44,0.45)",
           }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path d="M12 2L3 7l9 5 9-5-9-5zM3 17l9 5 9-5M3 12l9 5 9-5"
@@ -216,7 +216,7 @@ export default function Auth() {
             <div style={{ textAlign: "center", marginTop: "1rem" }}>
               <button style={{
                 background: "none", border: "none", cursor: "pointer",
-                fontSize: "0.8rem", color: "rgba(124,111,247,0.7)",
+                fontSize: "0.8rem", color: "rgba(192,25,44,0.85)",
                 fontFamily: "inherit",
               }}>
                 Forgot password?
@@ -230,7 +230,7 @@ export default function Auth() {
           <button onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
             style={{
               background: "none", border: "none", cursor: "pointer",
-              color: "rgba(124,111,247,0.8)", fontFamily: "inherit",
+              color: "rgba(192,25,44,0.9)", fontFamily: "inherit",
               fontSize: "0.78rem", fontWeight: 700,
             }}>
             {mode === "login" ? "Sign up" : "Sign in"}
