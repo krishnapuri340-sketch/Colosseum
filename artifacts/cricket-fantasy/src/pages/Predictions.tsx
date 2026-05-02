@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Target, Trophy, Zap, TrendingUp, CheckCircle,
   Clock, Lock, Award, ChevronDown, ChevronUp,
-  Flame, Users, ChevronRight, Star, Loader2, RefreshCw,
+  Flame, Users, ChevronRight, Loader2, RefreshCw,
 } from "lucide-react";
 import { TEAM_COLOR, TEAM_FULL_NAME, TEAM_LOGO, ROLE_COLOR } from "@/lib/ipl-constants";
 import { ALL_IPL_2026_PLAYERS } from "@/lib/ipl-players-2026";
@@ -172,9 +172,11 @@ function PickRow({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em",
-        color: "rgba(255,255,255,0.25)", textTransform: "uppercase" }}>
-        Others picked — {label}
+      <div style={{ display: "flex", alignItems: "center", gap: 4,
+        fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.08em",
+        color: "#a89ff9", textTransform: "uppercase" }}>
+        <Users size={9} style={{ color: "#a89ff9" }} />
+        League friends — {label}
       </div>
       {Object.entries(groups).map(([choice, friends]) => {
         const isMine  = myValue === choice;
@@ -457,20 +459,13 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           {match.allPicks.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center" }}>
-              {match.allPicks.slice(0, 4).map((f, fi) => (
-                <div key={fi} style={{ marginLeft: fi === 0 ? 0 : -7, zIndex: 4 - fi }}>
-                  <Avatar name={f.name} initials={f.initials} color={f.color} size={22} />
-                </div>
-              ))}
-              {match.allPicks.length > 4 && (
-                <div style={{ width: 22, height: 22, borderRadius: "50%", marginLeft: -7, zIndex: 0,
-                  background: "rgba(255,255,255,0.1)", border: "2px solid rgba(255,255,255,0.15)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.58rem", fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>
-                  +{match.allPicks.length - 4}
-                </div>
-              )}
+            <div style={{ display: "flex", alignItems: "center", gap: 4,
+              padding: "2px 8px 2px 6px", borderRadius: 20,
+              background: "rgba(124,111,247,0.1)", border: "1px solid rgba(124,111,247,0.2)" }}>
+              <Users size={10} style={{ color: "#a89ff9" }} />
+              <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "#a89ff9" }}>
+                {match.allPicks.length} in your leagues
+              </span>
             </div>
           )}
 
@@ -565,22 +560,27 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                   </div>
                 </div>
 
-                {/* League / others picker bar */}
+                {/* League friends bar — only shows people in your leagues */}
                 {match.allPicks.length > 0 && friendWinnerPct !== null && (
-                  <div>
+                  <div style={{ padding: "0.65rem 0.75rem", borderRadius: 10,
+                    background: "rgba(124,111,247,0.05)",
+                    border: "1px solid rgba(124,111,247,0.12)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 7 }}>
+                      <Users size={10} style={{ color: "#a89ff9" }} />
+                      <span style={{ fontSize: "0.6rem", fontWeight: 700,
+                        color: "#a89ff9", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                        Your Leagues
+                      </span>
+                    </div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
                       <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c1 }}>
                         {match.team1} {friendWinnerPct}%
-                      </span>
-                      <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.25)",
-                        display: "flex", alignItems: "center", gap: 4 }}>
-                        <Star size={10} /> Others in the app
                       </span>
                       <span style={{ fontSize: "0.62rem", fontWeight: 700, color: c2 }}>
                         {100 - friendWinnerPct}% {match.team2}
                       </span>
                     </div>
-                    <div style={{ height: 6, borderRadius: 3, overflow: "hidden", display: "flex",
+                    <div style={{ height: 5, borderRadius: 3, overflow: "hidden", display: "flex",
                       background: "rgba(255,255,255,0.05)" }}>
                       <div style={{ width: `${friendWinnerPct}%`,
                         background: `linear-gradient(90deg, ${c1}, ${c1}90)`,
@@ -589,7 +589,7 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                         background: `linear-gradient(90deg, ${c2}90, ${c2})`,
                         borderRadius: 3 }} />
                     </div>
-                    <div style={{ marginTop: 7, display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={{ display: "flex", gap: 3 }}>
                         {match.allPicks.filter(f => f.winner === match.team1).map((f, fi) => (
                           <Avatar key={fi} name={f.name} initials={f.initials} color={f.color}
