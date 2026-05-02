@@ -105,8 +105,8 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
   }
 
   function TeamRow({ row, idx }: { row: StandingRow; idx: number }) {
-    const color   = TEAM_COLOR[row.team] ?? "#aaa";
-    const isTop4  = row.position <= 4;
+    const isTop3  = row.position <= 4;
+    const accent  = isTop3 ? "#34d399" : "rgba(255,255,255,0.18)";
     const winPct  = row.played > 0 ? Math.round((row.won / row.played) * 100) : 0;
     const nrr     = nrrDisplay(row);
     const ptsPct  = maxPts > 0 ? (row.points / maxPts) * 100 : 0;
@@ -121,37 +121,31 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
           display: "flex", alignItems: "center", gap: 12,
           padding: "11px 16px 11px 0",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
-          position: "relative",
-          background: isTop4
-            ? `linear-gradient(90deg, ${color}08 0%, transparent 60%)`
-            : "transparent",
+          background: isTop3 ? "rgba(52,211,153,0.04)" : "transparent",
           transition: "background 0.15s",
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = isTop4
-          ? `linear-gradient(90deg, ${color}14 0%, rgba(255,255,255,0.02) 60%)`
+        onMouseEnter={e => (e.currentTarget.style.background = isTop3
+          ? "rgba(52,211,153,0.07)"
           : "rgba(255,255,255,0.025)")}
-        onMouseLeave={e => (e.currentTarget.style.background = isTop4
-          ? `linear-gradient(90deg, ${color}08 0%, transparent 60%)`
+        onMouseLeave={e => (e.currentTarget.style.background = isTop3
+          ? "rgba(52,211,153,0.04)"
           : "transparent")}
       >
-        {/* Left color bar */}
+        {/* Left accent bar */}
         <div style={{
           width: 3, alignSelf: "stretch", borderRadius: "0 3px 3px 0", flexShrink: 0,
-          background: isTop4 ? color : "rgba(255,255,255,0.08)",
-          opacity: isTop4 ? 0.8 : 0.4,
+          background: accent,
+          opacity: isTop3 ? 0.8 : 0.3,
         }} />
 
-        {/* Position badge */}
-        <div style={{
-          width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
-          background: isTop4 ? `${color}20` : "rgba(255,255,255,0.06)",
-          border: `1.5px solid ${isTop4 ? color + "60" : "rgba(255,255,255,0.1)"}`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "0.68rem", fontWeight: 800,
-          color: isTop4 ? color : "rgba(255,255,255,0.4)",
+        {/* Position number — plain, no circle */}
+        <span style={{
+          width: 18, flexShrink: 0, textAlign: "center",
+          fontSize: "0.72rem", fontWeight: 800, fontVariantNumeric: "tabular-nums",
+          color: isTop3 ? "#34d399" : "rgba(255,255,255,0.3)",
         }}>
           {row.position}
-        </div>
+        </span>
 
         {/* Logo */}
         <TeamBadge code={row.team} size={34} />
@@ -161,22 +155,23 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{
               fontWeight: 800, fontSize: "0.85rem",
-              color: isTop4 ? color : "#fff",
+              color: isTop3 ? "#fff" : "rgba(255,255,255,0.7)",
               whiteSpace: "nowrap",
             }}>
               {row.team}
             </span>
-            {isTop4 && (
+            {isTop3 && (
               <span style={{
                 fontSize: "0.52rem", fontWeight: 800, letterSpacing: "0.08em",
                 padding: "1px 5px", borderRadius: 4,
-                background: `${color}22`, color, border: `1px solid ${color}40`,
+                background: "rgba(52,211,153,0.15)", color: "#34d399",
+                border: "1px solid rgba(52,211,153,0.3)",
               }}>
                 Q
               </span>
             )}
           </div>
-          <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.3)",
+          <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.28)",
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             maxWidth: 140, marginTop: 1 }}>
             {row.teamFull}
@@ -187,7 +182,9 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
               <div style={{
                 height: "100%", borderRadius: 2,
                 width: `${winPct}%`,
-                background: `linear-gradient(90deg, ${color}, ${color}80)`,
+                background: isTop3
+                  ? "linear-gradient(90deg, #34d399, #34d39980)"
+                  : "rgba(255,255,255,0.2)",
                 transition: "width 0.6s ease",
               }} />
             </div>
@@ -197,7 +194,7 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
         {/* Stats */}
         <div style={{ display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
           <Stat label="P" value={row.played} />
-          <Stat label="W" value={row.won} highlight={row.won > 0 ? "#fff" : undefined} />
+          <Stat label="W" value={row.won} highlight={row.won > 0 ? "rgba(255,255,255,0.75)" : undefined} />
           <Stat label="L" value={row.lost} />
           <Stat label="NRR" value={nrr.label} highlight={nrr.color} />
         </div>
@@ -210,12 +207,12 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
         }}>
           <div style={{
             padding: "4px 10px", borderRadius: 8,
-            background: isTop4 ? `${color}22` : "rgba(255,255,255,0.06)",
-            border: `1.5px solid ${isTop4 ? color + "50" : "rgba(255,255,255,0.1)"}`,
+            background: isTop3 ? "rgba(52,211,153,0.12)" : "rgba(255,255,255,0.06)",
+            border: `1.5px solid ${isTop3 ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.1)"}`,
           }}>
             <span style={{
               fontSize: "1rem", fontWeight: 900,
-              color: isTop4 ? color : "rgba(255,255,255,0.7)",
+              color: isTop3 ? "#34d399" : "rgba(255,255,255,0.6)",
               fontVariantNumeric: "tabular-nums", lineHeight: 1,
             }}>
               {row.points}
@@ -231,7 +228,7 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
               <div style={{
                 height: "100%", borderRadius: 1,
                 width: `${ptsPct}%`,
-                background: isTop4 ? color : "rgba(255,255,255,0.3)",
+                background: isTop3 ? "#34d399" : "rgba(255,255,255,0.25)",
                 transition: "width 0.6s ease",
               }} />
             </div>
