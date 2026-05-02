@@ -17,7 +17,7 @@ const BOTTOM_NAV = [
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { collapsed } = useSidebar();
-  const sidebarW = collapsed ? 64 : 256;
+  const sidebarW = collapsed ? 72 : 252;
 
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location === href || location.startsWith(href + "/");
