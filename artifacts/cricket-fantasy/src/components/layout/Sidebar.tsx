@@ -104,14 +104,10 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
         {(isMobile || !collapsed) && (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
-              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-              background: "linear-gradient(135deg, #c0192c, #8c0f1e)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 16px rgba(192,25,44,0.4)",
+              width: 34, height: 34, borderRadius: 10, flexShrink: 0, overflow: "hidden",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
             }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L3 7l9 5 9-5-9-5zM3 17l9 5 9-5M3 12l9 5 9-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <img src="/logo.png" alt="Colosseum" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div>
               <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#fff", lineHeight: 1.1 }}>Colosseum</div>
@@ -121,14 +117,10 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
         )}
         {!isMobile && collapsed && (
           <div style={{
-            width: 34, height: 34, borderRadius: 10,
-            background: "linear-gradient(135deg, #c0192c, #8c0f1e)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 16px rgba(192,25,44,0.4)",
+            width: 34, height: 34, borderRadius: 10, overflow: "hidden",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L3 7l9 5 9-5-9-5zM3 17l9 5 9-5M3 12l9 5 9-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <img src="/logo.png" alt="Colosseum" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
         )}
         {isMobile && onClose && (

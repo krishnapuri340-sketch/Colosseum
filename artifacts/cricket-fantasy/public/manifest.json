@@ -1,0 +1,17 @@
+{
+  "name": "Colosseum",
+  "short_name": "Colosseum",
+  "description": "IPL 2026 Cricket Fantasy",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#c0192c",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
