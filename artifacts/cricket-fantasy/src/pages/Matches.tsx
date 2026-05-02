@@ -238,21 +238,6 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
     );
   }
 
-  function ZoneLabel({ label, color }: { label: string; color: string }) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", gap: 8,
-        padding: "6px 16px 6px 19px",
-        background: `${color}08`,
-        borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-        <div style={{ width: 5, height: 5, borderRadius: "50%", background: color, flexShrink: 0 }} />
-        <span style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em",
-          textTransform: "uppercase", color }}>
-          {label}
-        </span>
-      </div>
-    );
-  }
-
   return (
     <div style={{
       background: "rgba(255,255,255,0.025)",
@@ -310,9 +295,19 @@ function LeagueTable({ standings, loading }: { standings: StandingRow[]; loading
               </div>
             ) : (
               <>
-                <ZoneLabel label="Playoff Qualification Zone" color="#34d399" />
                 {qualifiers.map((row, i) => <TeamRow key={row.team} row={row} idx={i} />)}
-                <ZoneLabel label="Elimination Zone" color="#f87171" />
+                <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "0 16px",
+                  position: "relative" }}>
+                  <span style={{
+                    position: "absolute", left: "50%", top: "50%",
+                    transform: "translate(-50%, -50%)",
+                    fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: "rgba(255,255,255,0.25)",
+                    background: "rgba(9,12,24,1)", padding: "0 8px", whiteSpace: "nowrap",
+                  }}>
+                    Playoff cutoff
+                  </span>
+                </div>
                 {rest.map((row, i) => <TeamRow key={row.team} row={row} idx={i + 4} />)}
               </>
             )}
