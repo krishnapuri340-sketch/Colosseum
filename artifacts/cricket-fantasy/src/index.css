@@ -583,40 +583,6 @@ select {
   .ambient-blob-a, .ambient-blob-b, .floodlight-beam { animation: none; }
 }
 
-/* ── Dashboard bento cards ───────────────────────────────────── */
-.bento-card { transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease; }
-.bento-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255,255,255,0.14) !important;
-  box-shadow: 0 12px 36px rgba(0,0,0,0.42);
-}
-.bento-card:hover .card-arrow {
-  background: rgba(192,25,44,0.22) !important;
-  border-color: rgba(192,25,44,0.4) !important;
-  transform: translate(2px, -2px);
-}
-.bento-card:hover .card-arrow svg { color: #fff !important; }
-
-.franchise-chip { transition: all 0.22s ease; }
-.franchise-chip:hover {
-  background: rgba(255,255,255,0.07) !important;
-  border-color: rgba(255,255,255,0.14) !important;
-  transform: translateY(-2px);
-}
-.franchise-chip:hover img { opacity: 1 !important; }
-
-.footer-link { color: rgba(255,255,255,0.45); }
-.footer-link:hover { color: #fff; }
-
-/* Hero / bento responsive collapse */
-@media (max-width: 920px) {
-  .hero-grid { grid-template-columns: 1fr !important; }
-  .hero-pill { justify-self: start; }
-  .hero-tagline { text-align: left !important; justify-self: start !important; }
-  .bento-row-2 { grid-template-columns: 1fr !important; }
-  .bento-row-3 { grid-template-columns: 1fr !important; }
-}
-
 /* ── Spotlight card — cursor-tracking radial glow ────────────── */
 .spotlight-card {
   position: relative;
