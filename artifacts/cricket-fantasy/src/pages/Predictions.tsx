@@ -244,15 +244,17 @@ function MomDropdown({
   const roleIcon: Record<string, string> = { BAT: "BAT", BWL: "BWL", AR: "AR", WK: "WK" };
 
   return (
-    <div style={{ position: "relative" }}>
+    <div>
+      {/* Trigger button */}
       <button
         onClick={() => !disabled && setOpen(o => !o)}
         disabled={disabled}
         style={{
           width: "100%", padding: "0.6rem 0.9rem",
           background: value ? "rgba(192,25,44,0.1)" : "rgba(255,255,255,0.04)",
-          border: `1.5px solid ${value ? "rgba(192,25,44,0.35)" : "rgba(255,255,255,0.09)"}`,
-          borderRadius: 13, color: value ? "#e05572" : "rgba(255,255,255,0.35)",
+          border: `1.5px solid ${value ? "rgba(192,25,44,0.35)" : open ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.09)"}`,
+          borderRadius: open ? "13px 13px 0 0" : 13,
+          color: value ? "#e05572" : "rgba(255,255,255,0.35)",
           fontSize: "0.85rem", fontWeight: value ? 700 : 400,
           display: "flex", alignItems: "center", justifyContent: "space-between",
           cursor: disabled ? "default" : "pointer", textAlign: "left",
@@ -267,34 +269,40 @@ function MomDropdown({
           transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
       </button>
 
-      <AnimatePresence>
+      {/* Inline expandable list — no absolute positioning, card grows naturally */}
+      <AnimatePresence initial={false}>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
+            key="mom-list"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{
-              position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
-              background: "rgba(12,13,22,0.98)", border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 14, zIndex: 100, overflow: "hidden",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+              overflow: "hidden",
+              background: "rgba(10,11,20,0.97)",
+              border: "1.5px solid rgba(255,255,255,0.1)",
+              borderTop: "none",
+              borderRadius: "0 0 13px 13px",
             }}
           >
-            <div style={{ padding: "0.55rem 0.75rem", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            {/* Search */}
+            <div style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <input
                 autoFocus
                 value={q} onChange={e => setQ(e.target.value)}
                 placeholder="Search player…"
                 style={{
                   width: "100%", background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8,
                   padding: "0.4rem 0.7rem", color: "#fff", fontSize: "0.82rem",
                   outline: "none", boxSizing: "border-box",
                 }}
               />
             </div>
-            <div style={{ maxHeight: 300, overflowY: "auto" }}>
+
+            {/* Player rows — capped height with scroll */}
+            <div style={{ maxHeight: 260, overflowY: "auto" }}>
               {[team1, team2].map(team => {
                 const tc   = team === team1 ? c1 : c2;
                 const list = filtered.filter(p => p.team === team);
@@ -302,13 +310,14 @@ function MomDropdown({
                 return (
                   <div key={team}>
                     <div style={{
-                      padding: "0.45rem 0.85rem",
-                      background: `${tc}0f`,
+                      padding: "0.4rem 0.85rem",
+                      background: `${tc}0e`,
                       borderBottom: "1px solid rgba(255,255,255,0.05)",
                       display: "flex", alignItems: "center", gap: 7,
+                      position: "sticky", top: 0, zIndex: 1,
                     }}>
-                      <TeamLogo code={team} size={18} />
-                      <span style={{ fontSize: "0.68rem", fontWeight: 800,
+                      <TeamLogo code={team} size={16} />
+                      <span style={{ fontSize: "0.65rem", fontWeight: 800,
                         color: tc, letterSpacing: "0.06em" }}>
                         {team} — {TEAM_FULL_NAME[team]}
                       </span>
@@ -320,7 +329,7 @@ function MomDropdown({
                           onClick={() => { onChange(p.name); setOpen(false); setQ(""); }}
                           style={{
                             display: "flex", alignItems: "center", gap: 10,
-                            padding: "0.5rem 0.85rem", cursor: "pointer",
+                            padding: "0.48rem 0.85rem", cursor: "pointer",
                             background: selected ? `${tc}14` : "transparent",
                             borderBottom: "1px solid rgba(255,255,255,0.03)",
                             transition: "background 0.12s",
@@ -364,11 +373,6 @@ function MomDropdown({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {open && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 99 }}
-          onClick={() => { setOpen(false); setQ(""); }} />
-      )}
     </div>
   );
 }
