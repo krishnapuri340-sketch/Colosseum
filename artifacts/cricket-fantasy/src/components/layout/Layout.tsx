@@ -1,121 +1,99 @@
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { RightPanel } from "./RightPanel";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useSidebar } from "@/context/SidebarContext";
-import { Link } from "wouter";
 import { LayoutDashboard, Swords, Gavel, Target, Trophy } from "lucide-react";
 
-// Bottom nav items for mobile (5 most-used)
 const BOTTOM_NAV = [
-  { href:"/",            label:"Home",    icon:LayoutDashboard },
-  { href:"/matches",     label:"Matches", icon:Swords },
-  { href:"/auction",     label:"Auction", icon:Gavel },
-  { href:"/predictions", label:"Predict", icon:Target },
-  { href:"/leaderboard", label:"Ranks",   icon:Trophy },
+  { href: "/",            label: "Home",    icon: LayoutDashboard },
+  { href: "/matches",     label: "Matches", icon: Swords },
+  { href: "/auction",     label: "Auction", icon: Gavel },
+  { href: "/predictions", label: "Predict", icon: Target },
+  { href: "/leaderboard", label: "Ranks",   icon: Trophy },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const showRightPanel = location === "/";
   const { collapsed } = useSidebar();
-
   const sidebarW = collapsed ? 64 : 256;
 
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location === href || location.startsWith(href + "/");
 
   return (
-    <div
-      className="h-screen text-foreground overflow-hidden"
-      style={{
-        background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99,102,241,0.18) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 80% 80%, rgba(192,25,44,0.08) 0%, transparent 60%), #07080f",
-        display:"flex", flexDirection:"column",
-      }}
-    >
-      {/* ── DESKTOP layout: sidebar + content side by side ── */}
+    <div className="h-screen text-foreground overflow-hidden flex flex-col">
+
+      {/* ── DESKTOP ── */}
       <div className="hidden lg:flex flex-1 overflow-hidden">
         <Sidebar />
-        <div
-          className={`flex-1 flex flex-col min-w-0 ${showRightPanel ? "xl:mr-80" : ""}`}
-          style={{ marginLeft: sidebarW, transition:"margin-left 0.22s ease" }}
-        >
+        <div className="flex-1 flex flex-col min-w-0"
+          style={{ marginLeft: sidebarW, transition: "margin-left 0.22s ease" }}>
           <Header />
-          <main
-            className="flex-1 overflow-x-hidden overflow-y-auto p-6 xl:p-8"
-            style={{ background:"rgba(255,255,255,0.02)" }}
-          >
-            <div className="max-w-7xl mx-auto">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto"
+            style={{ padding: "20px 24px 24px" }}>
+            <div className="max-w-6xl mx-auto stagger-children">
               {children}
             </div>
           </main>
         </div>
-        {showRightPanel && <RightPanel />}
       </div>
 
-      {/* ── MOBILE layout: header + scrollable content + bottom nav ── */}
+      {/* ── MOBILE ── */}
       <div className="lg:hidden flex flex-col flex-1 overflow-hidden">
-        <Sidebar /> {/* renders mobile drawer when open */}
+        <Sidebar />
         <Header />
-        <main
-          className="flex-1 overflow-x-hidden overflow-y-auto"
-          style={{
-            background:"rgba(255,255,255,0.02)",
-            padding:"16px 16px 80px", // 80px bottom padding for nav bar
-          }}
-        >
-          {children}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto"
+          style={{ padding: "14px 14px 88px" }}>
+          <div className="stagger-children">
+            {children}
+          </div>
         </main>
 
-        {/* ── BOTTOM NAV BAR ── */}
-        <nav
-          style={{
-            position:"fixed", bottom:0, left:0, right:0, zIndex:50,
-            height:60, display:"flex", alignItems:"stretch",
-            background:"rgba(6,7,14,0.97)",
-            borderTop:"1px solid rgba(255,255,255,0.08)",
-            backdropFilter:"blur(20px)",
-            WebkitBackdropFilter:"blur(20px)",
-            // Safe area for iPhone home bar
-            paddingBottom:"env(safe-area-inset-bottom)",
-          }}
-        >
-          {BOTTOM_NAV.map(item => {
-            const active = isActive(item.href);
-            return (
-              <Link key={item.href} href={item.href} style={{
-                flex:1, display:"flex", minWidth:0,
-                WebkitTapHighlightColor:"transparent",
-              }}>
-                <div
-                  style={{
-                    flex:1, display:"flex", flexDirection:"column",
-                    alignItems:"center", justifyContent:"flex-end", gap:3,
-                    padding:"6px 4px 0px", cursor:"pointer", minWidth:0,
-                  }}
-                >
-                  <div style={{
-                    width:32, height:32, borderRadius:9,
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    background: active ? "rgba(192,25,44,0.18)" : "transparent",
-                    transition:"background 0.18s",
+        {/* Bottom nav bar */}
+        <nav style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+          paddingBottom: "env(safe-area-inset-bottom)",
+          background: "rgba(9,12,24,0.92)",
+          backdropFilter: "blur(28px) saturate(200%)",
+          WebkitBackdropFilter: "blur(28px) saturate(200%)",
+          borderTop: "1px solid rgba(255,255,255,0.07)",
+        }}>
+          <div style={{
+            display: "flex", alignItems: "stretch",
+            height: 60, padding: "6px 8px 8px",
+          }}>
+            {BOTTOM_NAV.map(item => {
+              const active = isActive(item.href);
+              return (
+                <Link key={item.href} href={item.href} style={{
+                  flex: 1, display: "flex", minWidth: 0,
+                  WebkitTapHighlightColor: "transparent",
+                }}>
+                  <div className="press" style={{
+                    flex: 1, display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center",
+                    gap: 3, cursor: "pointer", borderRadius: 12,
+                    background: active ? "rgba(124,111,247,0.14)" : "transparent",
+                    transition: "background 0.2s",
                   }}>
                     <item.icon style={{
-                      width:18, height:18,
-                      color: active ? "#f87171" : "rgba(255,255,255,0.35)",
+                      width: 19, height: 19,
+                      color: active ? "#a89ff9" : "rgba(255,255,255,0.3)",
+                      transition: "color 0.2s",
                     }} />
+                    <span style={{
+                      fontSize: "0.58rem", fontWeight: active ? 800 : 500,
+                      color: active ? "#a89ff9" : "rgba(255,255,255,0.3)",
+                      letterSpacing: "0.03em", lineHeight: 1,
+                      transition: "color 0.2s",
+                    }}>
+                      {item.label}
+                    </span>
                   </div>
-                  <span style={{
-                    fontSize:"0.6rem", fontWeight: active ? 700 : 500,
-                    color: active ? "#f87171" : "rgba(255,255,255,0.35)",
-                    letterSpacing:"0.02em", lineHeight:1,
-                  }}>
-                    {item.label}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
       </div>
     </div>
