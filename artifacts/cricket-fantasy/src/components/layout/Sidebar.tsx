@@ -281,22 +281,6 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
         display: "flex", flexDirection: "column", gap: 4,
         flexShrink: 0,
       }}>
-        <NavItem
-          href="/profile"
-          label="Profile"
-          Icon={UserCircle}
-          active={isActive("/profile")}
-          collapsed={!isMobile && collapsed}
-          onClick={isMobile ? onClose : undefined}
-        />
-        <NavItem
-          href="/profile"
-          label="Settings"
-          Icon={Settings}
-          active={false}
-          collapsed={!isMobile && collapsed}
-          onClick={isMobile ? onClose : undefined}
-        />
         <button
           onClick={() => logout()}
           aria-label="Sign out"
