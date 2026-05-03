@@ -292,20 +292,18 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
                 <div style={{ display: "flex", alignItems: "center", height: 24, gap: 8, padding: "0 12px", pointerEvents: "none" }}>
                   <div style={{
                     flex: 1, height: 1,
-                    background: "linear-gradient(90deg, transparent, #34d399)",
-                    boxShadow: "0 0 5px rgba(52,211,153,0.35)",
+                    background: "linear-gradient(90deg, transparent, rgba(52,211,153,0.6))",
                   }} />
                   <span style={{
                     fontSize: "0.48rem", fontWeight: 800, letterSpacing: "0.14em",
                     textTransform: "uppercase" as const, color: "#34d399",
-                    opacity: 0.7, whiteSpace: "nowrap", flexShrink: 0,
+                    opacity: 0.6, whiteSpace: "nowrap", flexShrink: 0,
                   }}>
                     Playoff cutoff
                   </span>
                   <div style={{
                     flex: 1, height: 1,
-                    background: "linear-gradient(90deg, #34d399, transparent)",
-                    boxShadow: "0 0 5px rgba(52,211,153,0.35)",
+                    background: "linear-gradient(90deg, rgba(52,211,153,0.6), transparent)",
                   }} />
                 </div>
 
