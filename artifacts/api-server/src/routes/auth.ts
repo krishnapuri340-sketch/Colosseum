@@ -110,7 +110,9 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
   await db.insert(passwordResetTokensTable).values({ userId: user.id, tokenHash, expiresAt });
 
   const appDomain = process.env.APP_URL
-    ?? (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "https://IPLColosseum.replit.app");
+    ?? (process.env.REPLIT_DEPLOYMENT === "1"
+      ? "https://IPLColosseum.replit.app"
+      : `https://${process.env.REPLIT_DEV_DOMAIN}`);
   const resetUrl = `${appDomain}/reset-password?token=${rawToken}`;
 
   await resend.emails.send({
