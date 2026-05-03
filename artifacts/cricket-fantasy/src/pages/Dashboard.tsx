@@ -476,8 +476,7 @@ export default function Dashboard() {
               All players <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          <div className="glass-elevated rounded-2xl p-6 text-center"
-            style={{ border: "1px dashed rgba(255,255,255,0.10)" }}>
+          <div className="glass-elevated rounded-2xl p-6 text-center">
             <div className="text-sm font-semibold text-white/45">Differentials update during live matches</div>
             <div className="text-xs text-white/25 mt-1">Players outperforming average ownership appear here</div>
           </div>
