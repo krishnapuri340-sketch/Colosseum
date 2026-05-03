@@ -321,36 +321,6 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
         </button>
       </div>
 
-      {/* ═══════════ COLLAPSE TOGGLE — desktop only ═══════════ */}
-      {!isMobile && (
-        <button
-          onClick={toggle}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          style={{
-            position: "absolute", right: -13, top: 96,
-            width: 26, height: 26, borderRadius: "50%",
-            background: "rgba(7,9,26,0.98)",
-            border: "1px solid rgba(255,255,255,0.13)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", zIndex: 10,
-            transition: "all 0.2s",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.5)",
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLButtonElement).style.background = "#c0192c";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "#c0192c";
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 14px rgba(192,25,44,0.55)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLButtonElement).style.background = "rgba(7,9,26,0.98)";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.13)";
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 10px rgba(0,0,0,0.5)";
-          }}>
-          {collapsed
-            ? <ChevronRight size={11} style={{ color: "rgba(255,255,255,0.7)" }} />
-            : <ChevronLeft  size={11} style={{ color: "rgba(255,255,255,0.7)" }} />}
-        </button>
-      )}
     </div>
   );
 }
