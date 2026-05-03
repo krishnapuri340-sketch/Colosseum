@@ -591,41 +591,48 @@ function MatchRow({ match }: { match: IplMatch }) {
   const status = match.isLive ? "live" : match.isUpcoming ? "upcoming" : "completed";
   return (
     <Link href="/matches">
-      <div className="glass-elevated rounded-2xl p-3.5 cursor-pointer transition-all hover:-translate-y-px"
+      <div className="glass-elevated rounded-2xl p-4 cursor-pointer transition-all hover:-translate-y-px"
         style={{ "--team-color": c1 } as React.CSSProperties}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {/* Left: status + match number */}
-          <div className="flex flex-col items-center gap-1 shrink-0 w-14">
+          <div className="flex flex-col items-center gap-1.5 shrink-0 w-16">
             <StatusPill status={status} />
-            <div className="text-[0.62rem] text-white/30 font-bold">M{match.matchNumber}</div>
+            <div className="text-[0.65rem] text-white/30 font-bold">M{match.matchNumber}</div>
           </div>
 
+          {/* Divider */}
+          <div style={{ width:1, height:36, background:"rgba(255,255,255,0.07)", flexShrink:0 }} />
+
           {/* Middle: teams */}
-          <div className="flex-1 min-w-0 flex items-center gap-2.5">
-            <TeamLogo code={match.homeTeam} size={28} />
+          <div className="flex-1 min-w-0 flex items-center gap-3">
+            <TeamLogo code={match.homeTeam} size={34} />
             <div className="min-w-0">
-              <div className="text-sm font-black truncate" style={{ color: c1 }}>{match.homeTeam}</div>
-              {match.firstInningsScore && (
-                <div className="text-[0.7rem] font-mono text-white/70 truncate">{match.firstInningsScore}</div>
+              <div className="text-base font-black truncate" style={{ color: c1 }}>{match.homeTeam}</div>
+              {match.firstInningsScore ? (
+                <div className="text-[0.72rem] font-mono text-white/70 truncate">{match.firstInningsScore}</div>
+              ) : (
+                <div className="text-[0.68rem] text-white/30 truncate">{match.homeTeamFull}</div>
               )}
             </div>
-            <span className="text-[0.62rem] text-white/22 font-mono mx-1">vs</span>
-            <TeamLogo code={match.awayTeam} size={28} />
+            <span className="text-[0.65rem] text-white/20 font-mono font-black mx-1">VS</span>
+            <TeamLogo code={match.awayTeam} size={34} />
             <div className="min-w-0">
-              <div className="text-sm font-black truncate" style={{ color: c2 }}>{match.awayTeam}</div>
-              {match.secondInningsScore && (
-                <div className="text-[0.7rem] font-mono text-white/70 truncate">{match.secondInningsScore}</div>
+              <div className="text-base font-black truncate" style={{ color: c2 }}>{match.awayTeam}</div>
+              {match.secondInningsScore ? (
+                <div className="text-[0.72rem] font-mono text-white/70 truncate">{match.secondInningsScore}</div>
+              ) : (
+                <div className="text-[0.68rem] text-white/30 truncate">{match.awayTeamFull}</div>
               )}
             </div>
           </div>
 
           {/* Right: time/venue */}
           <div className="text-right shrink-0 hidden sm:block">
-            <div className="text-[0.7rem] text-white/55 font-bold">{match.matchTime}</div>
-            <div className="text-[0.62rem] text-white/28 truncate max-w-[110px]">{match.city}</div>
+            <div className="text-[0.75rem] text-white/60 font-bold">{match.matchTime}</div>
+            <div className="text-[0.64rem] text-white/28 truncate max-w-[120px]">{match.city}</div>
           </div>
 
-          <ChevronRight className="w-3.5 h-3.5 text-white/25 shrink-0" />
+          <ChevronRight className="w-4 h-4 text-white/20 shrink-0" />
         </div>
       </div>
     </Link>
