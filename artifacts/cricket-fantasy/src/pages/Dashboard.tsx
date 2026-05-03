@@ -91,27 +91,6 @@ function TeamLogo({ code, size=44 }: { code:string; size?:number }) {
   );
 }
 
-/** Mock "rivals" avatar stack — renders top 3 most-popular team colors as initial bubbles */
-const RIVAL_AVATARS = [
-  { initial: "RK", color: "#fcd34d" },
-  { initial: "AS", color: "#a78bfa" },
-  { initial: "MJ", color: "#34d399" },
-];
-
-function AvatarBubble({ initial, color, size = 32 }: { initial: string; color: string; size?: number }) {
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%",
-      background: `linear-gradient(135deg, ${color}, ${color}88)`,
-      color: "#0b0e1f",
-      fontSize: size * 0.4, fontWeight: 900,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      letterSpacing: "-0.02em",
-    }}>
-      {initial}
-    </div>
-  );
-}
 
 function StatusPill({ status }: { status: "live" | "upcoming" | "completed" }) {
   const cls = `status-pill status-pill-${status}`;
@@ -222,21 +201,8 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Avatar stack + Invite */}
+              {/* Invite / Share */}
               <div className="flex items-center gap-3">
-                <div className="avatar-stack">
-                  {RIVAL_AVATARS.map(r => (
-                    <AvatarBubble key={r.initial} initial={r.initial} color={r.color} size={30} />
-                  ))}
-                  <div style={{
-                    width: 30, height: 30, borderRadius: "50%",
-                    background: "rgba(255,255,255,0.08)",
-                    color: "rgba(255,255,255,0.6)",
-                    fontSize: 11, fontWeight: 800,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    letterSpacing: "-0.02em",
-                  }}>+12</div>
-                </div>
                 <button
                   className="chip press-sm"
                   style={{ background: shared ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.06)", transition: "background 0.2s" }}
@@ -603,14 +569,7 @@ function FeaturedMatch({ match }: { match: IplMatch }) {
               🏆 {match.result}
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-xs text-white/55">
-              <div className="avatar-stack">
-                {RIVAL_AVATARS.slice(0, 3).map(r => (
-                  <AvatarBubble key={r.initial} initial={r.initial} color={r.color} size={22} />
-                ))}
-              </div>
-              <span><span className="text-white font-bold">+128</span> predicting</span>
-            </div>
+            <div />
           )}
 
           <div className="flex items-center gap-1.5 text-xs font-bold text-white">
