@@ -9,72 +9,36 @@ import { SidebarProvider } from "@/context/SidebarContext";
 import { apiJson } from "@/lib/api";
 import { IPL_MATCHES_KEY, IPL_STANDINGS_KEY } from "@/hooks/use-ipl-data";
 
-/* ───────── Lazy-loaded routes ─────────
- * Each page becomes its own JS chunk so the initial bundle is small and
- * routes load on demand. The Suspense fallback below matches the auth
- * loading state so transitions stay calm.
+/* ───────── Eagerly-imported sidebar pages ─────────
+ * These are the pages users visit via the sidebar constantly.
+ * Importing them eagerly means no Suspense fallback on navigation —
+ * switching tabs is instant because the code is already in the bundle.
  */
-const Dashboard       = lazy(() => import("@/pages/Dashboard"));
-const Matches         = lazy(() => import("@/pages/Matches"));
-const Players         = lazy(() => import("@/pages/Players"));
-const MyTeams         = lazy(() => import("@/pages/MyTeams"));
-const Auction         = lazy(() => import("@/pages/Auction"));
+import Dashboard   from "@/pages/Dashboard";
+import Matches     from "@/pages/Matches";
+import Players     from "@/pages/Players";
+import MyTeams     from "@/pages/MyTeams";
+import Auction     from "@/pages/Auction";
+import Predictions from "@/pages/Predictions";
+import Guide       from "@/pages/Guide";
+import Leaderboard from "@/pages/Leaderboard";
+import LiveScore   from "@/pages/LiveScore";
+import Watchlist   from "@/pages/Watchlist";
+import Profile     from "@/pages/Profile";
+
+/* ───────── Lazy-loaded sub-pages ─────────
+ * Less-visited flows that are fine to load on demand.
+ */
 const JoinAuction     = lazy(() => import("@/pages/JoinAuction"));
 const CreateAuction   = lazy(() => import("@/pages/CreateAuction"));
 const AuctionRoom     = lazy(() => import("@/pages/AuctionRoom"));
 const AuctionComplete = lazy(() => import("@/pages/AuctionComplete"));
-const Predictions     = lazy(() => import("@/pages/Predictions"));
-const Guide           = lazy(() => import("@/pages/Guide"));
-const Leaderboard     = lazy(() => import("@/pages/Leaderboard"));
-const LiveScore       = lazy(() => import("@/pages/LiveScore"));
-const Watchlist       = lazy(() => import("@/pages/Watchlist"));
-const Profile         = lazy(() => import("@/pages/Profile"));
 const AuthPages       = lazy(() => import("@/pages/Auth"));
 const NotFound        = lazy(() => import("@/pages/not-found"));
 
-/* ───────── Background chunk prefetch ─────────
- * Fire-and-forget imports after the first paint so all sidebar pages
- * are already in the module cache before the user clicks them.
- * Uses requestIdleCallback when available so it never blocks the UI.
- */
-const PAGE_IMPORTS = [
-  () => import("@/pages/Matches"),
-  () => import("@/pages/Players"),
-  () => import("@/pages/MyTeams"),
-  () => import("@/pages/Auction"),
-  () => import("@/pages/JoinAuction"),
-  () => import("@/pages/CreateAuction"),
-  () => import("@/pages/AuctionRoom"),
-  () => import("@/pages/AuctionComplete"),
-  () => import("@/pages/Predictions"),
-  () => import("@/pages/Guide"),
-  () => import("@/pages/Leaderboard"),
-  () => import("@/pages/LiveScore"),
-  () => import("@/pages/Watchlist"),
-  () => import("@/pages/Profile"),
-  () => import("@/pages/Dashboard"),
-];
-
-function prefetchChunks() {
-  const schedule = (cb: () => void) => {
-    if (typeof requestIdleCallback !== "undefined") {
-      requestIdleCallback(cb, { timeout: 3000 });
-    } else {
-      setTimeout(cb, 200);
-    }
-  };
-
-  PAGE_IMPORTS.forEach((load, i) => {
-    schedule(() => {
-      setTimeout(() => load().catch(() => {}), i * 80);
-    });
-  });
-}
-
-/* ───────── Query client with sensible defaults ─────────
- * - staleTime 2min so intra-session navigation always hits cache
- * - retry 1 to absorb the occasional flaky request without piling on
- * - refetchOnWindowFocus off — the live ticker / live score do explicit polling
+/* ───────── Query client ─────────
+ * - staleTime 2 min so intra-session navigation always hits cache
+ * - refetchOnWindowFocus off — live score does its own polling
  */
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -87,8 +51,8 @@ const queryClient = new QueryClient({
   },
 });
 
-/* Prefetch IPL data into the query cache so pages that show
- * matches/standings have data ready before they mount. */
+/* Prefetch IPL data into cache on app load so Matches/Dashboard
+ * pages render with data immediately. */
 function prefetchIplData() {
   queryClient.prefetchQuery({
     queryKey: IPL_MATCHES_KEY,
@@ -100,6 +64,21 @@ function prefetchIplData() {
     queryFn: () => apiJson<{ standings: unknown[] }>("/ipl/standings"),
     staleTime: 5 * 60_000,
   }).catch(() => {});
+}
+
+/* Prefetch lazy sub-page chunks in idle time so even those are fast. */
+function prefetchLazyChunks() {
+  const schedule = (fn: () => void) =>
+    typeof requestIdleCallback !== "undefined"
+      ? requestIdleCallback(fn, { timeout: 4000 })
+      : setTimeout(fn, 500);
+
+  [
+    () => import("@/pages/JoinAuction"),
+    () => import("@/pages/CreateAuction"),
+    () => import("@/pages/AuctionRoom"),
+    () => import("@/pages/AuctionComplete"),
+  ].forEach((load, i) => schedule(() => setTimeout(() => load().catch(() => {}), i * 100)));
 }
 
 function AppFallback() {
@@ -172,8 +151,8 @@ function AppRoutes() {
 
 function App() {
   useEffect(() => {
-    prefetchChunks();
     prefetchIplData();
+    prefetchLazyChunks();
   }, []);
 
   return (
