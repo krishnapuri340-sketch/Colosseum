@@ -37,11 +37,11 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
           position: "relative",
           display: "flex",
           alignItems: "center",
-          gap: collapsed ? 0 : 12,
-          padding: collapsed ? "0" : "5px 8px",
-          height: 52,
+          gap: collapsed ? 0 : 10,
+          padding: collapsed ? "0" : "4px 8px",
+          height: 42,
           justifyContent: collapsed ? "center" : "flex-start",
-          borderRadius: 14,
+          borderRadius: 11,
           cursor: "pointer",
           WebkitTapHighlightColor: "transparent",
           transition: "background 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
@@ -67,8 +67,8 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
       >
         {/* Icon orb: tinted crimson glass when active, soft tile when not */}
         <div style={{
-          width: 38, height: 38,
-          borderRadius: active ? "50%" : 11,
+          width: 30, height: 30,
+          borderRadius: active ? "50%" : 9,
           flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
           background: active
@@ -83,7 +83,7 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
           transition: "all 0.22s ease",
         }}>
           <Icon style={{
-            width: 17, height: 17,
+            width: 14, height: 14,
             color: active ? "#ff8a99" : "rgba(255,255,255,0.42)",
             transition: "color 0.22s ease",
           }} />
@@ -91,7 +91,7 @@ function NavItem({ href, label, Icon, active, collapsed, onClick }: {
 
         {!collapsed && (
           <span style={{
-            fontSize: "0.92rem",
+            fontSize: "0.82rem",
             fontWeight: active ? 700 : 500,
             color: active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
             whiteSpace: "nowrap",
@@ -303,11 +303,11 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
           className="press-sm"
           style={{
             display: "flex", alignItems: "center",
-            gap: collapsed ? 0 : 12,
-            padding: collapsed ? "0" : "5px 8px",
-            height: 52,
+            gap: collapsed ? 0 : 10,
+            padding: collapsed ? "0" : "4px 8px",
+            height: 42,
             justifyContent: collapsed ? "center" : "flex-start",
-            borderRadius: 14, cursor: "pointer", width: "100%",
+            borderRadius: 11, cursor: "pointer", width: "100%",
             background: "transparent", border: "none",
             transition: "background 0.18s",
             WebkitTapHighlightColor: "transparent",
@@ -317,17 +317,17 @@ function SidebarContent({ collapsed, isMobile, onClose }: {
           onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "transparent"}
         >
           <div style={{
-            width: 38, height: 38, borderRadius: 11,
+            width: 30, height: 30, borderRadius: 9,
             flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
             background: "rgba(220,38,38,0.10)",
             border: "1px solid rgba(220,38,38,0.18)",
           }}>
-            <LogOut size={15} style={{ color: "rgba(255,120,130,0.85)" }} />
+            <LogOut size={13} style={{ color: "rgba(255,120,130,0.85)" }} />
           </div>
           {(isMobile || !collapsed) && (
             <span style={{
-              fontSize: "0.92rem", fontWeight: 600,
+              fontSize: "0.82rem", fontWeight: 600,
               color: "rgba(255,120,130,0.85)",
               letterSpacing: "-0.01em",
             }}>
