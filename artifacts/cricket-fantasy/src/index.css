@@ -771,9 +771,11 @@ select {
   animation: pulseDot 1.8s ease-in-out infinite;
 }
 .status-pill-upcoming {
-  color: #fcd34d;
-  background: rgba(245, 158, 11, 0.10);
-  border: 1px solid rgba(245, 158, 11, 0.28);
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  font-size: 0.55rem;
+  padding: 2px 7px;
 }
 .status-pill-completed {
   color: rgba(255, 255, 255, 0.7);
