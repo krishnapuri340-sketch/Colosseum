@@ -191,23 +191,6 @@ export default function Auction() {
         </div>
       </div>
 
-      {/* Dev shortcut — jumps straight into the auction stage with mock teams */}
-      <button
-        onClick={() => navigate("/auction/room?dev=1")}
-        title="Skip lobby & prep — land directly in the auction stage"
-        style={{ alignSelf:"flex-start", marginTop:"-0.5rem",
-          display:"inline-flex", alignItems:"center", gap:"0.4rem",
-          padding:"0.45rem 0.85rem", background:"rgba(255,255,255,0.04)",
-          border:"1px dashed rgba(255,255,255,0.18)", borderRadius:8,
-          color:"rgba(255,255,255,0.55)", fontSize:"0.72rem", fontWeight:700,
-          letterSpacing:"0.08em", textTransform:"uppercase", cursor:"pointer",
-          transition:"all 0.15s" }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.borderColor = `${ACCENT}80`; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.55)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.18)"; }}>
-        <Play style={{ width:11, height:11, color:ACCENT }} />
-        Dev: Jump to auction stage
-      </button>
-
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
     </Layout>
   );

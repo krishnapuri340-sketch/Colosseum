@@ -93,18 +93,6 @@ function makeInitTeams(startBudget: number, registered: RegisteredTeam[]): AucTe
   }));
 }
 
-// ── Dev bypass: 4 mock teams so /auction/room?dev=1 lands straight on the auction stage ──
-const DEV_MOCK_TEAMS: Omit<AucTeam, "budget">[] = [
-  { id: "t1", name: "Mumbai Indians",      color: "#005da0", squad: [] },
-  { id: "t2", name: "Chennai Super Kings", color: "#fbc52d", squad: [] },
-  { id: "t3", name: "Royal Challengers",   color: "#c0192c", squad: [] },
-  { id: "t4", name: "Gujarat Titans",      color: "#1c2c5b", squad: [] },
-];
-function isDevBypassActive(): boolean {
-  if (typeof window === "undefined") return false;
-  return new URLSearchParams(window.location.search).get("dev") === "1";
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────
 function crFmt(n: number) {
   if (n === 0) return "₹0";
@@ -785,9 +773,6 @@ export default function AuctionRoom() {
   const [, navigate]   = useLocation();
   const { myAuctions, addAuction } = useApp();
 
-  // Dev bypass — when /auction/room?dev=1, skip prep stage with 4 mock teams
-  const devBypass = useMemo(() => isDevBypassActive(), []);
-
   // Load settings saved by CreateAuction (or JoinAuction)
   const config = useMemo(() => loadAuctionConfig(), []);
   const startBudget = config.budget;
@@ -808,18 +793,14 @@ export default function AuctionRoom() {
   }
 
   // Room stage: prep or auction
-  const [roomStage, setRoomStage] = useState<RoomStage>(devBypass ? "auction" : "prep");
+  const [roomStage, setRoomStage] = useState<RoomStage>("prep");
 
   // Shuffled player queue — built once when auction starts
   const queueRef = useRef<Player[]>([]);
   const queueIdx = useRef(0);
 
   // Auction state — teams start empty, populated once API responds
-  const [teams, setTeams]       = useState<AucTeam[]>(() =>
-    devBypass
-      ? DEV_MOCK_TEAMS.map(t => ({ ...t, budget: startBudget }))
-      : makeInitTeams(startBudget, [])
-  );
+  const [teams, setTeams]       = useState<AucTeam[]>(() => makeInitTeams(startBudget, []));
   const soldRef                  = useRef<Set<string>>(new Set());
 
   const [phase, setPhase]         = useState<AucPhase>("idle");
@@ -1068,16 +1049,6 @@ export default function AuctionRoom() {
     saveSnap({ roomStage: "auction", excl: excluded });
     advanceToNext(queueRef.current, 0);
   }
-
-  // ── Dev bypass: auto-start the queue once on mount ───────────────────
-  useEffect(() => {
-    if (!devBypass) return;
-    if (queueRef.current.length > 0) return;
-    queueRef.current = buildQueue(mode, []);
-    queueIdx.current = 0;
-    advanceToNext(queueRef.current, 0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [devBypass]);
 
   // ── Advance to next player in queue ───────────────────────────────
   function advanceToNext(queue: Player[], idx: number) {
