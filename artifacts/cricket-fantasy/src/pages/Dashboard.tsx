@@ -334,7 +334,7 @@ export default function Dashboard() {
             )}
 
             {/* Filtered match list */}
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 mt-6">
               {loading ? (
                 [1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-2xl bg-white/5" />)
               ) : filtered.length === 0 ? (
