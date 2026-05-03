@@ -134,13 +134,13 @@ export default function Dashboard() {
   const featured = live[0] ?? upcoming[0] ?? null;
 
   const filtered = useMemo<IplMatch[]>(() => {
-    const list =
-      filter === "live"      ? live
-      : filter === "upcoming" ? upcoming
-      : filter === "completed" ? completed
-      : [...live, ...upcoming, ...completed];
-    // Drop the featured card from the list to avoid duplication
-    return list.filter(m => m.iplId !== featured?.iplId).slice(0, 4);
+    if (filter === "live")      return live.filter(m => m.iplId !== featured?.iplId);
+    if (filter === "upcoming")  return upcoming.filter(m => m.iplId !== featured?.iplId).slice(0, 1);
+    if (filter === "completed") return completed.filter(m => m.iplId !== featured?.iplId).slice(0, 4);
+    // "all": remaining live + only the next 1 upcoming
+    const remainingLive = live.filter(m => m.iplId !== featured?.iplId);
+    const nextUpcoming  = upcoming.filter(m => m.iplId !== featured?.iplId).slice(0, 1);
+    return [...remainingLive, ...nextUpcoming];
   }, [filter, live, upcoming, completed, featured]);
 
   const filterCount = (k: FilterKey) =>
