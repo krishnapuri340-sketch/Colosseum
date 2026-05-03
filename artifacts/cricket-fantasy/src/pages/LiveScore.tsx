@@ -41,12 +41,6 @@ interface LivePlayerScore {
 // that may be supplied later by a richer live-events feed.
 type LiveMatch = IplMatch & { currentOver?: string };
 
-// ── Mock live events (replace with real API) ──────────────────────────
-const MOCK_EVENTS: LiveEvent[] = [];
-
-// MY_SQUAD_NAMES derived from AppContext myTeams in component
-
-const MOCK_PLAYERS: LivePlayerScore[] = [];
 
 const EVENT_COLORS: Record<string,string> = {
   "Wicket (Bowled)":  "#22c55e",
@@ -316,9 +310,8 @@ export default function LiveScore() {
           </div>
           <div style={{ display:"flex", gap:20, alignItems:"center" }}>
             {[
-              { label:"Fantasy Pts", value:mySquadTotalPts, color:"#c0392b" },
-              { label:"Players Active", value:`${MOCK_PLAYERS.filter(p=>MY_SQUAD_NAMES.has(p.name)&&p.isActive).length}/${[...MY_SQUAD_NAMES].length}`, color:"#22c55e" },
-              { label:"Rank (live)", value:"#7", color:"#f59e0b" },
+              { label:"Fantasy Pts", value: mySquadTotalPts, color:"#c0392b" },
+              { label:"Squad Players", value: MY_SQUAD_NAMES.size, color:"#22c55e" },
             ].map(s=>(
               <div key={s.label} style={{ textAlign:"center" }}>
                 <div style={{ fontSize:"1.5rem", fontWeight:900, color:s.color, fontFamily:"monospace", lineHeight:1 }}>

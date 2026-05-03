@@ -13,21 +13,11 @@ const ROLE_ICON: Record<string,string> = { BAT:"BAT", BWL:"BWL", AR:"AR", WK:"WK
 type SortKey   = "credits"|"name"|"role";
 type ViewMode  = "teams"|"all";
 
-function estimatePoints(credits: number) {
-  return Math.round(credits * 48 + (credits >= 10 ? 85 : credits >= 8 ? 30 : 10));
-}
-function getForm(name: string) {
-  const seed = name.split("").reduce((a,c) => a + c.charCodeAt(0), 0);
-  return Array.from({ length:5 }, (_,i) => ((seed + i*7) % 3 === 0 ? "B" : "A"));
-}
-
 // ── Compact player row (used inside team cards) ───────────────────────
 function PlayerRow({ player }: { player: typeof ALL_IPL_2026_PLAYERS[0] }) {
   const tc   = TEAM_COLOR[player.team] ?? "#aaa";
   const tier = getPlayerTier(player.credits);
   const tc2  = TIER_COLORS[tier];
-  const form = getForm(player.name);
-  const pts  = estimatePoints(player.credits);
   const base = TIER_CONFIG[tier].basePrice;
 
   return (
@@ -71,14 +61,6 @@ function PlayerRow({ player }: { player: typeof ALL_IPL_2026_PLAYERS[0] }) {
         </div>
       </div>
 
-      {/* Form dots */}
-      <div className="hidden sm:flex items-center gap-0.5">
-        {form.map((f,fi) => (
-          <div key={fi} style={{ width:12, height:3, borderRadius:2,
-            background: f==="A"?"#22c55e":"rgba(255,255,255,0.12)" }} />
-        ))}
-      </div>
-
       {/* Stats */}
       <div style={{ display:"flex", gap:12, flexShrink:0 }}>
         <div style={{ textAlign:"right" }}>
@@ -86,12 +68,6 @@ function PlayerRow({ player }: { player: typeof ALL_IPL_2026_PLAYERS[0] }) {
             {player.credits}
           </div>
           <div style={{ fontSize:"0.58rem", color:"rgba(255,255,255,0.25)" }}>CR</div>
-        </div>
-        <div style={{ textAlign:"right" }} className="hidden sm:block">
-          <div style={{ fontSize:"0.8rem", fontWeight:700, color:"rgba(255,255,255,0.6)", fontFamily:"monospace" }}>
-            {pts}
-          </div>
-          <div style={{ fontSize:"0.58rem", color:"rgba(255,255,255,0.25)" }}>PTS</div>
         </div>
         <div style={{ textAlign:"right", minWidth:40 }} className="hidden md:block">
           <div style={{ fontSize:"0.72rem", fontWeight:600, color:"rgba(255,255,255,0.35)",
