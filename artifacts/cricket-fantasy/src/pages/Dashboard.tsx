@@ -6,7 +6,7 @@ import {
   ArrowRight, Trophy, Flame, TrendingUp, Gavel,
   Target, Users, Zap, ChevronRight, Star, Radio,
   Sparkles, UserPlus, SlidersHorizontal, Calendar,
-  ArrowUpRight, Plus,
+  ArrowUpRight, Plus, Share2, Check,
 } from "lucide-react";
 import { Link } from "wouter";
 import { TEAM_COLOR, TEAM_LOGO } from "@/lib/ipl-constants";
@@ -126,7 +126,24 @@ function todayLabel() {
 
 export default function Dashboard() {
   const [filter, setFilter]   = useState<FilterKey>("all");
-  const { profile, totalPts, currentRank, myTeams, predAccuracy, notifications } = useApp();
+  const [shared, setShared]   = useState(false);
+  const { profile, myTeams, notifications } = useApp();
+
+  async function handleShare() {
+    const url  = window.location.origin + (import.meta.env.BASE_URL ?? "/");
+    const text = "Join me on Colosseum — IPL 2026 Fantasy! Build your squad, host auctions, and compete live.";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Colosseum · IPL 2026 Fantasy", text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShared(true);
+        setTimeout(() => setShared(false), 2500);
+      }
+    } catch {
+      // user cancelled or API unavailable — silently ignore
+    }
+  }
   const { data: matches = [], isLoading: loading } = useIplMatches();
 
   const { live, upcoming, completed } = useMemo(() => ({
@@ -220,9 +237,14 @@ export default function Dashboard() {
                     letterSpacing: "-0.02em",
                   }}>+12</div>
                 </div>
-                <button className="chip" style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <UserPlus className="w-3 h-3" />
-                  Invite
+                <button
+                  className="chip press-sm"
+                  style={{ background: shared ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.06)", transition: "background 0.2s" }}
+                  onClick={handleShare}
+                  title={shared ? "Link copied!" : "Share this app"}
+                >
+                  {shared ? <Check className="w-3 h-3" style={{ color: "#34d399" }} /> : <Share2 className="w-3 h-3" />}
+                  {shared ? "Copied!" : "Invite"}
                 </button>
               </div>
             </div>
@@ -313,78 +335,7 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* ═════════ STATS — featured + 3 mini ═════════ */}
-        <motion.div variants={fade}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3">
-
-          {/* Featured big stat — Total Points (spans 2 cols on mobile for impact) */}
-          <Link href="/leaderboard" className="col-span-2 md:col-span-1">
-            <div className="featured-card relative rounded-2xl p-5 cursor-pointer"
-              style={{
-                background: "linear-gradient(135deg, rgba(192,25,44,0.32) 0%, rgba(123,16,36,0.18) 60%, rgba(9,12,30,0.85) 100%)",
-                boxShadow: "0 1px 0 rgba(255,255,255,0.08) inset, 0 8px 32px rgba(192,25,44,0.18)",
-                minHeight: 132,
-              }}>
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="text-[0.66rem] font-black tracking-widest uppercase text-white/55 mb-1">Season Points</div>
-                  <div className="text-xs text-white/40">IPL 2026 fantasy</div>
-                </div>
-                <ArrowUpRight className="w-4 h-4 text-white/40" />
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-5xl font-black text-white tabular-nums leading-none"
-                  style={{ letterSpacing: "-0.04em" }}>
-                  <AnimatedNumber value={totalPts} />
-                </span>
-                <span className="text-sm text-white/45 font-bold">pts</span>
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <div className="flex-1 h-1.5 rounded-full bg-white/8 overflow-hidden">
-                  <div className="h-full rounded-full"
-                    style={{
-                      width: `${Math.min(100, (totalPts / 5000) * 100)}%`,
-                      background: "linear-gradient(90deg, #ff3854, #c0192c)",
-                      boxShadow: "0 0 10px rgba(192,25,44,0.6)",
-                    }} />
-                </div>
-                <span className="text-xs text-white/35 font-bold">Goal 5K</span>
-              </div>
-            </div>
-          </Link>
-
-          {[
-            { label:"Current Rank",  value:<><span>#</span><AnimatedNumber value={currentRank} /></>, sub:"Fantasy league", color:"#f59e0b", icon:<Trophy className="w-4 h-4" /> },
-            { label:"Teams Active",  value:<AnimatedNumber value={myTeams.length} />, sub:`${myTeams.filter(t=>t.status==="live").length} live`, color:"#34d399", icon:<Users className="w-4 h-4" /> },
-            { label:"Predictions",   value:<><AnimatedNumber value={predAccuracy} /><span>%</span></>, sub:"Accuracy",  color:"#818cf8", icon:<Target className="w-4 h-4" /> },
-          ].map(s => (
-            <SpotlightCard
-              key={s.label}
-              color={toRgbCsv(s.color)}
-              radius={300}
-              className="glass-elevated rounded-2xl p-4 flex flex-col justify-between cursor-default"
-              style={{ minHeight: 132 }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${s.color}26, ${s.color}10)`,
-                    border: `1px solid ${s.color}30`,
-                    color: s.color,
-                  }}>
-                  {s.icon}
-                </div>
-                <Sparkles className="w-3 h-3 text-white/15" />
-              </div>
-              <div>
-                <div className="text-2xl font-black text-white tabular-nums leading-none"
-                  style={{ letterSpacing: "-0.025em" }}>{s.value}</div>
-                <div className="text-xs font-bold text-white/55 mt-1.5">{s.label}</div>
-                <div className="text-[0.66rem] text-white/30 mt-0.5">{s.sub}</div>
-              </div>
-            </SpotlightCard>
-          ))}
-        </motion.div>
+        {/* Stats grid hidden until real scoring data is available */}
 
         {/* ═════════ MAIN GRID ═════════ */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -536,72 +487,7 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Activity mini — sparkline progress */}
-            <div className="glass-elevated rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="text-[0.7rem] font-black tracking-widest uppercase text-white/55">Activity</div>
-                  <div className="text-xs text-white/40 mt-0.5">{notifications.length} events this week</div>
-                </div>
-                <Link href="/leaderboard">
-                  <button className="press-sm flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.7rem] font-bold text-white"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(192,25,44,0.85), rgba(155,19,35,0.7))",
-                      border: "1px solid rgba(255,120,140,0.32)",
-                      boxShadow: "0 4px 12px rgba(192,25,44,0.25)",
-                      cursor: "pointer", fontFamily: "inherit",
-                    }}>
-                    Get the report <ArrowUpRight className="w-3 h-3" />
-                  </button>
-                </Link>
-              </div>
-
-              {/* Mini bar sparkline (deterministic mock by week-day) */}
-              <div className="flex items-end gap-1.5 h-14 mb-2">
-                {[40, 65, 35, 80, 50, 90, 70].map((h, i) => (
-                  <div key={i} className="flex-1 rounded-t-md"
-                    style={{
-                      height: `${h}%`,
-                      background: i === 5
-                        ? "linear-gradient(180deg, #ff3854, #c0192c)"
-                        : "linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))",
-                      boxShadow: i === 5 ? "0 0 12px rgba(192,25,44,0.5)" : "none",
-                    }} />
-                ))}
-              </div>
-              <div className="flex justify-between text-[0.62rem] text-white/30 font-bold tracking-wider">
-                {["M","T","W","T","F","S","S"].map((d, i) => (
-                  <span key={i} style={{ color: i === 5 ? "rgba(255,255,255,0.7)" : undefined }}>{d}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* Season progress — kept from previous version */}
-            <div className="glass-elevated rounded-2xl p-4">
-              <div className="text-[0.7rem] font-black tracking-widest uppercase text-white/55 mb-3">IPL 2026 Season</div>
-              <div className="space-y-2.5">
-                {[
-                  { label: "Matches Played", value: `${completed.length}/70`, pct: (completed.length / 70) * 100, color: "#818cf8" },
-                  { label: "Live Right Now",  value: `${live.length}`, pct: live.length > 0 ? 100 : 0, color: "#34d399" },
-                  { label: "Your Accuracy",   value: `${predAccuracy}%`, pct: predAccuracy, color: "#f59e0b" },
-                ].map(item => (
-                  <div key={item.label}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-white/50 font-medium">{item.label}</span>
-                      <span className="text-xs font-black text-white tabular-nums">{item.value}</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: `${Math.max(2, Math.min(100, item.pct))}%`,
-                          background: `linear-gradient(90deg, ${item.color}cc, ${item.color})`,
-                          boxShadow: `0 0 8px ${item.color}60`,
-                        }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Activity and Season Progress hidden until real data is available */}
           </motion.div>
         </div>
 
