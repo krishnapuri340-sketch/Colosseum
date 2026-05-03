@@ -354,6 +354,14 @@ export default function Dashboard() {
           {/* RIGHT RAIL — Today spotlight, My Squads, Activity (G.Take pattern) */}
           <motion.div variants={fade} className="space-y-4">
 
+            {/* Section header — mirrors left column header for vertical alignment */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-black flex items-center gap-2" style={{ letterSpacing: "-0.01em" }}>
+                <Star className="w-4.5 h-4.5 text-red-400" />
+                Today
+              </h2>
+            </div>
+
             {/* Today's spotlight — like G.Take "Today note" */}
             <div className="glass-elevated rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
