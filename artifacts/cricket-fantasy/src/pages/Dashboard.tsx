@@ -598,9 +598,10 @@ function MatchRow({ match }: { match: IplMatch }) {
   const status = match.isLive ? "live" : match.isUpcoming ? "upcoming" : "completed";
   return (
     <Link href="/matches">
-      <div className="featured-card rounded-2xl p-4 cursor-pointer relative overflow-hidden"
+      <div className="rounded-2xl p-4 cursor-pointer relative overflow-hidden"
         style={{
           background: `linear-gradient(135deg, ${c1}22 0%, rgba(7,9,26,0.65) 50%, ${c2}1e 100%)`,
+          border: "1px solid rgba(255,255,255,0.08)",
           boxShadow: "0 1px 0 rgba(255,255,255,0.07) inset, 0 8px 28px rgba(0,0,0,0.28)",
         }}>
 
