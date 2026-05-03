@@ -40,10 +40,8 @@ function PlayerRow({ player, showTeam = false }: {
         display: "flex", alignItems: "center", gap: 12,
         padding: "0.6rem 1rem",
         borderBottom: `1px solid ${BORDER2}`,
-        transition: "background 0.12s", cursor: "default",
+        cursor: "default",
       }}
-      onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.03)"}
-      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
     >
       {/* Role tag */}
       <div style={{
@@ -86,15 +84,8 @@ function PlayerRow({ player, showTeam = false }: {
       {/* Stats */}
       <div style={{ display: "flex", gap: 16, alignItems: "center", flexShrink: 0 }}>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: "0.88rem", fontWeight: 700, color: tc2,
+          <div style={{ fontSize: "0.82rem", fontWeight: 700, color: tc2,
             fontFamily: "JetBrains Mono, monospace", lineHeight: 1 }}>
-            {player.credits}
-          </div>
-          <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.22)", marginTop: 1 }}>CR</div>
-        </div>
-        <div style={{ textAlign: "right" }} className="hidden sm:block">
-          <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "rgba(255,255,255,0.35)",
-            fontFamily: "JetBrains Mono, monospace" }}>
             {baseFmt}
           </div>
           <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.22)", marginTop: 1 }}>BASE</div>
@@ -524,10 +515,7 @@ export default function Players() {
                   Player
                 </span>
                 <span style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em",
-                  color: "rgba(255,255,255,0.22)", textTransform: "uppercase" }}>CR</span>
-                <span style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em",
-                  color: "rgba(255,255,255,0.22)", textTransform: "uppercase" }}
-                  className="hidden sm:block">BASE</span>
+                  color: "rgba(255,255,255,0.22)", textTransform: "uppercase" }}>BASE</span>
               </div>
 
               {flatFiltered.map(p => <PlayerRow key={p.name} player={p} showTeam />)}
