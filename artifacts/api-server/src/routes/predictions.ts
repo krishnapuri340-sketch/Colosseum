@@ -223,6 +223,23 @@ router.post("/predictions", requireAuth, async (req: any, res: any): Promise<voi
     return;
   }
 
+  // Guard: only allow saves while the match has not yet started.
+  // Once it goes live or is completed, picks are locked.
+  try {
+    const raw = await fetchS3(`${COMP_ID}-matchschedule.js`);
+    const fixtures: any[] = raw?.Matchsummary ?? [];
+    const fx = fixtures.find(m => String(m.MatchID ?? "") === String(matchId));
+    if (fx) {
+      const status = String(fx.MatchStatus ?? "").toLowerCase();
+      if (status === "live" || status === "post" || status === "result") {
+        res.status(409).json({ error: "Match has started — predictions are locked." });
+        return;
+      }
+    }
+  } catch {
+    // If the schedule lookup fails, fall through and allow the save rather than blocking the user.
+  }
+
   try {
     const [pred] = await db
       .insert(predictionsTable)

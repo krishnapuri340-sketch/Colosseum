@@ -85,7 +85,11 @@ async function submitPrediction(matchId: string, pick: Pick): Promise<void> {
     headers:     { "Content-Type": "application/json" },
     body:        JSON.stringify({ matchId, ...pick }),
   });
-  if (!r.ok) throw new Error(`${r.status}`);
+  if (!r.ok) {
+    let msg = `${r.status}`;
+    try { const j = await r.json(); if (j?.error) msg = j.error; } catch { /* ignore */ }
+    throw new Error(msg);
+  }
 }
 
 async function fetchLeaderboard(): Promise<any[]> {
@@ -385,7 +389,9 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
   const c1 = TEAM_COLOR[match.team1] ?? "#aaa";
   const c2 = TEAM_COLOR[match.team2] ?? "#aaa";
 
-  const isOpen    = match.status === "open" && !submitted;
+  // Picks are editable for the entire "open" window — even after submission.
+  // They lock the moment the match goes live (or is settled).
+  const isOpen    = match.status === "open";
   const isSettled = match.status === "settled";
   const isLive    = match.status === "live";
 
@@ -413,8 +419,8 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
       await submitPrediction(match.matchId, picks);
       setSub(true);
       onPickSaved?.();
-    } catch {
-      setError("Failed to save — please try again.");
+    } catch (e: any) {
+      setError(e?.message?.includes("locked") ? e.message : "Failed to save — please try again.");
     } finally {
       setSubm(false);
     }
@@ -781,29 +787,38 @@ function MatchCard({ match, onPickSaved }: { match: ApiMatch; onPickSaved?: () =
                     <span style={{ fontSize: "0.72rem", color: "#ef4444" }}>{error}</span>
                   )}
                   {isOpen && (
-                    <button
-                      onClick={handleLockPicks}
-                      disabled={!canSubmit || submitting}
-                      style={{
-                        padding: "0.65rem 1.7rem", borderRadius: 12, border: "none",
-                        background: canSubmit
-                          ? "linear-gradient(135deg, #c0192c 0%, #e05572 100%)"
-                          : "rgba(192,25,44,0.12)",
-                        color: canSubmit ? "#fff" : "rgba(255,255,255,0.2)",
-                        fontWeight: 800, fontSize: "0.85rem",
-                        cursor: canSubmit && !submitting ? "pointer" : "default",
-                        transition: "all 0.2s",
-                        display: "flex", alignItems: "center", gap: 6,
-                        boxShadow: canSubmit ? "0 4px 20px rgba(192,25,44,0.45), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
-                      }}
-                    >
-                      {submitting
-                        ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Saving…</>
-                        : "Lock Picks"}
-                    </button>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                      <button
+                        onClick={handleLockPicks}
+                        disabled={!canSubmit || submitting}
+                        style={{
+                          padding: "0.65rem 1.7rem", borderRadius: 12, border: "none",
+                          background: canSubmit
+                            ? "linear-gradient(135deg, #c0192c 0%, #e05572 100%)"
+                            : "rgba(192,25,44,0.12)",
+                          color: canSubmit ? "#fff" : "rgba(255,255,255,0.2)",
+                          fontWeight: 800, fontSize: "0.85rem",
+                          cursor: canSubmit && !submitting ? "pointer" : "default",
+                          transition: "all 0.2s",
+                          display: "flex", alignItems: "center", gap: 6,
+                          boxShadow: canSubmit ? "0 4px 20px rgba(192,25,44,0.45), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
+                        }}
+                      >
+                        {submitting
+                          ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Saving…</>
+                          : submitted ? "Update Picks" : "Lock Picks"}
+                      </button>
+                      {submitted && !submitting && (
+                        <span style={{ fontSize: "0.66rem", color: "rgba(255,255,255,0.4)",
+                          display: "flex", alignItems: "center", gap: 4 }}>
+                          <CheckCircle size={10} style={{ color: "#22c55e" }} />
+                          Saved — editable until kick-off
+                        </span>
+                      )}
+                    </div>
                   )}
 
-                  {submitted && !isSettled && (
+                  {submitted && !isOpen && !isSettled && (
                     <div style={{ display: "flex", alignItems: "center", gap: 6,
                       padding: "0.5rem 0.85rem", background: "rgba(34,197,94,0.08)",
                       border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10 }}>
