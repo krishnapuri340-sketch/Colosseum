@@ -289,21 +289,24 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
                 ))}
 
                 {/* Playoff cutoff separator */}
-                <div style={{ position: "relative", height: 24, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                <div style={{ display: "flex", alignItems: "center", height: 24, gap: 8, padding: "0 12px", pointerEvents: "none" }}>
                   <div style={{
-                    position: "absolute", left: 0, right: 0,
-                    height: 1,
-                    background: "linear-gradient(90deg, transparent 0%, #34d399 20%, #34d399 80%, transparent 100%)",
-                    boxShadow: "0 0 6px 1px rgba(52,211,153,0.4)",
+                    flex: 1, height: 1,
+                    background: "linear-gradient(90deg, transparent, #34d399)",
+                    boxShadow: "0 0 5px rgba(52,211,153,0.35)",
                   }} />
                   <span style={{
-                    position: "relative", zIndex: 1,
                     fontSize: "0.48rem", fontWeight: 800, letterSpacing: "0.14em",
                     textTransform: "uppercase" as const, color: "#34d399",
-                    opacity: 0.7, whiteSpace: "nowrap",
+                    opacity: 0.7, whiteSpace: "nowrap", flexShrink: 0,
                   }}>
                     Playoff cutoff
                   </span>
+                  <div style={{
+                    flex: 1, height: 1,
+                    background: "linear-gradient(90deg, #34d399, transparent)",
+                    boxShadow: "0 0 5px rgba(52,211,153,0.35)",
+                  }} />
                 </div>
 
                 {rest.map((row, i) => <TeamRow key={row.team} row={row} idx={i + 4} />)}
