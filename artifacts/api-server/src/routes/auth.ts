@@ -86,6 +86,36 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   res.json({ id: user.id, email: user.email, name: user.name, ...(keep ? { token } : {}) });
 });
 
+router.post("/auth/change-password", async (req, res): Promise<void> => {
+  const userId = getUserFromRequest(req);
+  if (!userId) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+  const { currentPassword, newPassword } = req.body ?? {};
+  if (!currentPassword || !newPassword) {
+    res.status(400).json({ error: "currentPassword and newPassword are required" });
+    return;
+  }
+  if ((newPassword as string).length < 8) {
+    res.status(400).json({ error: "New password must be at least 8 characters" });
+    return;
+  }
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const valid = await bcrypt.compare(currentPassword as string, user.passwordHash);
+  if (!valid) {
+    res.status(401).json({ error: "Current password is incorrect" });
+    return;
+  }
+  const newHash = await bcrypt.hash(newPassword as string, 12);
+  await db.update(usersTable).set({ passwordHash: newHash }).where(eq(usersTable.id, userId));
+  res.json({ ok: true });
+});
+
 router.post("/auth/logout", (_req, res): void => {
   res.clearCookie(COOKIE_NAME, { path: "/", sameSite: "lax", secure: true });
   res.json({ ok: true });

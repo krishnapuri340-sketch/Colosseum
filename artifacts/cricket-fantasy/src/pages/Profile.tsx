@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { useApp } from "@/context/AppContext";
-import { Camera, Save, LogOut, Bell, Shield, Palette, Trophy, ChevronRight, Check } from "lucide-react";
+import { apiJson } from "@/lib/api";
+import { Camera, Save, LogOut, Bell, Shield, Palette, Trophy, ChevronRight, Check, Eye, EyeOff, Lock } from "lucide-react";
 import { ALL_TEAMS, TEAM_COLOR, TEAM_FULL_NAME, TEAM_LOGO } from "@/lib/ipl-constants";
 
 const ACCENT = "#c0192c";
@@ -68,6 +69,36 @@ export default function Profile() {
   const [favTeam, setFavTeam]         = useState(profile.favoriteTeam);
   const [saved, setSaved]             = useState(false);
   const [activeTab, setActiveTab]     = useState<"profile"|"notifications"|"privacy">("profile");
+
+  const [pwOpen, setPwOpen]         = useState(false);
+  const [currentPw, setCurrentPw]   = useState("");
+  const [newPw, setNewPw]           = useState("");
+  const [confirmPw, setConfirmPw]   = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew]       = useState(false);
+  const [pwLoading, setPwLoading]   = useState(false);
+  const [pwError, setPwError]       = useState<string | null>(null);
+  const [pwDone, setPwDone]         = useState(false);
+
+  async function handleChangePassword() {
+    setPwError(null);
+    if (newPw.length < 8) { setPwError("New password must be at least 8 characters."); return; }
+    if (newPw !== confirmPw) { setPwError("Passwords don't match."); return; }
+    setPwLoading(true);
+    try {
+      await apiJson("/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
+      });
+      setPwDone(true);
+      setCurrentPw(""); setNewPw(""); setConfirmPw("");
+      setTimeout(() => { setPwDone(false); setPwOpen(false); }, 2200);
+    } catch (err: any) {
+      setPwError(err?.message ?? "Something went wrong.");
+    } finally {
+      setPwLoading(false);
+    }
+  }
 
   const [notifSettings, setNotifSettings] = useState({
     auctionStart:   true,
@@ -278,18 +309,135 @@ export default function Profile() {
           <div className="space-y-4">
             <Section title="Account">
               <div style={{ display:"flex", flexDirection:"column", gap:"0.75rem" }}>
+
+                {/* Change Password row + inline form */}
+                <div style={{ border:`1px solid ${BORDER}`, borderRadius:10, overflow:"hidden" }}>
+                  <div onClick={()=>{ setPwOpen(o=>!o); setPwError(null); }}
+                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                      padding:"0.75rem 0.9rem", background:"rgba(255,255,255,0.03)",
+                      cursor:"pointer" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      <Lock size={14} style={{ color:DIM }} />
+                      <span style={{ fontSize:"0.88rem", color:"rgba(255,255,255,0.8)" }}>
+                        Change Password
+                      </span>
+                    </div>
+                    <ChevronRight size={14} style={{ color:DIM,
+                      transform: pwOpen ? "rotate(90deg)" : "rotate(0deg)",
+                      transition:"transform 0.2s" }} />
+                  </div>
+
+                  <AnimatePresence initial={false}>
+                    {pwOpen && (
+                      <motion.div key="pw-form"
+                        initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }}
+                        exit={{ height:0, opacity:0 }} transition={{ duration:0.22 }}
+                        style={{ overflow:"hidden" }}>
+                        <div style={{ padding:"1rem 0.9rem", borderTop:`1px solid ${BORDER}`,
+                          display:"flex", flexDirection:"column", gap:"0.75rem" }}>
+
+                          {/* Current password */}
+                          <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                            <label style={{ fontSize:"0.7rem", fontWeight:700,
+                              letterSpacing:"0.08em", color:DIM, textTransform:"uppercase" }}>
+                              Current Password
+                            </label>
+                            <div style={{ position:"relative" }}>
+                              <input type={showCurrent?"text":"password"} value={currentPw}
+                                onChange={e=>setCurrentPw(e.target.value)}
+                                placeholder="Your current password"
+                                style={{ width:"100%", padding:"0.7rem 2.5rem 0.7rem 0.85rem",
+                                  background:"rgba(255,255,255,0.05)", border:`1px solid ${BORDER}`,
+                                  borderRadius:9, color:"#fff", fontSize:"0.88rem",
+                                  outline:"none", boxSizing:"border-box" }} />
+                              <button type="button" onClick={()=>setShowCurrent(v=>!v)}
+                                style={{ position:"absolute", right:10, top:"50%",
+                                  transform:"translateY(-50%)", background:"none", border:"none",
+                                  cursor:"pointer", color:DIM, padding:0, display:"flex" }}>
+                                {showCurrent ? <EyeOff size={15}/> : <Eye size={15}/>}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* New password */}
+                          <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                            <label style={{ fontSize:"0.7rem", fontWeight:700,
+                              letterSpacing:"0.08em", color:DIM, textTransform:"uppercase" }}>
+                              New Password
+                            </label>
+                            <div style={{ position:"relative" }}>
+                              <input type={showNew?"text":"password"} value={newPw}
+                                onChange={e=>setNewPw(e.target.value)}
+                                placeholder="At least 8 characters"
+                                style={{ width:"100%", padding:"0.7rem 2.5rem 0.7rem 0.85rem",
+                                  background:"rgba(255,255,255,0.05)", border:`1px solid ${BORDER}`,
+                                  borderRadius:9, color:"#fff", fontSize:"0.88rem",
+                                  outline:"none", boxSizing:"border-box" }} />
+                              <button type="button" onClick={()=>setShowNew(v=>!v)}
+                                style={{ position:"absolute", right:10, top:"50%",
+                                  transform:"translateY(-50%)", background:"none", border:"none",
+                                  cursor:"pointer", color:DIM, padding:0, display:"flex" }}>
+                                {showNew ? <EyeOff size={15}/> : <Eye size={15}/>}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Confirm new password */}
+                          <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                            <label style={{ fontSize:"0.7rem", fontWeight:700,
+                              letterSpacing:"0.08em", color:DIM, textTransform:"uppercase" }}>
+                              Confirm New Password
+                            </label>
+                            <input type="password" value={confirmPw}
+                              onChange={e=>setConfirmPw(e.target.value)}
+                              placeholder="Repeat new password"
+                              style={{ padding:"0.7rem 0.85rem",
+                                background:"rgba(255,255,255,0.05)", border:`1px solid ${BORDER}`,
+                                borderRadius:9, color:"#fff", fontSize:"0.88rem",
+                                outline:"none" }} />
+                          </div>
+
+                          {pwError && (
+                            <div style={{ fontSize:"0.78rem", color:"#f87171",
+                              background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.2)",
+                              borderRadius:8, padding:"0.5rem 0.75rem" }}>
+                              {pwError}
+                            </div>
+                          )}
+
+                          <button onClick={handleChangePassword} disabled={pwLoading || pwDone}
+                            style={{ display:"flex", alignItems:"center", justifyContent:"center",
+                              gap:7, padding:"0.75rem",
+                              background: pwDone ? "#16a34a" : ACCENT,
+                              border:"none", borderRadius:10, color:"#fff",
+                              fontWeight:700, fontSize:"0.85rem", cursor:"pointer",
+                              opacity: pwLoading ? 0.7 : 1,
+                              transition:"background 0.25s",
+                              boxShadow: pwDone
+                                ? "0 0 18px rgba(22,163,74,0.3)"
+                                : "0 0 18px rgba(192,25,44,0.25)" }}>
+                            {pwDone
+                              ? <><Check size={15}/> Password updated!</>
+                              : pwLoading ? "Updating…" : "Update Password"}
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Other account rows */}
                 {[
-                  { label:"Change Password", href:"#" },
-                  { label:"Export My Data",  href:"#" },
-                  { label:"Delete Account",  href:"#", danger:true },
+                  { label:"Export My Data", danger:false },
+                  { label:"Delete Account", danger:true },
                 ].map(item=>(
                   <div key={item.label}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
                       padding:"0.75rem 0.9rem", background:"rgba(255,255,255,0.03)",
-                      border:`1px solid ${(item as any).danger?"rgba(239,68,68,0.2)":BORDER}`,
+                      border:`1px solid ${item.danger?"rgba(239,68,68,0.2)":BORDER}`,
                       borderRadius:10, cursor:"pointer" }}>
                     <span style={{ fontSize:"0.88rem",
-                      color:(item as any).danger?"#f87171":"rgba(255,255,255,0.8)" }}>
+                      color:item.danger?"#f87171":"rgba(255,255,255,0.8)" }}>
                       {item.label}
                     </span>
                     <ChevronRight size={14} style={{ color:DIM }} />
