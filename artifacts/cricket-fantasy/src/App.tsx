@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppProvider } from "@/context/AppContext";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { apiJson } from "@/lib/api";
+import { IPL_MATCHES_KEY, IPL_STANDINGS_KEY } from "@/hooks/use-ipl-data";
 
 /* ───────── Lazy-loaded routes ─────────
  * Each page becomes its own JS chunk so the initial bundle is small and
@@ -30,21 +32,75 @@ const Profile         = lazy(() => import("@/pages/Profile"));
 const AuthPages       = lazy(() => import("@/pages/Auth"));
 const NotFound        = lazy(() => import("@/pages/not-found"));
 
+/* ───────── Background chunk prefetch ─────────
+ * Fire-and-forget imports after the first paint so all sidebar pages
+ * are already in the module cache before the user clicks them.
+ * Uses requestIdleCallback when available so it never blocks the UI.
+ */
+const PAGE_IMPORTS = [
+  () => import("@/pages/Matches"),
+  () => import("@/pages/Players"),
+  () => import("@/pages/MyTeams"),
+  () => import("@/pages/Auction"),
+  () => import("@/pages/JoinAuction"),
+  () => import("@/pages/CreateAuction"),
+  () => import("@/pages/AuctionRoom"),
+  () => import("@/pages/AuctionComplete"),
+  () => import("@/pages/Predictions"),
+  () => import("@/pages/Guide"),
+  () => import("@/pages/Leaderboard"),
+  () => import("@/pages/LiveScore"),
+  () => import("@/pages/Watchlist"),
+  () => import("@/pages/Profile"),
+  () => import("@/pages/Dashboard"),
+];
+
+function prefetchChunks() {
+  const schedule = (cb: () => void) => {
+    if (typeof requestIdleCallback !== "undefined") {
+      requestIdleCallback(cb, { timeout: 3000 });
+    } else {
+      setTimeout(cb, 200);
+    }
+  };
+
+  PAGE_IMPORTS.forEach((load, i) => {
+    schedule(() => {
+      setTimeout(() => load().catch(() => {}), i * 80);
+    });
+  });
+}
+
 /* ───────── Query client with sensible defaults ─────────
- * - staleTime 30s so back/forward and intra-session navigation use cache
+ * - staleTime 2min so intra-session navigation always hits cache
  * - retry 1 to absorb the occasional flaky request without piling on
  * - refetchOnWindowFocus off — the live ticker / live score do explicit polling
  */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
-      gcTime: 5 * 60_000,
+      staleTime: 2 * 60_000,
+      gcTime: 10 * 60_000,
       retry: 1,
       refetchOnWindowFocus: false,
     },
   },
 });
+
+/* Prefetch IPL data into the query cache so pages that show
+ * matches/standings have data ready before they mount. */
+function prefetchIplData() {
+  queryClient.prefetchQuery({
+    queryKey: IPL_MATCHES_KEY,
+    queryFn: () => apiJson<{ matches: unknown[] }>("/ipl/matches"),
+    staleTime: 2 * 60_000,
+  }).catch(() => {});
+  queryClient.prefetchQuery({
+    queryKey: IPL_STANDINGS_KEY,
+    queryFn: () => apiJson<{ standings: unknown[] }>("/ipl/standings"),
+    staleTime: 5 * 60_000,
+  }).catch(() => {});
+}
 
 function AppFallback() {
   return (
@@ -115,6 +171,11 @@ function AppRoutes() {
 }
 
 function App() {
+  useEffect(() => {
+    prefetchChunks();
+    prefetchIplData();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
