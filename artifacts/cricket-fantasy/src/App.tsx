@@ -29,7 +29,6 @@ import Profile     from "@/pages/Profile";
 /* ───────── Lazy-loaded sub-pages ─────────
  * Less-visited flows that are fine to load on demand.
  */
-const ResetPassword   = lazy(() => import("@/pages/ResetPassword"));
 const JoinAuction     = lazy(() => import("@/pages/JoinAuction"));
 const CreateAuction   = lazy(() => import("@/pages/CreateAuction"));
 const AuctionRoom     = lazy(() => import("@/pages/AuctionRoom"));
@@ -144,7 +143,6 @@ function AppRoutes() {
         <Route path="/live"             component={() => <ProtectedRoute component={LiveScore} />} />
         <Route path="/watchlist"        component={() => <ProtectedRoute component={Watchlist} />} />
         <Route path="/profile"          component={() => <ProtectedRoute component={Profile} />} />
-        <Route path="/reset-password"   component={ResetPassword} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
