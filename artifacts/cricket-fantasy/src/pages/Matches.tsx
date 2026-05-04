@@ -1,315 +1,561 @@
-import { useState } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { MapPin, Swords, Radio, Calendar, Trophy, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  MapPin, Swords, Radio, Calendar, Trophy,
+  ChevronDown, ChevronUp, RefreshCw, Award, Clock,
+} from "lucide-react";
 import { TEAM_LOGO, TEAM_COLOR, TEAM_FULL_NAME, ALL_TEAMS } from "@/lib/ipl-constants";
 import {
-  useIplMatches,
-  useIplStandings,
-  type IplMatch,
-  type IplStanding as StandingRow,
+  useIplMatches, useIplStandings,
+  type IplMatch, type IplStanding as StandingRow,
 } from "@/hooks/use-ipl-data";
+import { apiJson } from "@/lib/api";
 
+// ── Design tokens ─────────────────────────────────────────────────────
+const V      = "#7C6FF7";
+const CARD   = "rgba(19,23,38,0.7)";
+const BORDER = "rgba(255,255,255,0.08)";
+const DIM    = "rgba(255,255,255,0.38)";
+const BDR2   = "rgba(255,255,255,0.05)";
+
+// ── Scorecard API types ───────────────────────────────────────────────
+interface BatterRow {
+  PlayerName?: string; name?: string;
+  Runs?: string|number; Balls?: string|number;
+  Fours?: string|number; Sixes?: string|number;
+  Dismissal?: string; dismissal?: string;
+  NotOut?: boolean|string;
+}
+interface BowlerRow {
+  PlayerName?: string; name?: string;
+  Overs?: string|number; Runs?: string|number;
+  Wickets?: string|number; Maidens?: string|number; Dots?: string|number;
+}
+interface InningsData {
+  InningsName?: string; TeamCode?: string; TotalScore?: string;
+  Batsmen?: BatterRow[]; Bowlers?: BowlerRow[];
+}
+interface ScorecardResp { Innings?: InningsData[]; innings?: InningsData[]; }
+interface PointsResp {
+  playerPoints: Record<string, number>;
+  playerStats: Record<string, {
+    runs: number; balls: number; fours: number; sixes: number; duck: boolean;
+    wickets: number; dots: number; maidens: number; ballsBowled: number;
+    runsConceded: number; catches: number; runOuts: number; stumpings: number;
+  }>;
+}
+
+function n(v?: string|number) { return parseFloat(String(v ?? "0")) || 0; }
+function pName(r: BatterRow|BowlerRow) { return String((r as any).PlayerName ?? (r as any).name ?? ""); }
+function srFmt(runs: number, balls: number) { return balls === 0 ? "—" : ((runs/balls)*100).toFixed(1); }
+function ecoFmt(runs: number, balls: number) { return balls === 0 ? "—" : ((runs/balls)*6).toFixed(2); }
+function ptsColor(pts?: number) {
+  if (pts === undefined) return DIM;
+  if (pts >= 60) return "#6ee7b7";
+  if (pts >= 30) return "#a89ff9";
+  if (pts > 0)   return "rgba(255,255,255,0.65)";
+  return "#f87171";
+}
+function fmtPts(pts?: number) {
+  if (pts === undefined) return "—";
+  return pts >= 0 ? `+${pts}` : `${pts}`;
+}
+
+// ── Team badge ────────────────────────────────────────────────────────
 function TeamBadge({ code, size = 36 }: { code: string; size?: number }) {
   const logo  = TEAM_LOGO[code];
   const color = TEAM_COLOR[code] ?? "#aaa";
-  if (logo)
-    return (
-      <img src={logo} alt={code}
-        style={{ width: size, height: size, objectFit: "contain" }}
-        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-      />
-    );
+  if (logo) return (
+    <img src={logo} alt={code}
+      style={{ width: size, height: size, objectFit: "contain" }}
+      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+  );
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%",
       background: `${color}22`, border: `1.5px solid ${color}50`,
       display: "flex", alignItems: "center", justifyContent: "center",
       fontWeight: 800, fontSize: size * 0.28, color,
-    }}>
-      {code}
+    }}>{code}</div>
+  );
+}
+
+// ── Scorecard embedded inside match card ──────────────────────────────
+function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null }) {
+  const [scorecard, setSC] = useState<ScorecardResp | null>(null);
+  const [points, setPts]   = useState<PointsResp | null>(null);
+  const [loading, setLoad] = useState(false);
+  const [error, setErr]    = useState("");
+  const [tab, setTab]      = useState<"scorecard"|"fantasy">("scorecard");
+  const fetched            = useRef(false);
+
+  // Fetch on first render
+  useMemo(() => {
+    if (fetched.current) return;
+    fetched.current = true;
+    setLoad(true);
+    Promise.all([
+      apiJson<ScorecardResp>(`/ipl/scorecard/${matchId}`),
+      apiJson<PointsResp>(`/ipl/points/${matchId}`),
+    ]).then(([sc, pts]) => { setSC(sc); setPts(pts); })
+      .catch(e => setErr(e?.message ?? "Failed to load"))
+      .finally(() => setLoad(false));
+  }, [matchId]);
+
+  const innings = scorecard?.Innings ?? scorecard?.innings ?? [];
+  const fantasyRows = useMemo(() => {
+    if (!points) return [];
+    return Object.entries(points.playerPoints)
+      .map(([name, pts]) => ({ name, pts, stats: points.playerStats[name] }))
+      .sort((a, b) => b.pts - a.pts);
+  }, [points]);
+
+  if (loading) return (
+    <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: 6 }}>
+      {[1,2,3].map(i => <div key={i} className="shimmer" style={{ height: 14, borderRadius: 6 }} />)}
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ padding: "1rem", fontSize: "0.8rem", color: "#f87171", textAlign: "center" }}>
+      {error}
+    </div>
+  );
+
+  if (!scorecard) return null;
+
+  // Table header cell
+  const TH = ({ children, right }: { children: string; right?: boolean }) => (
+    <th style={{
+      padding: "0.3rem 0.5rem", fontSize: "0.6rem", fontWeight: 700,
+      letterSpacing: "0.08em", textTransform: "uppercase" as const,
+      color: "rgba(255,255,255,0.25)", textAlign: right ? "right" : "left",
+    }}>{children}</th>
+  );
+
+  return (
+    <div style={{ borderTop: `1px solid ${BORDER}` }}>
+      {/* Tab bar */}
+      <div style={{ display: "flex", gap: 4, padding: "0.65rem 1rem 0" }}>
+        {(["scorecard","fantasy"] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className="press-sm"
+            style={{
+              padding: "0.35rem 0.85rem", borderRadius: 9999, fontSize: "0.75rem",
+              fontWeight: 600, cursor: "pointer", border: "none",
+              background: tab === t ? `${V}22` : "rgba(255,255,255,0.04)",
+              color: tab === t ? "#a89ff9" : DIM,
+              outline: tab === t ? `1px solid ${V}40` : "1px solid rgba(255,255,255,0.07)",
+              fontFamily: "inherit",
+            }}>
+            {t === "scorecard" ? "Scorecard" : "Fantasy Pts"}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding: "0.75rem 1rem 1rem" }}>
+
+        {/* ── SCORECARD TAB ── */}
+        {tab === "scorecard" && innings.map((inn, ii) => {
+          const tc = TEAM_COLOR[inn.TeamCode ?? ""] ?? V;
+          const batters = inn.Batsmen ?? [];
+          const bowlers = inn.Bowlers ?? [];
+          return (
+            <div key={ii} style={{ marginBottom: ii < innings.length - 1 ? "1.25rem" : 0 }}>
+              {/* Innings header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.55rem" }}>
+                <div style={{ width: 3, height: 18, borderRadius: 2, background: tc, flexShrink: 0 }} />
+                <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "#fff" }}>
+                  {inn.InningsName ?? `Innings ${ii + 1}`}
+                </span>
+                {inn.TotalScore && (
+                  <span style={{ fontFamily: "JetBrains Mono, monospace",
+                    fontSize: "0.85rem", fontWeight: 700, color: tc }}>
+                    {inn.TotalScore}
+                  </span>
+                )}
+              </div>
+
+              {/* Batting */}
+              {batters.length > 0 && (
+                <div style={{ overflowX: "auto", marginBottom: "0.75rem" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse",
+                    minWidth: 380, fontSize: "0.75rem" }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                        <TH>Batter</TH>
+                        <TH right>R</TH><TH right>B</TH>
+                        <TH right>4s</TH><TH right>6s</TH>
+                        <TH right>SR</TH><TH right>Pts</TH>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {batters.map((b, bi) => {
+                        const name    = pName(b);
+                        const runs    = n(b.Runs); const balls = n(b.Balls);
+                        const fours   = n(b.Fours); const sixes = n(b.Sixes);
+                        const dismiss = String(b.Dismissal ?? b.dismissal ?? "not out");
+                        const notOut  = b.NotOut === true || b.NotOut === "true"
+                          || dismiss.toLowerCase().includes("not out");
+                        const pts = points?.playerPoints[name];
+                        return (
+                          <tr key={bi} style={{ borderBottom: `1px solid ${BDR2}`,
+                            background: bi % 2 === 0 ? "rgba(255,255,255,0.015)" : "transparent" }}>
+                            <td style={{ padding: "0.38rem 0.5rem" }}>
+                              <div style={{ fontWeight: 600, color: "#fff" }}>{name}</div>
+                              <div style={{ fontSize: "0.6rem", color: DIM, marginTop: 1 }}>
+                                {notOut ? "not out" : dismiss}
+                              </div>
+                            </td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              fontWeight: 700, fontFamily: "JetBrains Mono, monospace",
+                              color: runs >= 50 ? "#fbbf24" : "#fff" }}>
+                              {runs}{notOut && <span style={{ color: "#6ee7b7", fontSize: "0.65rem" }}>*</span>}
+                            </td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>{balls}</td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              color: fours > 0 ? "#60a5fa" : DIM,
+                              fontFamily: "JetBrains Mono, monospace" }}>{fours}</td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              color: sixes > 0 ? "#a89ff9" : DIM,
+                              fontFamily: "JetBrains Mono, monospace" }}>{sixes}</td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>
+                              {srFmt(runs, balls)}
+                            </td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              fontWeight: 700, fontFamily: "JetBrains Mono, monospace",
+                              color: ptsColor(pts) }}>{fmtPts(pts)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Bowling */}
+              {bowlers.length > 0 && (
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse",
+                    minWidth: 320, fontSize: "0.75rem" }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                        <TH>Bowler</TH>
+                        <TH right>O</TH><TH right>R</TH>
+                        <TH right>W</TH><TH right>Eco</TH>
+                        <TH right>Dots</TH><TH right>M</TH><TH right>Pts</TH>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bowlers.map((b, bi) => {
+                        const name    = pName(b);
+                        const overs   = String(b.Overs ?? "0");
+                        const ovParts = overs.split(".");
+                        const balls   = (parseInt(ovParts[0])||0)*6 + (parseInt(ovParts[1])||0);
+                        const runs    = n(b.Runs); const wkts = n(b.Wickets);
+                        const maidens = n(b.Maidens); const dots = n(b.Dots);
+                        const pts     = points?.playerPoints[name];
+                        return (
+                          <tr key={bi} style={{ borderBottom: `1px solid ${BDR2}`,
+                            background: bi % 2 === 0 ? "rgba(255,255,255,0.015)" : "transparent" }}>
+                            <td style={{ padding: "0.38rem 0.5rem",
+                              fontWeight: 600, color: "#fff" }}>{name}</td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>{overs}</td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>{runs}</td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              fontWeight: 700, fontFamily: "JetBrains Mono, monospace",
+                              color: wkts >= 3 ? "#6ee7b7" : wkts > 0 ? "#a89ff9" : DIM }}>{wkts}</td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>
+                              {ecoFmt(runs, balls)}
+                            </td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              color: dots > 0 ? "#60a5fa" : DIM,
+                              fontFamily: "JetBrains Mono, monospace" }}>{dots}</td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              color: maidens > 0 ? "#fbbf24" : DIM,
+                              fontFamily: "JetBrains Mono, monospace" }}>{maidens}</td>
+                            <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                              fontWeight: 700, fontFamily: "JetBrains Mono, monospace",
+                              color: ptsColor(pts) }}>{fmtPts(pts)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* ── FANTASY POINTS TAB ── */}
+        {tab === "fantasy" && (
+          <div>
+            {/* MOM */}
+            {mom && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8,
+                padding: "0.55rem 0.75rem", marginBottom: "0.75rem",
+                background: "rgba(232,160,32,0.08)", border: "1px solid rgba(232,160,32,0.2)",
+                borderRadius: 10 }}>
+                <Award size={14} style={{ color: "#fbbf24", flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: "0.58rem", fontWeight: 700, color: "rgba(232,160,32,0.7)",
+                    letterSpacing: "0.08em", textTransform: "uppercase" }}>Man of the Match</div>
+                  <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#fff" }}>{mom}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Top 3 podium */}
+            {fantasyRows.slice(0, 3).length > 0 && (
+              <div style={{ display: "flex", gap: 6, marginBottom: "0.75rem" }}>
+                {fantasyRows.slice(0, 3).map((row, i) => {
+                  const cols = ["#fbbf24","#9ca3af","#d97706"];
+                  const s = row.stats;
+                  return (
+                    <div key={row.name} style={{ flex: 1, background: `${cols[i]}08`,
+                      border: `1px solid ${cols[i]}25`, borderRadius: 11,
+                      padding: "0.55rem 0.65rem" }}>
+                      <div style={{ fontSize: "0.58rem", fontWeight: 800, color: cols[i],
+                        letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 3 }}>
+                        {["1st","2nd","3rd"][i]}
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: "0.75rem", color: "#fff",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {row.name}
+                      </div>
+                      <div style={{ fontSize: "1.2rem", fontWeight: 900, color: cols[i],
+                        fontFamily: "JetBrains Mono, monospace", lineHeight: 1.2, marginTop: 2 }}>
+                        {row.pts}<span style={{ fontSize: "0.6rem", marginLeft: 2 }}>pts</span>
+                      </div>
+                      {s && (
+                        <div style={{ fontSize: "0.6rem", color: DIM, marginTop: 3 }}>
+                          {s.runs > 0 && `${s.runs}r(${s.balls}b) `}
+                          {s.wickets > 0 && `${s.wickets}w `}
+                          {s.catches > 0 && `${s.catches}ct`}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Full table */}
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse",
+                minWidth: 440, fontSize: "0.75rem" }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <TH>Player</TH>
+                    <TH right>Batting</TH>
+                    <TH right>Bowling</TH>
+                    <TH right>Field</TH>
+                    <TH right>Pts</TH>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fantasyRows.map((row, ri) => {
+                    const s = row.stats;
+                    const bat = s.runs > 0
+                      ? `${s.runs}(${s.balls}) ${s.fours}×4 ${s.sixes}×6`
+                      : s.duck ? "0 duck" : "—";
+                    const bowl = s.wickets > 0 || s.ballsBowled > 0
+                      ? `${s.wickets}w ${s.dots}d ${s.maidens}m`
+                      : "—";
+                    const field = [
+                      s.catches > 0 && `${s.catches}ct`,
+                      s.stumpings > 0 && `${s.stumpings}st`,
+                      s.runOuts > 0 && `${s.runOuts}ro`,
+                    ].filter(Boolean).join(" ") || "—";
+                    return (
+                      <tr key={row.name} style={{ borderBottom: `1px solid ${BDR2}`,
+                        background: ri % 2 === 0 ? "rgba(255,255,255,0.015)" : "transparent" }}>
+                        <td style={{ padding: "0.38rem 0.5rem",
+                          fontWeight: 600, color: "#fff" }}>{row.name}</td>
+                        <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                          color: DIM, fontFamily: "JetBrains Mono, monospace",
+                          fontSize: "0.7rem", whiteSpace: "nowrap" }}>{bat}</td>
+                        <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                          color: s.wickets > 0 ? "#6ee7b7" : DIM,
+                          fontFamily: "JetBrains Mono, monospace",
+                          fontSize: "0.7rem", whiteSpace: "nowrap" }}>{bowl}</td>
+                        <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                          color: s.catches > 0 || s.stumpings > 0 ? "#fb923c" : DIM,
+                          fontFamily: "JetBrains Mono, monospace", fontSize: "0.7rem" }}>
+                          {field}
+                        </td>
+                        <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
+                          fontWeight: 800, fontFamily: "JetBrains Mono, monospace",
+                          fontSize: "0.85rem", color: ptsColor(row.pts) }}>
+                          {fmtPts(row.pts)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function LeagueTable({ standings, loading, seasonComplete }: { standings: StandingRow[]; loading: boolean; seasonComplete: boolean }) {
-  const [collapsed, setCollapsed] = useState(false);
-
-  const rows: StandingRow[] = standings.length > 0
-    ? [...standings].sort((a, b) => a.position - b.position)
-    : ALL_TEAMS.map((t, i) => ({
-        team: t, teamFull: TEAM_FULL_NAME[t] ?? t,
-        played: 0, won: 0, lost: 0, noResult: 0, tied: 0, nrr: 0, points: 0, position: i + 1,
-      }));
-
-  const qualifiers = rows.filter(r => r.position <= 4);
-  const rest       = rows.filter(r => r.position > 4);
-  const maxPts     = Math.max(...rows.map(r => r.points), 1);
-
-  function nrrDisplay(row: StandingRow) {
-    if (row.played === 0) return { label: "—", color: "rgba(255,255,255,0.25)" };
-    const n = parseFloat(String(row.nrr));
-    if (isNaN(n)) return { label: "—", color: "rgba(255,255,255,0.25)" };
-    return {
-      label: (n >= 0 ? "+" : "") + n.toFixed(3),
-      color: n > 0 ? "#34d399" : n < 0 ? "#f87171" : "rgba(255,255,255,0.35)",
-    };
-  }
-
-  function Stat({ value, highlight }: { label: string; value: string | number; highlight?: string }) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minWidth: 32 }}>
-        <span style={{ fontSize: "0.82rem", fontWeight: 700, color: highlight ?? "rgba(255,255,255,0.75)",
-          fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-          {value === 0 ? <span style={{ color: "rgba(255,255,255,0.2)" }}>0</span> : value}
-        </span>
-      </div>
-    );
-  }
-
-  // Shared grid: accent-bar | pos | logo | team-name | P | W | L | gap | NRR | gap | PTS
-  const GRID_COLS = "3px 22px 34px 1fr 32px 32px 32px 18px 48px 14px 52px";
-
-  function ColHeaders() {
-    const lbl = (t: string) => (
-      <div style={{
-        textAlign: "center" as const,
-        fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.06em",
-        textTransform: "uppercase" as const, color: "rgba(255,255,255,0.35)",
-      }}>
-        {t}
-      </div>
-    );
-    return (
-      <div style={{
-        display: "grid", gridTemplateColumns: GRID_COLS,
-        alignItems: "center",
-        padding: "8px 8px 8px 0",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        background: "rgba(255,255,255,0.02)",
-      }}>
-        <div />
-        {lbl("#")}
-        <div />
-        <div style={{
-          paddingLeft: 10,
-          fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.06em",
-          textTransform: "uppercase" as const, color: "rgba(255,255,255,0.35)",
-        }}>
-          Team
-        </div>
-        {lbl("P")}{lbl("W")}{lbl("L")}<div />{lbl("NRR")}<div />{lbl("PTS")}
-      </div>
-    );
-  }
-
-  function TeamRow({ row, idx }: { row: StandingRow; idx: number }) {
-    const isTop3  = row.position <= 4;
-    const accent  = isTop3 ? "#34d399" : "rgba(255,255,255,0.18)";
-    const winPct  = row.played > 0 ? Math.round((row.won / row.played) * 100) : 0;
-    const nrr     = nrrDisplay(row);
-
-    const statVal = (val: string | number, color?: string) => (
-      <div style={{
-        textAlign: "center" as const,
-        fontSize: "0.88rem", fontWeight: 700, fontVariantNumeric: "tabular-nums",
-        color: color ?? "rgba(255,255,255,0.5)",
-      }}>
-        {val}
-      </div>
-    );
-
-    return (
-      <motion.div
-        key={row.team}
-        initial={{ opacity: 0, x: -12 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: idx * 0.04, duration: 0.25, ease: "easeOut" }}
-        style={{
-          display: "grid", gridTemplateColumns: GRID_COLS,
-          alignItems: "center",
-          padding: "13px 8px 13px 0",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
-          position: "relative",
-          background: "transparent",
-          transition: "background 0.15s",
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.025)")}
-        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-      >
-        {/* Col 1: Left accent bar */}
-        <div style={{
-          alignSelf: "stretch", borderRadius: "0 3px 3px 0",
-          background: accent, opacity: isTop3 ? 0.8 : 0.3,
-        }} />
-
-        {/* Col 2: Position */}
-        <div style={{
-          textAlign: "center" as const,
-          fontSize: "0.72rem", fontWeight: 800, fontVariantNumeric: "tabular-nums",
-          color: isTop3 ? "#34d399" : "rgba(255,255,255,0.3)",
-        }}>
-          {row.position}
-        </div>
-
-        {/* Col 3: Logo */}
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <TeamBadge code={row.team} size={32} />
-        </div>
-
-        {/* Col 4: Name + win-rate bar */}
-        <div style={{ minWidth: 0, paddingLeft: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{
-              fontWeight: 800, fontSize: "0.85rem",
-              color: isTop3 ? "#fff" : "rgba(255,255,255,0.7)",
-              whiteSpace: "nowrap",
-            }}>
-              {row.team}
-            </span>
-            {isTop3 && seasonComplete && (
-              <span style={{
-                fontSize: "0.52rem", fontWeight: 800, letterSpacing: "0.08em",
-                padding: "1px 5px", borderRadius: 4,
-                background: "rgba(52,211,153,0.15)", color: "#34d399",
-                border: "1px solid rgba(52,211,153,0.3)",
-              }}>Q</span>
-            )}
-          </div>
-          <div style={{
-            fontSize: "0.62rem", color: "rgba(255,255,255,0.28)",
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            maxWidth: 140, marginTop: 1,
-          }}>
-            {row.teamFull}
-          </div>
-          {row.played > 0 && (
-            <div style={{ marginTop: 4, height: 3, borderRadius: 2,
-              background: "rgba(255,255,255,0.07)", overflow: "hidden", maxWidth: 100 }}>
-              <div style={{
-                height: "100%", borderRadius: 2, width: `${winPct}%`,
-                background: isTop3 ? "linear-gradient(90deg,#34d399,#34d39980)" : "rgba(255,255,255,0.2)",
-                transition: "width 0.6s ease",
-              }} />
-            </div>
-          )}
-        </div>
-
-        {/* Cols 5-10: P W L [gap] NRR PTS */}
-        {statVal(row.played)}
-        {statVal(row.won, row.won > 0 ? "rgba(255,255,255,0.75)" : undefined)}
-        {statVal(row.lost)}
-        <div />
-        {statVal(nrr.label, nrr.color)}
-        <div />
-
-        {/* Points */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div style={{
-            padding: "3px 8px", borderRadius: 7,
-            background: isTop3 ? "rgba(52,211,153,0.12)" : "rgba(255,255,255,0.06)",
-            border: `1.5px solid ${isTop3 ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.1)"}`,
-          }}>
-            <span style={{
-              fontSize: "0.95rem", fontWeight: 900,
-              color: isTop3 ? "#34d399" : "rgba(255,255,255,0.6)",
-              fontVariantNumeric: "tabular-nums", lineHeight: 1,
-            }}>
-              {row.points}
-            </span>
-          </div>
-        </div>
-
-      </motion.div>
-    );
-  }
+// ── Main MatchCard with expandable scorecard ──────────────────────────
+function MatchCard({ match }: { match: IplMatch }) {
+  const [open, setOpen] = useState(match.isLive);
+  const c1 = TEAM_COLOR[match.homeTeam] ?? "#aaa";
+  const c2 = TEAM_COLOR[match.awayTeam] ?? "#aaa";
+  const canExpand = match.isCompleted || match.isLive;
 
   return (
     <div style={{
-      background: "rgba(255,255,255,0.025)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 18,
-      overflow: "hidden",
+      background: CARD, borderRadius: 18, overflow: "hidden",
+      border: `1px solid ${open ? (match.isLive ? "rgba(34,197,94,0.25)" : `${V}22`) : BORDER}`,
+      borderTop: `2px solid ${match.isLive ? "#22c55e" : match.isCompleted ? V : "rgba(255,255,255,0.12)"}`,
+      backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+      transition: "border-color 0.2s",
     }}>
-      {/* Header */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "14px 16px 12px 20px",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        background: "rgba(255,255,255,0.015)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Trophy style={{ width: 15, height: 15, color: "#f59e0b" }} />
-          <span style={{ fontWeight: 800, fontSize: "0.82rem", letterSpacing: "0.08em",
-            textTransform: "uppercase", color: "rgba(255,255,255,0.8)" }}>
-            IPL 2026 — Points Table
-          </span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#34d399" }} />
-            <span style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>
-              Top 4 qualify
-            </span>
+
+      {/* Card header */}
+      <div
+        onClick={() => canExpand && setOpen(o => !o)}
+        style={{ padding: "1rem", cursor: canExpand ? "pointer" : "default" }}>
+
+        {/* Top row: badges + date */}
+        <div style={{ display: "flex", alignItems: "center",
+          justifyContent: "space-between", marginBottom: "0.85rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{
+              fontSize: "0.65rem", fontWeight: 700,
+              color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.06)",
+              padding: "2px 8px", borderRadius: 6,
+            }}>M{match.matchNumber}</span>
+            {match.isLive && (
+              <span style={{ display: "flex", alignItems: "center", gap: 4,
+                fontSize: "0.65rem", fontWeight: 700, color: "#22c55e",
+                background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)",
+                padding: "2px 8px", borderRadius: 6 }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e" }}
+                  className="live-pulse" />
+                LIVE
+              </span>
+            )}
+            {match.isCompleted && (
+              <span className="pill pill-violet" style={{ fontSize: "0.62rem" }}>Result</span>
+            )}
+            {match.isUpcoming && (
+              <span style={{ fontSize: "0.65rem", fontWeight: 700,
+                color: "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", gap: 3 }}>
+                <Clock size={11} /> {match.matchTime}
+              </span>
+            )}
           </div>
-          <button
-            onClick={() => setCollapsed(c => !c)}
-            style={{ background: "none", border: "none", cursor: "pointer",
-              color: "rgba(255,255,255,0.3)", padding: 2, display: "flex", alignItems: "center" }}>
-            {collapsed
-              ? <ChevronDown style={{ width: 15, height: 15 }} />
-              : <ChevronUp   style={{ width: 15, height: 15 }} />}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: "0.68rem", color: DIM }}>{match.matchDate}</span>
+            {canExpand && (
+              <div style={{ width: 24, height: 24, borderRadius: 7,
+                background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`,
+                display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {open
+                  ? <ChevronUp size={12} style={{ color: DIM }} />
+                  : <ChevronDown size={12} style={{ color: DIM }} />}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Teams row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Home */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+            <TeamBadge code={match.homeTeam} size={42} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "1rem", color: c1 }}>{match.homeTeam}</div>
+              <div style={{ fontSize: "0.68rem", color: DIM }}>{match.homeTeamFull}</div>
+              {match.firstInningsScore && (
+                <div style={{ fontFamily: "JetBrains Mono, monospace",
+                  fontSize: "0.95rem", fontWeight: 700, color: c1, marginTop: 2 }}>
+                  {match.firstInningsScore}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* VS */}
+          <div style={{ padding: "0 0.75rem", textAlign: "center" }}>
+            <Swords size={20} style={{ color: "rgba(255,255,255,0.1)", display: "block", margin: "0 auto" }} />
+            <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.2)",
+              fontWeight: 700, marginTop: 2 }}>VS</div>
+          </div>
+
+          {/* Away */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, justifyContent: "flex-end" }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontWeight: 800, fontSize: "1rem", color: c2 }}>{match.awayTeam}</div>
+              <div style={{ fontSize: "0.68rem", color: DIM }}>{match.awayTeamFull}</div>
+              {match.secondInningsScore && (
+                <div style={{ fontFamily: "JetBrains Mono, monospace",
+                  fontSize: "0.95rem", fontWeight: 700, color: c2, marginTop: 2 }}>
+                  {match.secondInningsScore}
+                </div>
+              )}
+            </div>
+            <TeamBadge code={match.awayTeam} size={42} />
+          </div>
+        </div>
+
+        {/* Result / toss / MOM */}
+        {match.isCompleted && match.result && (
+          <div style={{ marginTop: "0.75rem", padding: "0.5rem 0.75rem", borderRadius: 10,
+            background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}`,
+            textAlign: "center" }}>
+            <span style={{ fontSize: "0.78rem", fontWeight: 700,
+              color: match.winningTeamCode
+                ? (TEAM_COLOR[match.winningTeamCode] ?? "#6ee7b7")
+                : "#6ee7b7" }}>
+              {match.result}
+            </span>
+            {match.mom && (
+              <span style={{ fontSize: "0.72rem", color: DIM, marginLeft: "0.75rem" }}>
+                MOM: <b style={{ color: "#fbbf24" }}>{match.mom}</b>
+              </span>
+            )}
+          </div>
+        )}
+        {!match.isCompleted && match.tossText && (
+          <div style={{ marginTop: "0.6rem", fontSize: "0.72rem",
+            color: DIM, textAlign: "center", fontStyle: "italic" }}>
+            {match.tossText}
+          </div>
+        )}
+
+        {/* Venue */}
+        <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center",
+          gap: 4, fontSize: "0.68rem", color: "rgba(255,255,255,0.25)" }}>
+          <MapPin size={10} />
+          {match.venue}{match.city ? `, ${match.city}` : ""}
         </div>
       </div>
 
-      <AnimatePresence initial={false}>
-        {!collapsed && (
+      {/* Expandable scorecard */}
+      <AnimatePresence>
+        {open && canExpand && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: "easeInOut" }}
-            style={{ overflow: "hidden" }}
-          >
-            {loading ? (
-              <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <div key={i} style={{ height: 52, borderRadius: 10,
-                    background: "rgba(255,255,255,0.04)", animation: "pulse 1.5s infinite" }} />
-                ))}
-              </div>
-            ) : (
-              <>
-                <ColHeaders />
-                {qualifiers.map((row, i) => (
-                  <TeamRow key={row.team} row={row} idx={i} />
-                ))}
-
-                {/* Playoff cutoff separator */}
-                <div style={{ display: "flex", alignItems: "center", height: 24, gap: 8, padding: "0 12px", pointerEvents: "none" }}>
-                  <div style={{
-                    flex: 1, height: 1,
-                    background: "linear-gradient(90deg, transparent, rgba(52,211,153,0.6))",
-                  }} />
-                  <span style={{
-                    fontSize: "0.48rem", fontWeight: 800, letterSpacing: "0.14em",
-                    textTransform: "uppercase" as const, color: "#34d399",
-                    opacity: 0.6, whiteSpace: "nowrap", flexShrink: 0,
-                  }}>
-                    Playoff cutoff
-                  </span>
-                  <div style={{
-                    flex: 1, height: 1,
-                    background: "linear-gradient(90deg, rgba(52,211,153,0.6), transparent)",
-                  }} />
-                </div>
-
-                {rest.map((row, i) => <TeamRow key={row.team} row={row} idx={i + 4} />)}
-              </>
-            )}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}>
+            <InlineScorecard matchId={match.iplId} mom={match.mom} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -317,213 +563,291 @@ function LeagueTable({ standings, loading, seasonComplete }: { standings: Standi
   );
 }
 
-function TeamLogo({ code }: { code: string }) {
-  const logo = TEAM_LOGO[code];
-  const color = TEAM_COLOR[code] ?? "#00d4ff";
-  if (logo) {
-    return (
-      <img
-        src={logo}
-        alt={code}
-        style={{ width: 52, height: 52, objectFit: "contain" }}
-        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-      />
-    );
+// ── Points table (unchanged logic, updated styles) ────────────────────
+function LeagueTable({ standings, loading, seasonComplete }: {
+  standings: StandingRow[]; loading: boolean; seasonComplete: boolean;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const rows = standings.length > 0
+    ? [...standings].sort((a, b) => a.position - b.position)
+    : ALL_TEAMS.map((t, i) => ({
+        team: t, teamFull: TEAM_FULL_NAME[t] ?? t,
+        played: 0, won: 0, lost: 0, noResult: 0, tied: 0, nrr: 0, points: 0, position: i + 1,
+      }));
+
+  const GRID = "3px 24px 36px 1fr 30px 30px 30px 16px 52px 14px 54px";
+
+  function nrrFmt(r: StandingRow) {
+    if (r.played === 0) return { label: "—", color: DIM };
+    const v = parseFloat(String(r.nrr));
+    if (isNaN(v)) return { label: "—", color: DIM };
+    return { label: (v >= 0 ? "+" : "") + v.toFixed(3),
+      color: v > 0 ? "#6ee7b7" : v < 0 ? "#f87171" : DIM };
   }
+
   return (
-    <div style={{
-      width: 52, height: 52, borderRadius: "50%",
-      background: `${color}22`, border: `1.5px solid ${color}50`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontWeight: 800, fontSize: "0.85rem", color,
-    }}>
-      {code}
+    <div style={{ background: CARD, border: `1px solid ${BORDER}`,
+      borderRadius: 18, overflow: "hidden",
+      backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0.85rem 1rem", borderBottom: `1px solid ${BORDER}`,
+        background: "rgba(255,255,255,0.015)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <Trophy size={14} style={{ color: "#f59e0b" }} />
+          <span style={{ fontWeight: 800, fontSize: "0.8rem", letterSpacing: "0.06em",
+            textTransform: "uppercase", color: "rgba(255,255,255,0.8)" }}>
+            IPL 2026 — Points Table
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#6ee7b7" }} />
+            <span style={{ fontSize: "0.62rem", color: DIM }}>Top 4 qualify</span>
+          </div>
+          <button onClick={() => setCollapsed(c => !c)} style={{
+            background: "none", border: "none", cursor: "pointer",
+            color: DIM, padding: 2, display: "flex", alignItems: "center",
+          }}>
+            {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}>
+
+            {/* Column headers */}
+            {!loading && (
+              <div style={{ display: "grid", gridTemplateColumns: GRID,
+                alignItems: "center", padding: "6px 8px",
+                borderBottom: `1px solid ${BDR2}`,
+                background: "rgba(255,255,255,0.02)" }}>
+                {["","#","","Team","P","W","L","","NRR","","PTS"].map((h, i) => (
+                  <div key={i} style={{ textAlign: i > 3 ? "center" : "left" as any,
+                    fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.06em",
+                    textTransform: "uppercase" as any,
+                    color: "rgba(255,255,255,0.25)", paddingLeft: i === 3 ? 8 : 0 }}>
+                    {h}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {loading
+              ? Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="shimmer"
+                    style={{ height: 54, margin: "4px 8px", borderRadius: 10 }} />
+                ))
+              : rows.map((row, idx) => {
+                  const isTop4 = row.position <= 4;
+                  const nrr    = nrrFmt(row);
+                  const winPct = row.played > 0 ? Math.round((row.won / row.played) * 100) : 0;
+                  const isCut  = !isTop4 && idx > 0 && rows[idx - 1].position <= 4;
+                  return (
+                    <div key={row.team}>
+                      {isCut && (
+                        <div style={{ display: "flex", alignItems: "center",
+                          gap: 8, height: 22, padding: "0 12px", pointerEvents: "none" }}>
+                          <div style={{ flex: 1, height: 1,
+                            background: "linear-gradient(90deg, transparent, rgba(110,231,183,0.5))" }} />
+                          <span style={{ fontSize: "0.48rem", fontWeight: 800,
+                            letterSpacing: "0.12em", textTransform: "uppercase" as any,
+                            color: "#6ee7b7", opacity: 0.6 }}>Playoff cutoff</span>
+                          <div style={{ flex: 1, height: 1,
+                            background: "linear-gradient(90deg, rgba(110,231,183,0.5), transparent)" }} />
+                        </div>
+                      )}
+                      <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.03, duration: 0.22 }}
+                        style={{ display: "grid", gridTemplateColumns: GRID,
+                          alignItems: "center", padding: "12px 8px",
+                          borderBottom: `1px solid ${BDR2}`,
+                          transition: "background 0.15s" }}
+                        onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.025)"}
+                        onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}>
+                        {/* Accent bar */}
+                        <div style={{ alignSelf: "stretch", borderRadius: "0 3px 3px 0",
+                          background: isTop4 ? "#6ee7b7" : "rgba(255,255,255,0.15)",
+                          opacity: isTop4 ? 0.8 : 0.3 }} />
+                        {/* Position */}
+                        <div style={{ textAlign: "center" as any, fontSize: "0.72rem",
+                          fontWeight: 800, color: isTop4 ? "#6ee7b7" : "rgba(255,255,255,0.28)" }}>
+                          {row.position}
+                        </div>
+                        {/* Logo */}
+                        <div style={{ display: "flex", justifyContent: "center" }}>
+                          <TeamBadge code={row.team} size={28} />
+                        </div>
+                        {/* Team name */}
+                        <div style={{ paddingLeft: 8, minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, fontSize: "0.82rem",
+                            color: isTop4 ? "#fff" : "rgba(255,255,255,0.65)",
+                            whiteSpace: "nowrap" }}>
+                            {row.team}
+                            {isTop4 && seasonComplete && (
+                              <span style={{ marginLeft: 5, fontSize: "0.5rem",
+                                fontWeight: 800, letterSpacing: "0.08em",
+                                padding: "1px 4px", borderRadius: 3,
+                                background: "rgba(110,231,183,0.15)", color: "#6ee7b7",
+                                border: "1px solid rgba(110,231,183,0.3)" }}>Q</span>
+                            )}
+                          </div>
+                          {row.played > 0 && (
+                            <div style={{ marginTop: 3, height: 3, borderRadius: 2,
+                              background: "rgba(255,255,255,0.07)", overflow: "hidden", maxWidth: 80 }}>
+                              <div style={{ height: "100%", borderRadius: 2, width: `${winPct}%`,
+                                background: isTop4 ? "#6ee7b7" : "rgba(255,255,255,0.2)",
+                                transition: "width 0.6s ease" }} />
+                            </div>
+                          )}
+                        </div>
+                        {/* Stats */}
+                        {[row.played, row.won, row.lost].map((v, ci) => (
+                          <div key={ci} style={{ textAlign: "center" as any,
+                            fontSize: "0.82rem", fontWeight: 700,
+                            color: v === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)",
+                            fontVariantNumeric: "tabular-nums" }}>
+                            {v}
+                          </div>
+                        ))}
+                        <div />
+                        {/* NRR */}
+                        <div style={{ textAlign: "center" as any,
+                          fontSize: "0.78rem", fontWeight: 700, color: nrr.color,
+                          fontVariantNumeric: "tabular-nums" }}>
+                          {nrr.label}
+                        </div>
+                        <div />
+                        {/* Points */}
+                        <div style={{ textAlign: "center" as any }}>
+                          <div style={{ display: "inline-block",
+                            padding: "3px 10px", borderRadius: 7,
+                            background: isTop4 ? "rgba(110,231,183,0.1)" : "rgba(255,255,255,0.06)",
+                            border: `1.5px solid ${isTop4 ? "rgba(110,231,183,0.3)" : "rgba(255,255,255,0.1)"}` }}>
+                            <span style={{ fontSize: "0.9rem", fontWeight: 900,
+                              color: isTop4 ? "#6ee7b7" : "rgba(255,255,255,0.6)",
+                              fontVariantNumeric: "tabular-nums" }}>
+                              {row.points}
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  );
+                })
+            }
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function MatchCard({ match }: { match: IplMatch }) {
-  const homeColor = TEAM_COLOR[match.homeTeam] ?? "#00d4ff";
-  const awayColor = TEAM_COLOR[match.awayTeam] ?? "#00d4ff";
-
-  return (
-    <motion.div
-      variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
-      className="glass-card rounded-2xl overflow-hidden hover:border-primary/40 cursor-pointer"
-    >
-      <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold px-2 py-1 rounded bg-white/10 text-white">
-            M{match.matchNumber}
-          </span>
-          {match.isLive && (
-            <span className="flex items-center gap-1 text-xs font-bold px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30 animate-pulse">
-              <Radio className="w-3 h-3" /> LIVE
-            </span>
-          )}
-          {match.isCompleted && (
-            <span className="text-xs font-bold px-2 py-1 rounded bg-white/10 text-muted-foreground">
-              COMPLETED
-            </span>
-          )}
-          {match.isUpcoming && (
-            <span className="text-xs font-bold px-2 py-1 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
-              UPCOMING
-            </span>
-          )}
-        </div>
-        <div className="text-xs text-muted-foreground flex items-center gap-1">
-          <Calendar className="w-3 h-3" />
-          {match.matchDate} • {match.matchTime}
-        </div>
-      </div>
-
-      <div className="p-6">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4 flex-1">
-            <TeamLogo code={match.homeTeam} />
-            <div>
-              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: homeColor }}>{match.homeTeam}</div>
-              <div className="text-xs text-muted-foreground truncate max-w-[130px]">{match.homeTeamFull}</div>
-              {match.firstInningsScore && (
-                <div style={{ fontFamily: "monospace", fontSize: "1rem", fontWeight: 700, color: homeColor, marginTop: 2 }}>
-                  {match.firstInningsScore}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-1 px-4">
-            <div className="text-muted-foreground/30">
-              <Swords className="w-8 h-8" />
-            </div>
-            <span className="text-xs text-muted-foreground font-mono font-bold">VS</span>
-          </div>
-
-          <div className="flex items-center gap-4 flex-1 justify-end text-right">
-            <div>
-              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: awayColor }}>{match.awayTeam}</div>
-              <div className="text-xs text-muted-foreground truncate max-w-[130px]">{match.awayTeamFull}</div>
-              {match.secondInningsScore && (
-                <div style={{ fontFamily: "monospace", fontSize: "1rem", fontWeight: 700, color: awayColor, marginTop: 2 }}>
-                  {match.secondInningsScore}
-                </div>
-              )}
-            </div>
-            <TeamLogo code={match.awayTeam} />
-          </div>
-        </div>
-
-        {match.isCompleted && match.result && (
-          <div className="mt-4 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-center">
-            <p className="text-xs font-semibold" style={{ color: match.winningTeamCode ? (TEAM_COLOR[match.winningTeamCode] ?? "#34d399") : "#34d399" }}>
-              {match.result}
-            </p>
-          </div>
-        )}
-        {!match.isCompleted && match.tossText && (
-          <p className="text-xs text-muted-foreground mt-4 text-center italic">{match.tossText}</p>
-        )}
-        {match.mom && (
-          <div className="mt-2 text-center text-xs">
-            <span className="text-yellow-400">MOM:</span>{" "}
-            <span className="text-white font-semibold">{match.mom}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="px-6 py-3 border-t border-white/5 bg-background/30 flex items-center gap-2 text-sm text-muted-foreground">
-        <MapPin className="w-4 h-4" />
-        {match.venue}{match.city ? `, ${match.city}` : ""}
-      </div>
-    </motion.div>
-  );
-}
+// ── Main page ─────────────────────────────────────────────────────────
+type MatchTab = "live"|"upcoming"|"completed"|"all";
 
 export default function Matches() {
-  // Shared cache with Dashboard / LiveScore — no duplicate fetches.
-  const { data: matches = [], isLoading: loading, error: matchesError } = useIplMatches();
+  const { data: matches = [], isLoading, error: matchesError, refetch } = useIplMatches({ refetchInterval: 30_000 });
   const { data: standings = [], isLoading: standingsLoading } = useIplStandings();
+  const [tab, setTab] = useState<MatchTab>("live");
 
-  const error = matchesError ? `Failed to load matches: ${matchesError.message}` : null;
+  const filtered = useMemo(() => {
+    const list = tab === "live"      ? matches.filter(m => m.isLive)
+               : tab === "upcoming"  ? matches.filter(m => m.isUpcoming)
+               : tab === "completed" ? [...matches.filter(m => m.isCompleted)].reverse()
+               : matches;
+    return list;
+  }, [matches, tab]);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.07 } },
-  };
-
-  const filterMatches = (tab: string) => {
-    if (tab === "live") return matches.filter(m => m.isLive);
-    if (tab === "upcoming") return matches.filter(m => m.isUpcoming);
-    if (tab === "completed") return matches.filter(m => m.isCompleted);
-    return matches;
+  const counts = {
+    live:      matches.filter(m => m.isLive).length,
+    upcoming:  matches.filter(m => m.isUpcoming).length,
+    completed: matches.filter(m => m.isCompleted).length,
+    all:       matches.length,
   };
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Matches</h1>
-          <p className="text-muted-foreground">
-            Live scores, results and upcoming fixtures — IPL 2026 ({matches.length} matches)
-          </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start",
+          justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: "clamp(1.75rem,5vw,2.2rem)",
+              fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+              Matches
+            </h1>
+            <p style={{ margin: "0.3rem 0 0", color: DIM, fontSize: "0.9rem" }}>
+              IPL 2026 · {matches.length} matches · click a result to see the scorecard
+            </p>
+          </div>
+          <button onClick={() => refetch()} className="btn-secondary press"
+            style={{ height: 38, borderRadius: 12, padding: "0 0.9rem", fontSize: "0.82rem" }}>
+            <RefreshCw size={13} /> Refresh
+          </button>
         </div>
 
-        <LeagueTable
-          standings={standings}
-          loading={standingsLoading}
-          seasonComplete={!loading && matches.length > 0 && matches.every(m => m.isCompleted)}
-        />
+        {/* Points table */}
+        <LeagueTable standings={standings} loading={standingsLoading}
+          seasonComplete={!isLoading && matches.length > 0 && matches.every(m => m.isCompleted)} />
 
-        {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
-            {error}
+        {matchesError && (
+          <div style={{ padding: "0.85rem 1rem", background: "rgba(239,68,68,0.08)",
+            border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12,
+            color: "#f87171", fontSize: "0.85rem" }}>
+            Failed to load matches — {matchesError.message}
           </div>
         )}
 
-        <Tabs defaultValue="live" className="w-full">
-          <TabsList className="bg-white/5 border border-white/10 p-1 mb-6">
-            {["live", "upcoming", "completed", "all"].map(t => (
-              <TabsTrigger
-                key={t}
-                value={t}
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground capitalize"
-              >
-                {t === "live" ? (
-                  <span className="flex items-center gap-1.5"><Radio className="w-3 h-3" /> Live ({matches.filter(m => m.isLive).length})</span>
-                ) : t === "all" ? `All (${matches.length})` : `${t.charAt(0).toUpperCase() + t.slice(1)} (${filterMatches(t).length})`}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {["live", "upcoming", "completed", "all"].map(tab => (
-            <TabsContent key={tab} value={tab} className="mt-0 outline-none">
-              {loading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-48 w-full rounded-2xl bg-white/5" />)}
-                </div>
-              ) : (
-                <motion.div
-                  className="space-y-4"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  {filterMatches(tab).map(match => (
-                    <MatchCard key={match.iplId} match={match} />
-                  ))}
-                  {filterMatches(tab).length === 0 && (
-                    <div className="text-center py-20 glass-card rounded-2xl">
-                      <Swords className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                      <h3 className="text-xl font-bold mb-2">No Matches</h3>
-                      <p className="text-muted-foreground">No {tab !== "all" ? tab : ""} matches found.</p>
-                    </div>
-                  )}
-                </motion.div>
+        {/* Tab bar */}
+        <div className="tab-bar" style={{ width: "fit-content" }}>
+          {(["live","upcoming","completed","all"] as MatchTab[]).map(t => (
+            <button key={t} className={`tab-item ${tab === t ? "active" : ""}`}
+              onClick={() => setTab(t)}
+              style={{ padding: "0.4rem 0.85rem", fontSize: "0.8rem" }}>
+              {t === "live" && (
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <Radio size={11} /> Live ({counts.live})
+                </span>
               )}
-            </TabsContent>
+              {t !== "live" && (
+                `${t.charAt(0).toUpperCase() + t.slice(1)} (${counts[t]})`
+              )}
+            </button>
           ))}
-        </Tabs>
+        </div>
+
+        {/* Match list */}
+        {isLoading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            {[1,2,3].map(i => (
+              <div key={i} className="shimmer" style={{ height: 180, borderRadius: 18 }} />
+            ))}
+          </div>
+        ) : (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            {filtered.map(m => <MatchCard key={m.iplId} match={m} />)}
+            {filtered.length === 0 && (
+              <div style={{ padding: "3rem 2rem", textAlign: "center",
+                background: "rgba(255,255,255,0.02)",
+                border: "1px dashed rgba(255,255,255,0.08)", borderRadius: 18 }}>
+                <Swords size={28} style={{ margin: "0 auto 0.75rem", opacity: 0.2 }} />
+                <div style={{ fontSize: "0.95rem", fontWeight: 700,
+                  color: "rgba(255,255,255,0.35)" }}>
+                  No {tab !== "all" ? tab : ""} matches
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
     </Layout>
   );
