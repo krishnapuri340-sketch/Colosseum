@@ -921,6 +921,10 @@ export default function AuctionRoom() {
           if (msg.type === "presence" && msg.members !== undefined) {
             setMemberCount(msg.members);
           }
+          if (!isHost && msg.type === "complete") {
+            // Host ended the auction — navigate to results
+            navigate("/auction/complete");
+          }
           if (!isHost && msg.type === "state" && msg.payload) {
             const s = msg.payload;
             if (s.roomStage !== undefined) setRoomStage(s.roomStage);
@@ -1038,6 +1042,15 @@ export default function AuctionRoom() {
         });
       }
     } catch { /* navigate anyway */ }
+    // Broadcast completion to all members so they navigate too
+    try {
+      const ws = wsRef.current;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "complete", roomCode }));
+        // Give the message a moment to send before navigating away
+        await new Promise(r => setTimeout(r, 300));
+      }
+    } catch { /* non-fatal */ }
     navigate("/auction/complete");
   }
 
