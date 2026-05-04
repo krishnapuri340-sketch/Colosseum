@@ -488,6 +488,19 @@ html, body, #root { max-width: 100vw; overflow-x: hidden; }
 /* ── iOS safe area ───────────────────────────────────────────── */
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
+/* ── Matches two-column grid ─────────────────────────────────── */
+.matches-grid {
+  grid-template-columns: minmax(0, 1fr) 280px !important;
+}
+@media (max-width: 900px) {
+  .matches-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .matches-grid > div:last-child {
+    position: static !important;
+  }
+}
+
 /* ── Mobile base ─────────────────────────────────────────────── */
 @media (max-width: 767px) {
   input, select, textarea { font-size: 16px !important; }

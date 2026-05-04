@@ -5,12 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin, Swords, Radio, Calendar, Trophy,
   ChevronDown, ChevronUp, RefreshCw, Award, Clock,
+  TrendingUp,
 } from "lucide-react";
 import { TEAM_LOGO, TEAM_COLOR, TEAM_FULL_NAME, ALL_TEAMS } from "@/lib/ipl-constants";
 import {
   useIplMatches, useIplStandings,
   type IplMatch, type IplStanding as StandingRow,
 } from "@/hooks/use-ipl-data";
+import { useQuery } from "@tanstack/react-query";
 import { apiJson } from "@/lib/api";
 
 // ── Design tokens ─────────────────────────────────────────────────────
@@ -901,6 +903,187 @@ function LeagueTable({ standings, loading, seasonComplete }: {
   );
 }
 
+// ── Season stats types & hook ─────────────────────────────────────────
+interface SeasonPlayer {
+  name: string;
+  matches: number;
+  runs: number; balls: number; fours: number; sixes: number;
+  notOuts: number; innings: number;
+  wickets: number; runsConceded: number; ballsBowled: number;
+  dots: number; maidens: number;
+}
+interface SeasonStatsResp { players: SeasonPlayer[]; updatedAt: number; }
+
+function useSeasonStats() {
+  return useQuery<SeasonStatsResp>({
+    queryKey: ["season-stats"],
+    queryFn: () => apiJson<SeasonStatsResp>("/ipl/season-stats"),
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+// ── Stats Sidebar ─────────────────────────────────────────────────────
+type StatsView = "batting" | "bowling";
+
+function StatsSidebar() {
+  const { data, isLoading } = useSeasonStats();
+  const [view, setView] = useState<StatsView>("batting");
+
+  const players = data?.players ?? [];
+
+  const batters = useMemo(
+    () => [...players].filter(p => p.innings > 0).sort((a, b) => b.runs - a.runs).slice(0, 10),
+    [players]
+  );
+  const bowlers = useMemo(
+    () => [...players].filter(p => p.ballsBowled > 0).sort((a, b) => b.wickets - a.wickets || (a.runsConceded / (a.ballsBowled || 1)) - (b.runsConceded / (b.ballsBowled || 1))).slice(0, 10),
+    [players]
+  );
+
+  const rows = view === "batting" ? batters : bowlers;
+  const maxVal = view === "batting"
+    ? (batters[0]?.runs ?? 1)
+    : (bowlers[0]?.wickets ?? 1);
+
+  return (
+    <div style={{
+      background: CARD, borderRadius: 18,
+      border: `1px solid ${BORDER}`,
+      backdropFilter: "blur(18px)",
+      overflow: "hidden",
+      flexShrink: 0,
+    }}>
+      {/* Header */}
+      <div style={{ padding: "1rem 1rem 0.75rem", borderBottom: `1px solid ${BORDER}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: "0.65rem" }}>
+          <TrendingUp size={14} style={{ color: V }} />
+          <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "#fff", letterSpacing: "-0.01em" }}>
+            Season Stats
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 4 }}>
+          {(["batting", "bowling"] as StatsView[]).map(v => (
+            <button key={v} onClick={() => setView(v)} className="press-sm"
+              style={{
+                padding: "0.3rem 0.75rem", borderRadius: 9999, fontSize: "0.72rem",
+                fontWeight: 600, cursor: "pointer", border: "none", fontFamily: "inherit",
+                background: view === v ? `${V}22` : "rgba(255,255,255,0.04)",
+                color: view === v ? "#a89ff9" : DIM,
+                outline: view === v ? `1px solid ${V}40` : "1px solid rgba(255,255,255,0.07)",
+              }}>
+              {v === "batting" ? "Batting" : "Bowling"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{ padding: "0.5rem 0" }}>
+        {isLoading ? (
+          <div style={{ padding: "0.75rem 1rem", display: "flex", flexDirection: "column", gap: 8 }}>
+            {[1,2,3,4,5].map(i => (
+              <div key={i} className="shimmer" style={{ height: 36, borderRadius: 8 }} />
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
+          <div style={{ padding: "2rem 1rem", textAlign: "center",
+            color: DIM, fontSize: "0.8rem" }}>
+            No data yet
+          </div>
+        ) : (
+          rows.map((p, i) => {
+            const primary = view === "batting" ? p.runs : p.wickets;
+            const pct = maxVal > 0 ? primary / maxVal : 0;
+            const barColor = view === "batting" ? "#60a5fa" : "#6ee7b7";
+            const eco = p.ballsBowled > 0 ? ((p.runsConceded / p.ballsBowled) * 6).toFixed(2) : "—";
+            const sr  = p.balls > 0 ? ((p.runs / p.balls) * 100).toFixed(0) : "—";
+            const avg = view === "batting"
+              ? (p.innings - p.notOuts > 0 ? (p.runs / (p.innings - p.notOuts)).toFixed(1) : "—")
+              : (p.wickets > 0 ? (p.runsConceded / p.wickets).toFixed(1) : "—");
+
+            return (
+              <div key={p.name} style={{
+                padding: "0.5rem 1rem",
+                borderBottom: i < rows.length - 1 ? `1px solid ${BDR2}` : "none",
+              }}>
+                {/* Name row */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <span style={{
+                    width: 18, height: 18, borderRadius: 5,
+                    background: i < 3 ? `${["#fbbf24","#9ca3af","#cd7c2e"][i]}18` : "rgba(255,255,255,0.06)",
+                    border: `1px solid ${i < 3 ? ["rgba(251,191,36,0.35)","rgba(156,163,175,0.35)","rgba(205,124,46,0.35)"][i] : "rgba(255,255,255,0.08)"}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "0.6rem", fontWeight: 800, flexShrink: 0,
+                    color: i < 3 ? ["#fbbf24","#9ca3af","#cd7c2e"][i] : DIM,
+                  }}>{i + 1}</span>
+                  <span style={{
+                    flex: 1, fontSize: "0.78rem", fontWeight: 600, color: "#fff",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>{p.name}</span>
+                  <span style={{
+                    fontFamily: "JetBrains Mono, monospace", fontWeight: 800,
+                    fontSize: "0.88rem", color: barColor, flexShrink: 0,
+                  }}>{primary}</span>
+                </div>
+
+                {/* Bar */}
+                <div style={{
+                  height: 3, borderRadius: 2,
+                  background: "rgba(255,255,255,0.06)", overflow: "hidden",
+                  marginBottom: 4,
+                }}>
+                  <div style={{
+                    height: "100%", borderRadius: 2,
+                    width: `${pct * 100}%`,
+                    background: `linear-gradient(90deg, ${barColor}99, ${barColor})`,
+                    transition: "width 0.4s ease",
+                  }} />
+                </div>
+
+                {/* Sub-stats */}
+                <div style={{ display: "flex", gap: 8, fontSize: "0.62rem", color: DIM }}>
+                  {view === "batting" ? (
+                    <>
+                      <span>{p.matches}m</span>
+                      <span style={{ color: "rgba(255,255,255,0.18)" }}>·</span>
+                      <span>avg <b style={{ color: "rgba(255,255,255,0.55)" }}>{avg}</b></span>
+                      <span style={{ color: "rgba(255,255,255,0.18)" }}>·</span>
+                      <span>SR <b style={{ color: "rgba(255,255,255,0.55)" }}>{sr}</b></span>
+                      <span style={{ color: "rgba(255,255,255,0.18)" }}>·</span>
+                      <span style={{ color: "#60a5fa" }}>{p.fours}×4</span>
+                      <span style={{ color: "#a89ff9" }}>{p.sixes}×6</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{p.matches}m</span>
+                      <span style={{ color: "rgba(255,255,255,0.18)" }}>·</span>
+                      <span>avg <b style={{ color: "rgba(255,255,255,0.55)" }}>{avg}</b></span>
+                      <span style={{ color: "rgba(255,255,255,0.18)" }}>·</span>
+                      <span>eco <b style={{ color: "rgba(255,255,255,0.55)" }}>{eco}</b></span>
+                      <span style={{ color: "rgba(255,255,255,0.18)" }}>·</span>
+                      <span style={{ color: "#60a5fa" }}>{p.dots}d</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Footer */}
+      {data && (
+        <div style={{ padding: "0.5rem 1rem",
+          borderTop: `1px solid ${BORDER}`,
+          fontSize: "0.6rem", color: "rgba(255,255,255,0.2)", textAlign: "right" }}>
+          Updated {new Date(data.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────
 type MatchTab = "live"|"upcoming"|"completed"|"all";
 
@@ -958,48 +1141,66 @@ export default function Matches() {
           </div>
         )}
 
-        {/* Tab bar */}
-        <div className="tab-bar" style={{ width: "fit-content" }}>
-          {(["live","upcoming","completed","all"] as MatchTab[]).map(t => (
-            <button key={t} className={`tab-item ${tab === t ? "active" : ""}`}
-              onClick={() => setTab(t)}
-              style={{ padding: "0.4rem 0.85rem", fontSize: "0.8rem" }}>
-              {t === "live" && (
-                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <Radio size={11} /> Live ({counts.live})
-                </span>
-              )}
-              {t !== "live" && (
-                `${t.charAt(0).toUpperCase() + t.slice(1)} (${counts[t]})`
-              )}
-            </button>
-          ))}
-        </div>
+        {/* Two-column: match list + stats sidebar */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0,1fr) 280px",
+          gap: "1.25rem",
+          alignItems: "start",
+        }}
+          className="matches-grid">
 
-        {/* Match list */}
-        {isLoading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            {[1,2,3].map(i => (
-              <div key={i} className="shimmer" style={{ height: 180, borderRadius: 18 }} />
-            ))}
-          </div>
-        ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            {filtered.map(m => <MatchCard key={m.iplId} match={m} />)}
-            {filtered.length === 0 && (
-              <div style={{ padding: "3rem 2rem", textAlign: "center",
-                background: "rgba(255,255,255,0.02)",
-                border: "1px dashed rgba(255,255,255,0.08)", borderRadius: 18 }}>
-                <Swords size={28} style={{ margin: "0 auto 0.75rem", opacity: 0.2 }} />
-                <div style={{ fontSize: "0.95rem", fontWeight: 700,
-                  color: "rgba(255,255,255,0.35)" }}>
-                  No {tab !== "all" ? tab : ""} matches
-                </div>
+          {/* Left: tab bar + match list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {/* Tab bar */}
+            <div className="tab-bar" style={{ width: "fit-content" }}>
+              {(["live","upcoming","completed","all"] as MatchTab[]).map(t => (
+                <button key={t} className={`tab-item ${tab === t ? "active" : ""}`}
+                  onClick={() => setTab(t)}
+                  style={{ padding: "0.4rem 0.85rem", fontSize: "0.8rem" }}>
+                  {t === "live" && (
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <Radio size={11} /> Live ({counts.live})
+                    </span>
+                  )}
+                  {t !== "live" && (
+                    `${t.charAt(0).toUpperCase() + t.slice(1)} (${counts[t]})`
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Match list */}
+            {isLoading ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                {[1,2,3].map(i => (
+                  <div key={i} className="shimmer" style={{ height: 180, borderRadius: 18 }} />
+                ))}
               </div>
+            ) : (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                {filtered.map(m => <MatchCard key={m.iplId} match={m} />)}
+                {filtered.length === 0 && (
+                  <div style={{ padding: "3rem 2rem", textAlign: "center",
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px dashed rgba(255,255,255,0.08)", borderRadius: 18 }}>
+                    <Swords size={28} style={{ margin: "0 auto 0.75rem", opacity: 0.2 }} />
+                    <div style={{ fontSize: "0.95rem", fontWeight: 700,
+                      color: "rgba(255,255,255,0.35)" }}>
+                      No {tab !== "all" ? tab : ""} matches
+                    </div>
+                  </div>
+                )}
+              </motion.div>
             )}
-          </motion.div>
-        )}
+          </div>
+
+          {/* Right: season stats sidebar */}
+          <div style={{ position: "sticky", top: "1rem" }}>
+            <StatsSidebar />
+          </div>
+        </div>
       </div>
     </Layout>
   );

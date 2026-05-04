@@ -443,4 +443,106 @@ router.get("/ipl/points/:matchId", async (req, res): Promise<void> => {
   }
 });
 
+// ── Season-wide stats aggregated from all completed innings ───────────
+router.get("/ipl/season-stats", async (_req, res): Promise<void> => {
+  try {
+    const schedule = await fetchS3(`${COMP_ID}-matchschedule.js`);
+    const fixtures: any[] = schedule?.Matchsummary ?? [];
+
+    const completedIds = fixtures
+      .filter((m: any) => {
+        const s = String(m.MatchStatus ?? "").toLowerCase();
+        return s === "post" || s === "result";
+      })
+      .map((m: any) => String(m.MatchID ?? ""))
+      .filter(Boolean);
+
+    if (completedIds.length === 0) {
+      res.json({ players: [], updatedAt: Date.now() });
+      return;
+    }
+
+    type SeasonPlayer = {
+      name: string;
+      matches: number;
+      runs: number; balls: number; fours: number; sixes: number;
+      notOuts: number; innings: number;
+      wickets: number; runsConceded: number; ballsBowled: number;
+      dots: number; maidens: number;
+    };
+    const map: Record<string, SeasonPlayer> = {};
+
+    const allInnings = await Promise.allSettled(
+      completedIds.flatMap(id => [
+        fetchInnings(id, 1, 600_000),
+        fetchInnings(id, 2, 600_000),
+      ])
+    );
+
+    for (let i = 0; i < allInnings.length; i += 2) {
+      const matchResults = [allInnings[i], allInnings[i + 1]];
+      for (let j = 0; j < 2; j++) {
+        const r = matchResults[j];
+        if (r.status !== "fulfilled") continue;
+        const raw = r.value?.[`Innings${j + 1}`];
+        if (!raw) continue;
+
+        for (const b of raw.BattingCard ?? []) {
+          const name = cleanName(b.PlayerName ?? "");
+          if (!name) continue;
+          if (!map[name]) map[name] = { name, matches: 0, runs: 0, balls: 0, fours: 0, sixes: 0, notOuts: 0, innings: 0, wickets: 0, runsConceded: 0, ballsBowled: 0, dots: 0, maidens: 0 };
+          const p = map[name];
+          p.innings++;
+          p.runs  += b.Runs  ?? 0;
+          p.balls += b.Balls ?? 0;
+          p.fours += b.Fours ?? 0;
+          p.sixes += b.Sixes ?? 0;
+          const notOut = !b.OutDesc || b.OutDesc.trim() === "" || /not out/i.test(b.OutDesc);
+          if (notOut) p.notOuts++;
+        }
+
+        for (const b of raw.BowlingCard ?? []) {
+          const name = cleanName(b.PlayerName ?? "");
+          if (!name) continue;
+          if (!map[name]) map[name] = { name, matches: 0, runs: 0, balls: 0, fours: 0, sixes: 0, notOuts: 0, innings: 0, wickets: 0, runsConceded: 0, ballsBowled: 0, dots: 0, maidens: 0 };
+          const p = map[name];
+          p.wickets      += b.Wickets  ?? 0;
+          p.runsConceded += b.Runs     ?? 0;
+          p.ballsBowled  += b.TotalLegalBallsBowled ?? 0;
+          p.dots         += b.DotBalls ?? 0;
+          p.maidens      += b.Maidens  ?? 0;
+        }
+      }
+    }
+
+    // Derive matches played from innings appearances
+    const playerNames = Object.keys(map);
+    const matchPlayerSets: Record<string, Set<string>> = {};
+    let midx = 0;
+    for (let i = 0; i < allInnings.length; i += 2) {
+      const matchId = completedIds[midx++];
+      const seen = new Set<string>();
+      for (let j = 0; j < 2; j++) {
+        const r = allInnings[i + j];
+        if (r.status !== "fulfilled") continue;
+        const raw = r.value?.[`Innings${j + 1}`];
+        if (!raw) continue;
+        for (const b of [...(raw.BattingCard ?? []), ...(raw.BowlingCard ?? [])]) {
+          const name = cleanName(b.PlayerName ?? "");
+          if (name) seen.add(name);
+        }
+      }
+      matchPlayerSets[matchId] = seen;
+    }
+    for (const name of playerNames) {
+      map[name].matches = Object.values(matchPlayerSets).filter(s => s.has(name)).length;
+    }
+
+    const players = Object.values(map);
+    res.json({ players, updatedAt: Date.now() });
+  } catch (err: any) {
+    res.status(502).json({ error: "Failed to compute season stats", detail: err?.message });
+  }
+});
+
 export default router;
