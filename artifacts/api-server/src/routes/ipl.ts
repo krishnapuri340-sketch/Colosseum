@@ -285,8 +285,11 @@ router.get("/ipl/scorecard/:matchId", async (req, res): Promise<void> => {
   try {
     const data = await fetchS3(`${COMP_ID}-${matchId}-matchscorecard.js`);
     res.json(data);
-  } catch {
-    res.status(502).json({ error: "Failed to fetch scorecard" });
+  } catch (err: any) {
+    const notAvailable = /502|503|404|not found/i.test(err?.message ?? "");
+    res.status(notAvailable ? 404 : 502).json({
+      error: notAvailable ? "Scorecard not yet available" : "Failed to fetch scorecard",
+    });
   }
 });
 

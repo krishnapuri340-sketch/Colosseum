@@ -96,12 +96,14 @@ function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null
     if (fetched.current) return;
     fetched.current = true;
     setLoad(true);
-    Promise.all([
+    Promise.allSettled([
       apiJson<ScorecardResp>(`/ipl/scorecard/${matchId}`),
       apiJson<PointsResp>(`/ipl/points/${matchId}`),
-    ]).then(([sc, pts]) => { setSC(sc); setPts(pts); })
-      .catch(e => setErr(e?.message ?? "Failed to load"))
-      .finally(() => setLoad(false));
+    ]).then(([scRes, ptsRes]) => {
+      if (scRes.status === "fulfilled") setSC(scRes.value);
+      else setErr(scRes.reason?.message ?? "Scorecard not yet available");
+      if (ptsRes.status === "fulfilled") setPts(ptsRes.value);
+    }).finally(() => setLoad(false));
   }, [matchId]);
 
   const innings = scorecard?.Innings ?? scorecard?.innings ?? [];
