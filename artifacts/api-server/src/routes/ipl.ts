@@ -2,8 +2,9 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
-const S3_BASE = "https://ipl-stats-sports-mechanic.s3.ap-south-1.amazonaws.com/ipl/feeds";
-const COMP_ID = 284;
+const S3_BASE  = "https://ipl-stats-sports-mechanic.s3.ap-south-1.amazonaws.com/ipl/feeds";
+const IPL_FEED = "https://scores.iplt20.com/ipl/feeds";
+const COMP_ID  = 284;
 
 function stripJsonp(text: string): string {
   return text.replace(/^[A-Za-z_$][A-Za-z0-9_$]*\(/, "").replace(/\)\s*;?\s*$/, "");
@@ -11,56 +12,62 @@ function stripJsonp(text: string): string {
 
 const MATCH_ID_RE = /^\d+$/;
 
-// Simple in-memory cache with TTL — avoids hammering S3 on every request
 interface CacheEntry { data: any; expiresAt: number; }
-const s3Cache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 60_000; // 60 seconds
+const cache = new Map<string, CacheEntry>();
 
-async function fetchS3(path: string, ttlMs = CACHE_TTL_MS): Promise<any> {
+async function fetchUrl(url: string, key: string, ttlMs: number): Promise<any> {
   const now = Date.now();
-  const hit = s3Cache.get(path);
+  const hit = cache.get(key);
   if (hit && hit.expiresAt > now) return hit.data;
-
-  const url = `${S3_BASE}/${path}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-  if (!res.ok) throw new Error(`S3 fetch failed with status ${res.status}`);
+  const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${url}`);
   const text = await res.text();
   const data = JSON.parse(stripJsonp(text));
-  s3Cache.set(path, { data, expiresAt: now + ttlMs });
+  cache.set(key, { data, expiresAt: now + ttlMs });
   return data;
+}
+
+function fetchS3(path: string, ttlMs = 60_000): Promise<any> {
+  return fetchUrl(`${S3_BASE}/${path}`, `s3:${path}`, ttlMs);
+}
+
+function fetchInnings(matchId: string, inn: number, ttlMs: number): Promise<any> {
+  const path = `${matchId}-Innings${inn}.js`;
+  return fetchUrl(`${IPL_FEED}/${path}`, `inn:${path}`, ttlMs);
+}
+
+function cleanName(raw: string): string {
+  return String(raw ?? "").replace(/\s*\([^)]*\)\s*$/, "").trim();
 }
 
 interface PlayerStats {
   played: boolean;
-  runs: number;
-  balls: number;
-  fours: number;
-  sixes: number;
-  duck: boolean;
-  wickets: number;
-  dots: number;
-  lbwBowled: number;
-  maidens: number;
-  ballsBowled: number;
-  runsConceded: number;
-  catches: number;
-  runOuts: number;
-  sharedRunOuts: number;
-  stumpings: number;
+  runs: number; balls: number; fours: number; sixes: number;
+  duck: boolean; fifty: boolean; century: boolean;
+  wickets: number; dots: number; lbwBowled: number;
+  maidens: number; ballsBowled: number; runsConceded: number;
+  catches: number; runOuts: number; sharedRunOuts: number; stumpings: number;
+}
+
+function emptyStats(): PlayerStats {
+  return {
+    played: false, runs: 0, balls: 0, fours: 0, sixes: 0,
+    duck: false, fifty: false, century: false,
+    wickets: 0, dots: 0, lbwBowled: 0, maidens: 0,
+    ballsBowled: 0, runsConceded: 0, catches: 0, runOuts: 0, sharedRunOuts: 0, stumpings: 0,
+  };
 }
 
 function calcPoints(p: PlayerStats): number {
   if (!p.played) return 0;
-  let pts = 4; // Playing XI
+  let pts = 4;
 
   const r = p.runs || 0;
   const balls = p.balls || 0;
-
   pts += r;
   pts += (p.fours || 0) * 4;
   pts += (p.sixes || 0) * 6;
   if (p.duck) pts -= 2;
-
   if (r >= 100) pts += 16;
   else if (r >= 75) pts += 12;
   else if (r >= 50) pts += 8;
@@ -82,7 +89,6 @@ function calcPoints(p: PlayerStats): number {
   pts += w * 30;
   pts += (p.lbwBowled || 0) * 8;
   pts += (p.maidens || 0) * 12;
-
   if (w >= 5) pts += 16;
   else if (w >= 4) pts += 12;
   else if (w >= 3) pts += 8;
@@ -130,7 +136,6 @@ router.get("/ipl/matches", async (_req, res): Promise<void> => {
           : (m.SecondBattingTeamCode ?? null);
       }
 
-      // Derive actual home/away codes from HomeTeamID vs batting order
       const homeId  = String(m.HomeTeamID ?? "");
       const firstId2 = String(m.FirstBattingTeamID ?? "");
       const homeBatsFirst = homeId !== "" && homeId === firstId2;
@@ -181,7 +186,6 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
     const data = await fetchS3(`${COMP_ID}-matchschedule.js`);
     const fixtures: any[] = data?.Matchsummary ?? [];
 
-    // Build team-code map from all matches
     const teamMap: Record<string, { code: string; full: string }> = {};
     for (const m of fixtures) {
       const id1 = String(m.FirstBattingTeamID ?? "");
@@ -204,14 +208,12 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
 
     function parseScore(summary: string | null): { runs: number; balls: number } {
       if (!summary) return { runs: 0, balls: 0 };
-      // Capture wickets too — needed for ICC NRR all-out rule
       const m = summary.match(/(\d+)\/(\d+)\s*\((\d+)\.(\d+)\s*Ov/i) ?? summary.match(/(\d+)\/(\d+)\s*\((\d+)\)/i);
       if (!m) return { runs: 0, balls: 0 };
       const runs = parseInt(m[1]) || 0;
       const wickets = parseInt(m[2]) || 0;
       const overs = parseInt(m[3]) || 0;
       const actualBalls = m[4] ? (overs * 6) + (parseInt(m[4]) || 0) : (overs * 6) || 120;
-      // ICC NRR rule: if bowled out (10 wickets), use full allotted overs (120 balls for T20)
       const balls = wickets >= 10 ? 120 : actualBalls;
       return { runs, balls };
     }
@@ -228,19 +230,16 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
       const winCode = winId === firstId ? code1 : code2;
       const loseCode = winCode === code1 ? code2 : code1;
 
-      // Determine result type FIRST so NR matches don't pollute NRR
       const commentss = String(m.Commentss ?? "").toLowerCase();
       const isNoResult = commentss.includes("no result") || commentss.includes("abandon");
       const hasSuperOver = commentss.includes("super over");
 
       if (isNoResult) {
-        // Both teams get 1 point; played counts but NO runs/balls added to NRR
         if (table[code1]) { table[code1].played++; table[code1].noResult++; table[code1].points += 1; }
         if (table[code2]) { table[code2].played++; table[code2].noResult++; table[code2].points += 1; }
       } else {
         const s1 = parseScore(m["1Summary"]);
         const s2 = parseScore(m["2Summary"]);
-
         if (table[code1]) {
           table[code1].played++;
           table[code1].runsFor += s1.runs; table[code1].ballsFor += s1.balls;
@@ -251,9 +250,7 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
           table[code2].runsFor += s2.runs; table[code2].ballsFor += s2.balls;
           table[code2].runsAgainst += s1.runs; table[code2].ballsAgainst += s1.balls;
         }
-
         if (winId && (table[winCode] || hasSuperOver)) {
-          // Normal win (including super-over): winner gets 2 pts, loser 0
           if (table[winCode]) { table[winCode].won++; table[winCode].points += 2; }
           if (table[loseCode]) { table[loseCode].lost++; }
         }
@@ -278,58 +275,160 @@ router.get("/ipl/standings", async (_req, res): Promise<void> => {
 
 router.get("/ipl/scorecard/:matchId", async (req, res): Promise<void> => {
   const { matchId } = req.params;
-  if (!MATCH_ID_RE.test(matchId)) {
-    res.status(400).json({ error: "Invalid match ID" });
-    return;
-  }
+  if (!MATCH_ID_RE.test(matchId)) { res.status(400).json({ error: "Invalid match ID" }); return; }
   try {
-    const data = await fetchS3(`${COMP_ID}-${matchId}-matchscorecard.js`);
-    res.json(data);
+    const schedule = await fetchS3(`${COMP_ID}-matchschedule.js`);
+    const fixtures: any[] = schedule?.Matchsummary ?? [];
+    const info = fixtures.find((m: any) => String(m.MatchID) === matchId);
+    const isLive = info?.MatchStatus?.toLowerCase() === "live";
+    const ttl = isLive ? 30_000 : 600_000;
+
+    const teamCodes = [info?.FirstBattingTeamCode ?? "", info?.SecondBattingTeamCode ?? ""];
+    const teamNames = [
+      String(info?.FirstBattingTeamName ?? ""),
+      String(info?.SecondBattingTeamName ?? ""),
+    ];
+    const summaries = [info?.["1Summary"] ?? "", info?.["2Summary"] ?? ""];
+
+    const [r1, r2] = await Promise.allSettled([
+      fetchInnings(matchId, 1, ttl),
+      fetchInnings(matchId, 2, ttl),
+    ]);
+
+    const innings: any[] = [];
+    for (let i = 0; i < 2; i++) {
+      const result = i === 0 ? r1 : r2;
+      if (result.status !== "fulfilled") continue;
+      const raw = result.value?.[`Innings${i + 1}`];
+      if (!raw) continue;
+
+      const batters = ((raw.BattingCard ?? []) as any[])
+        .map((b: any) => ({
+          PlayerName: cleanName(b.PlayerName),
+          Runs: b.Runs ?? 0, Balls: b.Balls ?? 0,
+          Fours: b.Fours ?? 0, Sixes: b.Sixes ?? 0,
+          DotBalls: b.DotBalls ?? 0,
+          StrikeRate: b.StrikeRate ?? "0.00",
+          Dismissal: b.OutDesc ?? "",
+          NotOut: !b.OutDesc || b.OutDesc.trim() === "" || /not out/i.test(b.OutDesc),
+          PlayingOrder: b.PlayingOrder ?? 0,
+        }))
+        .sort((a: any, b: any) => a.PlayingOrder - b.PlayingOrder);
+
+      const bowlers = ((raw.BowlingCard ?? []) as any[])
+        .map((b: any) => ({
+          PlayerName: cleanName(b.PlayerName),
+          Overs: String(b.Overs ?? 0),
+          Balls: b.TotalLegalBallsBowled ?? 0,
+          Runs: b.Runs ?? 0, Wickets: b.Wickets ?? 0,
+          Economy: b.Economy ?? 0,
+          Dots: b.DotBalls ?? 0, Maidens: b.Maidens ?? 0,
+          BowlingOrder: b.BowlingOrder ?? 0,
+        }))
+        .sort((a: any, b: any) => a.BowlingOrder - b.BowlingOrder);
+
+      innings.push({
+        InningsNo: i + 1,
+        InningsName: teamNames[i] ? `${teamNames[i]} Innings` : `Innings ${i + 1}`,
+        TeamCode: teamCodes[i],
+        TotalScore: summaries[i],
+        Batsmen: batters,
+        Bowlers: bowlers,
+      });
+    }
+
+    if (innings.length === 0) {
+      res.status(404).json({ error: "Scorecard not yet available" });
+      return;
+    }
+    res.json({ innings, isLive });
   } catch (err: any) {
-    const notAvailable = /502|503|404|not found/i.test(err?.message ?? "");
-    res.status(notAvailable ? 404 : 502).json({
-      error: notAvailable ? "Scorecard not yet available" : "Failed to fetch scorecard",
-    });
+    res.status(502).json({ error: "Failed to fetch scorecard", detail: err?.message });
   }
 });
 
 router.get("/ipl/points/:matchId", async (req, res): Promise<void> => {
   const { matchId } = req.params;
-  if (!MATCH_ID_RE.test(matchId)) {
-    res.status(400).json({ error: "Invalid match ID" });
-    return;
-  }
+  if (!MATCH_ID_RE.test(matchId)) { res.status(400).json({ error: "Invalid match ID" }); return; }
   try {
-    const data = await fetchS3(`${COMP_ID}-${matchId}-matchscorecard.js`);
-    const innings: any[] = data?.Innings ?? data?.innings ?? [];
+    const schedule = await fetchS3(`${COMP_ID}-matchschedule.js`);
+    const fixtures: any[] = schedule?.Matchsummary ?? [];
+    const info = fixtures.find((m: any) => String(m.MatchID) === matchId);
+    const isLive = info?.MatchStatus?.toLowerCase() === "live";
+    const ttl = isLive ? 30_000 : 600_000;
+
+    const [r1, r2] = await Promise.allSettled([
+      fetchInnings(matchId, 1, ttl),
+      fetchInnings(matchId, 2, ttl),
+    ]);
+
     const playerStats: Record<string, PlayerStats> = {};
 
-    for (const inn of innings) {
-      for (const batter of inn.Batsmen ?? []) {
-        const name = batter.PlayerName ?? batter.name ?? "";
+    for (let i = 0; i < 2; i++) {
+      const result = i === 0 ? r1 : r2;
+      if (result.status !== "fulfilled") continue;
+      const raw = result.value?.[`Innings${i + 1}`];
+      if (!raw) continue;
+
+      for (const b of raw.BattingCard ?? []) {
+        const name = cleanName(b.PlayerName ?? "");
         if (!name) continue;
-        if (!playerStats[name]) playerStats[name] = { played: true, runs: 0, balls: 0, fours: 0, sixes: 0, duck: false, wickets: 0, dots: 0, lbwBowled: 0, maidens: 0, ballsBowled: 0, runsConceded: 0, catches: 0, runOuts: 0, sharedRunOuts: 0, stumpings: 0 };
+        if (!playerStats[name]) playerStats[name] = emptyStats();
         const p = playerStats[name];
         p.played = true;
-        p.runs += parseInt(batter.Runs ?? batter.runs ?? "0") || 0;
-        p.balls += parseInt(batter.Balls ?? batter.balls ?? "0") || 0;
-        p.fours += parseInt(batter.Fours ?? batter.fours ?? "0") || 0;
-        p.sixes += parseInt(batter.Sixes ?? batter.sixes ?? "0") || 0;
-        if (p.runs === 0 && !batter.NotOut && batter.Balls > 0) p.duck = true;
+        p.runs += b.Runs ?? 0;
+        p.balls += b.Balls ?? 0;
+        p.fours += b.Fours ?? 0;
+        p.sixes += b.Sixes ?? 0;
+        const notOut = !b.OutDesc || b.OutDesc.trim() === "" || /not out/i.test(b.OutDesc);
+        if ((b.Runs ?? 0) === 0 && !notOut && (b.Balls ?? 0) > 0) p.duck = true;
+        if (p.runs >= 100) p.century = true;
+        else if (p.runs >= 50) p.fifty = true;
       }
 
-      for (const bowler of inn.Bowlers ?? []) {
-        const name = bowler.PlayerName ?? bowler.name ?? "";
+      for (const b of raw.BowlingCard ?? []) {
+        const name = cleanName(b.PlayerName ?? "");
         if (!name) continue;
-        if (!playerStats[name]) playerStats[name] = { played: true, runs: 0, balls: 0, fours: 0, sixes: 0, duck: false, wickets: 0, dots: 0, lbwBowled: 0, maidens: 0, ballsBowled: 0, runsConceded: 0, catches: 0, runOuts: 0, sharedRunOuts: 0, stumpings: 0 };
+        if (!playerStats[name]) playerStats[name] = emptyStats();
         const p = playerStats[name];
         p.played = true;
-        p.wickets += parseInt(bowler.Wickets ?? bowler.wickets ?? "0") || 0;
-        p.maidens += parseInt(bowler.Maidens ?? bowler.maidens ?? "0") || 0;
-        p.runsConceded += parseInt(bowler.Runs ?? bowler.runs ?? "0") || 0;
-        const oversStr = String(bowler.Overs ?? bowler.overs ?? "0");
-        const parts = oversStr.split(".");
-        p.ballsBowled += (parseInt(parts[0]) || 0) * 6 + (parseInt(parts[1]) || 0);
+        p.wickets += b.Wickets ?? 0;
+        p.maidens += b.Maidens ?? 0;
+        p.dots += b.DotBalls ?? 0;
+        p.ballsBowled += b.TotalLegalBallsBowled ?? 0;
+        p.runsConceded += b.Runs ?? 0;
+      }
+
+      for (const b of raw.BattingCard ?? []) {
+        const outDesc = String(b.OutDesc ?? "").trim();
+        if (!outDesc || /not out/i.test(outDesc)) continue;
+        const lower = outDesc.toLowerCase();
+
+        let bowlerName: string | null = null;
+        if (/^b /.test(lower)) bowlerName = cleanName(outDesc.slice(2));
+        else if (/^lbw b /.test(lower)) bowlerName = cleanName(outDesc.slice(6));
+        if (bowlerName) {
+          if (!playerStats[bowlerName]) playerStats[bowlerName] = emptyStats();
+          playerStats[bowlerName].lbwBowled++;
+        }
+
+        if (/^c .+ b /.test(lower)) {
+          const bIdx = lower.indexOf(" b ");
+          const catcherName = cleanName(outDesc.slice(2, bIdx).trim());
+          if (catcherName && !/^sub/i.test(catcherName)) {
+            if (!playerStats[catcherName]) playerStats[catcherName] = emptyStats();
+            playerStats[catcherName].catches++;
+          }
+        }
+
+        if (/^st .+ b /.test(lower)) {
+          const bIdx = lower.indexOf(" b ");
+          const keeperName = cleanName(outDesc.slice(3, bIdx).trim());
+          if (keeperName) {
+            if (!playerStats[keeperName]) playerStats[keeperName] = emptyStats();
+            playerStats[keeperName].stumpings++;
+          }
+        }
       }
     }
 
@@ -339,8 +438,8 @@ router.get("/ipl/points/:matchId", async (req, res): Promise<void> => {
     }
 
     res.json({ matchId, playerPoints, playerStats });
-  } catch {
-    res.status(502).json({ error: "Failed to calculate points" });
+  } catch (err: any) {
+    res.status(502).json({ error: "Failed to calculate points", detail: err?.message });
   }
 });
 

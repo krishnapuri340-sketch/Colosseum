@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,33 +22,35 @@ const BDR2   = "rgba(255,255,255,0.05)";
 
 // ── Scorecard API types ───────────────────────────────────────────────
 interface BatterRow {
-  PlayerName?: string; name?: string;
-  Runs?: string|number; Balls?: string|number;
-  Fours?: string|number; Sixes?: string|number;
-  Dismissal?: string; dismissal?: string;
-  NotOut?: boolean|string;
+  PlayerName: string;
+  Runs: number; Balls: number; Fours: number; Sixes: number;
+  DotBalls: number; StrikeRate: string;
+  Dismissal: string; NotOut: boolean;
+  PlayingOrder: number;
 }
 interface BowlerRow {
-  PlayerName?: string; name?: string;
-  Overs?: string|number; Runs?: string|number;
-  Wickets?: string|number; Maidens?: string|number; Dots?: string|number;
+  PlayerName: string;
+  Overs: string; Balls: number; Runs: number;
+  Wickets: number; Economy: number;
+  Dots: number; Maidens: number;
+  BowlingOrder: number;
 }
 interface InningsData {
-  InningsName?: string; TeamCode?: string; TotalScore?: string;
-  Batsmen?: BatterRow[]; Bowlers?: BowlerRow[];
+  InningsNo: number; InningsName: string; TeamCode: string; TotalScore: string;
+  Batsmen: BatterRow[]; Bowlers: BowlerRow[];
 }
-interface ScorecardResp { Innings?: InningsData[]; innings?: InningsData[]; }
+interface ScorecardResp { innings: InningsData[]; isLive?: boolean; }
+interface PlayerStat {
+  runs: number; balls: number; fours: number; sixes: number; duck: boolean;
+  fifty: boolean; century: boolean;
+  wickets: number; dots: number; maidens: number; ballsBowled: number;
+  runsConceded: number; catches: number; runOuts: number; stumpings: number;
+}
 interface PointsResp {
   playerPoints: Record<string, number>;
-  playerStats: Record<string, {
-    runs: number; balls: number; fours: number; sixes: number; duck: boolean;
-    wickets: number; dots: number; maidens: number; ballsBowled: number;
-    runsConceded: number; catches: number; runOuts: number; stumpings: number;
-  }>;
+  playerStats: Record<string, PlayerStat>;
 }
 
-function n(v?: string|number) { return parseFloat(String(v ?? "0")) || 0; }
-function pName(r: BatterRow|BowlerRow) { return String((r as any).PlayerName ?? (r as any).name ?? ""); }
 function srFmt(runs: number, balls: number) { return balls === 0 ? "—" : ((runs/balls)*100).toFixed(1); }
 function ecoFmt(runs: number, balls: number) { return balls === 0 ? "—" : ((runs/balls)*6).toFixed(2); }
 function ptsColor(pts?: number) {
@@ -83,30 +85,38 @@ function TeamBadge({ code, size = 36 }: { code: string; size?: number }) {
 }
 
 // ── Scorecard embedded inside match card ──────────────────────────────
-function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null }) {
+type SCTab = "scorecard" | "stats" | "fantasy";
+
+function InlineScorecard({ matchId, mom, isLive }: { matchId: string; mom: string | null; isLive: boolean }) {
   const [scorecard, setSC] = useState<ScorecardResp | null>(null);
   const [points, setPts]   = useState<PointsResp | null>(null);
-  const [loading, setLoad] = useState(false);
+  const [loading, setLoad] = useState(true);
   const [error, setErr]    = useState("");
-  const [tab, setTab]      = useState<"scorecard"|"fantasy">("scorecard");
-  const fetched            = useRef(false);
+  const [tab, setTab]      = useState<SCTab>("scorecard");
+  const firstLoad          = useRef(false);
 
-  // Fetch on first render
-  useMemo(() => {
-    if (fetched.current) return;
-    fetched.current = true;
-    setLoad(true);
+  const load = useCallback(() => {
     Promise.allSettled([
       apiJson<ScorecardResp>(`/ipl/scorecard/${matchId}`),
       apiJson<PointsResp>(`/ipl/points/${matchId}`),
     ]).then(([scRes, ptsRes]) => {
-      if (scRes.status === "fulfilled") setSC(scRes.value);
-      else setErr(scRes.reason?.message ?? "Scorecard not yet available");
+      if (scRes.status === "fulfilled") { setSC(scRes.value); setErr(""); }
+      else if (!firstLoad.current) setErr(scRes.reason?.message ?? "Scorecard not yet available");
       if (ptsRes.status === "fulfilled") setPts(ptsRes.value);
+      firstLoad.current = true;
     }).finally(() => setLoad(false));
   }, [matchId]);
 
-  const innings = scorecard?.Innings ?? scorecard?.innings ?? [];
+  useEffect(() => {
+    load();
+    if (!isLive) return;
+    const id = setInterval(load, 30_000);
+    return () => clearInterval(id);
+  }, [load, isLive]);
+
+  const innings = scorecard?.innings ?? [];
+
+  // Fantasy rows sorted by pts
   const fantasyRows = useMemo(() => {
     if (!points) return [];
     return Object.entries(points.playerPoints)
@@ -114,21 +124,41 @@ function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null
       .sort((a, b) => b.pts - a.pts);
   }, [points]);
 
-  if (loading) return (
-    <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: 6 }}>
-      {[1,2,3].map(i => <div key={i} className="shimmer" style={{ height: 14, borderRadius: 6 }} />)}
-    </div>
-  );
+  // Stats tab: merge batting + bowling per player, sorted by pts
+  const statsRows = useMemo(() => {
+    type StatRow = {
+      name: string;
+      runs: number; balls: number; fours: number; sixes: number;
+      wickets: number; dots: number; maidens: number;
+      milestone: "100" | "50" | null;
+      pts: number;
+    };
+    const map: Record<string, StatRow> = {};
+    for (const inn of innings) {
+      for (const b of inn.Batsmen) {
+        if (!map[b.PlayerName]) map[b.PlayerName] = { name: b.PlayerName, runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0, dots: 0, maidens: 0, milestone: null, pts: 0 };
+        map[b.PlayerName].runs  += b.Runs;
+        map[b.PlayerName].balls += b.Balls;
+        map[b.PlayerName].fours += b.Fours;
+        map[b.PlayerName].sixes += b.Sixes;
+      }
+      for (const b of inn.Bowlers) {
+        if (!map[b.PlayerName]) map[b.PlayerName] = { name: b.PlayerName, runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0, dots: 0, maidens: 0, milestone: null, pts: 0 };
+        map[b.PlayerName].wickets += b.Wickets;
+        map[b.PlayerName].dots    += b.Dots;
+        map[b.PlayerName].maidens += b.Maidens;
+      }
+    }
+    for (const row of Object.values(map)) {
+      row.pts = points?.playerPoints[row.name] ?? 0;
+      const s = points?.playerStats[row.name];
+      if (s?.century) row.milestone = "100";
+      else if (s?.fifty) row.milestone = "50";
+    }
+    return Object.values(map).sort((a, b) => b.pts - a.pts);
+  }, [innings, points]);
 
-  if (error) return (
-    <div style={{ padding: "1rem", fontSize: "0.8rem", color: "#f87171", textAlign: "center" }}>
-      {error}
-    </div>
-  );
-
-  if (!scorecard) return null;
-
-  // Table header cell
+  // Table header helper — defined inside render so TH is available to all tabs
   const TH = ({ children, right }: { children: string; right?: boolean }) => (
     <th style={{
       padding: "0.3rem 0.5rem", fontSize: "0.6rem", fontWeight: 700,
@@ -137,21 +167,47 @@ function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null
     }}>{children}</th>
   );
 
+  if (loading) return (
+    <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: 6 }}>
+      {[1,2,3].map(i => <div key={i} className="shimmer" style={{ height: 14, borderRadius: 6 }} />)}
+    </div>
+  );
+
+  if (error && !scorecard) return (
+    <div style={{ padding: "1rem", fontSize: "0.8rem", color: DIM, textAlign: "center" }}>
+      {error}
+    </div>
+  );
+
+  if (!scorecard) return null;
+
+  const TABS: { key: SCTab; label: string }[] = [
+    { key: "scorecard", label: "Scorecard" },
+    { key: "stats",     label: "Stats" },
+    { key: "fantasy",   label: "Fantasy Pts" },
+  ];
+
   return (
     <div style={{ borderTop: `1px solid ${BORDER}` }}>
       {/* Tab bar */}
-      <div style={{ display: "flex", gap: 4, padding: "0.65rem 1rem 0" }}>
-        {(["scorecard","fantasy"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className="press-sm"
+      <div style={{ display: "flex", gap: 4, padding: "0.65rem 1rem 0", flexWrap: "wrap" }}>
+        {TABS.map(({ key, label }) => (
+          <button key={key} onClick={() => setTab(key)} className="press-sm"
             style={{
               padding: "0.35rem 0.85rem", borderRadius: 9999, fontSize: "0.75rem",
               fontWeight: 600, cursor: "pointer", border: "none",
-              background: tab === t ? `${V}22` : "rgba(255,255,255,0.04)",
-              color: tab === t ? "#a89ff9" : DIM,
-              outline: tab === t ? `1px solid ${V}40` : "1px solid rgba(255,255,255,0.07)",
+              background: tab === key ? `${V}22` : "rgba(255,255,255,0.04)",
+              color: tab === key ? "#a89ff9" : DIM,
+              outline: tab === key ? `1px solid ${V}40` : "1px solid rgba(255,255,255,0.07)",
               fontFamily: "inherit",
             }}>
-            {t === "scorecard" ? "Scorecard" : "Fantasy Pts"}
+            {label}
+            {key === "scorecard" && isLive && (
+              <span style={{ marginLeft: 5, display: "inline-block",
+                width: 5, height: 5, borderRadius: "50%", background: "#22c55e",
+                verticalAlign: "middle", position: "relative", top: -1 }}
+                className="live-pulse" />
+            )}
           </button>
         ))}
       </div>
@@ -160,16 +216,14 @@ function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null
 
         {/* ── SCORECARD TAB ── */}
         {tab === "scorecard" && innings.map((inn, ii) => {
-          const tc = TEAM_COLOR[inn.TeamCode ?? ""] ?? V;
-          const batters = inn.Batsmen ?? [];
-          const bowlers = inn.Bowlers ?? [];
+          const tc = TEAM_COLOR[inn.TeamCode] ?? V;
           return (
-            <div key={ii} style={{ marginBottom: ii < innings.length - 1 ? "1.25rem" : 0 }}>
+            <div key={ii} style={{ marginBottom: ii < innings.length - 1 ? "1.5rem" : 0 }}>
               {/* Innings header */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.55rem" }}>
                 <div style={{ width: 3, height: 18, borderRadius: 2, background: tc, flexShrink: 0 }} />
                 <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "#fff" }}>
-                  {inn.InningsName ?? `Innings ${ii + 1}`}
+                  {inn.InningsName}
                 </span>
                 {inn.TotalScore && (
                   <span style={{ fontFamily: "JetBrains Mono, monospace",
@@ -180,7 +234,7 @@ function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null
               </div>
 
               {/* Batting */}
-              {batters.length > 0 && (
+              {inn.Batsmen.length > 0 && (
                 <div style={{ overflowX: "auto", marginBottom: "0.75rem" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse",
                     minWidth: 380, fontSize: "0.75rem" }}>
@@ -193,39 +247,37 @@ function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null
                       </tr>
                     </thead>
                     <tbody>
-                      {batters.map((b, bi) => {
-                        const name    = pName(b);
-                        const runs    = n(b.Runs); const balls = n(b.Balls);
-                        const fours   = n(b.Fours); const sixes = n(b.Sixes);
-                        const dismiss = String(b.Dismissal ?? b.dismissal ?? "not out");
-                        const notOut  = b.NotOut === true || b.NotOut === "true"
-                          || dismiss.toLowerCase().includes("not out");
-                        const pts = points?.playerPoints[name];
+                      {inn.Batsmen.map((b, bi) => {
+                        const pts = points?.playerPoints[b.PlayerName];
                         return (
                           <tr key={bi} style={{ borderBottom: `1px solid ${BDR2}`,
                             background: bi % 2 === 0 ? "rgba(255,255,255,0.015)" : "transparent" }}>
                             <td style={{ padding: "0.38rem 0.5rem" }}>
-                              <div style={{ fontWeight: 600, color: "#fff" }}>{name}</div>
+                              <div style={{ fontWeight: 600, color: "#fff" }}>
+                                {b.PlayerName}
+                                {b.Runs >= 100 && <span style={{ marginLeft: 4, fontSize: "0.58rem", fontWeight: 800, color: "#fbbf24", background: "rgba(251,191,36,0.12)", padding: "1px 4px", borderRadius: 4 }}>100</span>}
+                                {b.Runs >= 50 && b.Runs < 100 && <span style={{ marginLeft: 4, fontSize: "0.58rem", fontWeight: 800, color: "#fb923c", background: "rgba(251,146,60,0.12)", padding: "1px 4px", borderRadius: 4 }}>50</span>}
+                              </div>
                               <div style={{ fontSize: "0.6rem", color: DIM, marginTop: 1 }}>
-                                {notOut ? "not out" : dismiss}
+                                {b.NotOut ? "not out" : b.Dismissal || "not out"}
                               </div>
                             </td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
                               fontWeight: 700, fontFamily: "JetBrains Mono, monospace",
-                              color: runs >= 50 ? "#fbbf24" : "#fff" }}>
-                              {runs}{notOut && <span style={{ color: "#6ee7b7", fontSize: "0.65rem" }}>*</span>}
+                              color: b.Runs >= 50 ? "#fbbf24" : "#fff" }}>
+                              {b.Runs}{b.NotOut && <span style={{ color: "#6ee7b7", fontSize: "0.65rem" }}>*</span>}
                             </td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
-                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>{balls}</td>
+                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>{b.Balls}</td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
-                              color: fours > 0 ? "#60a5fa" : DIM,
-                              fontFamily: "JetBrains Mono, monospace" }}>{fours}</td>
+                              color: b.Fours > 0 ? "#60a5fa" : DIM,
+                              fontFamily: "JetBrains Mono, monospace" }}>{b.Fours}</td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
-                              color: sixes > 0 ? "#a89ff9" : DIM,
-                              fontFamily: "JetBrains Mono, monospace" }}>{sixes}</td>
+                              color: b.Sixes > 0 ? "#a89ff9" : DIM,
+                              fontFamily: "JetBrains Mono, monospace" }}>{b.Sixes}</td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
                               color: DIM, fontFamily: "JetBrains Mono, monospace" }}>
-                              {srFmt(runs, balls)}
+                              {b.StrikeRate !== "0.00" ? parseFloat(b.StrikeRate).toFixed(1) : srFmt(b.Runs, b.Balls)}
                             </td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
                               fontWeight: 700, fontFamily: "JetBrains Mono, monospace",
@@ -239,7 +291,7 @@ function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null
               )}
 
               {/* Bowling */}
-              {bowlers.length > 0 && (
+              {inn.Bowlers.length > 0 && (
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse",
                     minWidth: 320, fontSize: "0.75rem" }}>
@@ -252,36 +304,30 @@ function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null
                       </tr>
                     </thead>
                     <tbody>
-                      {bowlers.map((b, bi) => {
-                        const name    = pName(b);
-                        const overs   = String(b.Overs ?? "0");
-                        const ovParts = overs.split(".");
-                        const balls   = (parseInt(ovParts[0])||0)*6 + (parseInt(ovParts[1])||0);
-                        const runs    = n(b.Runs); const wkts = n(b.Wickets);
-                        const maidens = n(b.Maidens); const dots = n(b.Dots);
-                        const pts     = points?.playerPoints[name];
+                      {inn.Bowlers.map((b, bi) => {
+                        const pts = points?.playerPoints[b.PlayerName];
                         return (
                           <tr key={bi} style={{ borderBottom: `1px solid ${BDR2}`,
                             background: bi % 2 === 0 ? "rgba(255,255,255,0.015)" : "transparent" }}>
                             <td style={{ padding: "0.38rem 0.5rem",
-                              fontWeight: 600, color: "#fff" }}>{name}</td>
+                              fontWeight: 600, color: "#fff" }}>{b.PlayerName}</td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
-                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>{overs}</td>
+                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>{b.Overs}</td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
-                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>{runs}</td>
+                              color: DIM, fontFamily: "JetBrains Mono, monospace" }}>{b.Runs}</td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
                               fontWeight: 700, fontFamily: "JetBrains Mono, monospace",
-                              color: wkts >= 3 ? "#6ee7b7" : wkts > 0 ? "#a89ff9" : DIM }}>{wkts}</td>
+                              color: b.Wickets >= 3 ? "#6ee7b7" : b.Wickets > 0 ? "#a89ff9" : DIM }}>{b.Wickets}</td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
                               color: DIM, fontFamily: "JetBrains Mono, monospace" }}>
-                              {ecoFmt(runs, balls)}
+                              {b.Economy > 0 ? b.Economy.toFixed(2) : ecoFmt(b.Runs, b.Balls)}
                             </td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
-                              color: dots > 0 ? "#60a5fa" : DIM,
-                              fontFamily: "JetBrains Mono, monospace" }}>{dots}</td>
+                              color: b.Dots > 0 ? "#60a5fa" : DIM,
+                              fontFamily: "JetBrains Mono, monospace" }}>{b.Dots}</td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
-                              color: maidens > 0 ? "#fbbf24" : DIM,
-                              fontFamily: "JetBrains Mono, monospace" }}>{maidens}</td>
+                              color: b.Maidens > 0 ? "#fbbf24" : DIM,
+                              fontFamily: "JetBrains Mono, monospace" }}>{b.Maidens}</td>
                             <td style={{ textAlign: "right", padding: "0.38rem 0.5rem",
                               fontWeight: 700, fontFamily: "JetBrains Mono, monospace",
                               color: ptsColor(pts) }}>{fmtPts(pts)}</td>
@@ -296,10 +342,114 @@ function InlineScorecard({ matchId, mom }: { matchId: string; mom: string | null
           );
         })}
 
+        {/* ── STATS TAB ── */}
+        {tab === "stats" && (
+          <div>
+            {mom && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8,
+                padding: "0.5rem 0.75rem", marginBottom: "0.75rem",
+                background: "rgba(232,160,32,0.08)", border: "1px solid rgba(232,160,32,0.2)",
+                borderRadius: 10 }}>
+                <Award size={13} style={{ color: "#fbbf24", flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "rgba(232,160,32,0.7)",
+                    letterSpacing: "0.08em", textTransform: "uppercase" }}>Man of the Match</div>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#fff" }}>{mom}</div>
+                </div>
+              </div>
+            )}
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse",
+                minWidth: 480, fontSize: "0.73rem" }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <TH>Player</TH>
+                    <TH right>R</TH>
+                    <TH right>B</TH>
+                    <TH right>4s</TH>
+                    <TH right>6s</TH>
+                    <TH right>SR</TH>
+                    <TH right>MS</TH>
+                    <TH right>W</TH>
+                    <TH right>Dot</TH>
+                    <TH right>M</TH>
+                    <TH right>Pts</TH>
+                  </tr>
+                </thead>
+                <tbody>
+                  {statsRows.map((row, ri) => (
+                    <tr key={row.name} style={{ borderBottom: `1px solid ${BDR2}`,
+                      background: ri % 2 === 0 ? "rgba(255,255,255,0.015)" : "transparent" }}>
+                      <td style={{ padding: "0.35rem 0.5rem", fontWeight: 600, color: "#fff",
+                        whiteSpace: "nowrap", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {row.name}
+                        {row.name === mom && (
+                          <span style={{ marginLeft: 4, fontSize: "0.5rem", color: "#fbbf24" }}>★</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "0.35rem 0.5rem",
+                        fontFamily: "JetBrains Mono, monospace", fontWeight: 700,
+                        color: row.runs >= 50 ? "#fbbf24" : row.runs > 0 ? "#fff" : DIM }}>
+                        {row.runs > 0 ? row.runs : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "0.35rem 0.5rem",
+                        fontFamily: "JetBrains Mono, monospace", color: DIM }}>
+                        {row.balls > 0 ? row.balls : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "0.35rem 0.5rem",
+                        fontFamily: "JetBrains Mono, monospace",
+                        color: row.fours > 0 ? "#60a5fa" : DIM }}>
+                        {row.fours > 0 ? row.fours : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "0.35rem 0.5rem",
+                        fontFamily: "JetBrains Mono, monospace",
+                        color: row.sixes > 0 ? "#a89ff9" : DIM }}>
+                        {row.sixes > 0 ? row.sixes : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "0.35rem 0.5rem",
+                        fontFamily: "JetBrains Mono, monospace", color: DIM }}>
+                        {row.balls > 0 ? srFmt(row.runs, row.balls) : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "0.35rem 0.5rem" }}>
+                        {row.milestone === "100"
+                          ? <span style={{ fontSize: "0.58rem", fontWeight: 800, color: "#fbbf24",
+                              background: "rgba(251,191,36,0.12)", padding: "1px 5px", borderRadius: 4 }}>100</span>
+                          : row.milestone === "50"
+                          ? <span style={{ fontSize: "0.58rem", fontWeight: 800, color: "#fb923c",
+                              background: "rgba(251,146,60,0.12)", padding: "1px 5px", borderRadius: 4 }}>50</span>
+                          : <span style={{ color: DIM }}>—</span>}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "0.35rem 0.5rem",
+                        fontFamily: "JetBrains Mono, monospace", fontWeight: 700,
+                        color: row.wickets >= 3 ? "#6ee7b7" : row.wickets > 0 ? "#a89ff9" : DIM }}>
+                        {row.wickets > 0 ? row.wickets : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "0.35rem 0.5rem",
+                        fontFamily: "JetBrains Mono, monospace",
+                        color: row.dots > 0 ? "#60a5fa" : DIM }}>
+                        {row.dots > 0 ? row.dots : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "0.35rem 0.5rem",
+                        fontFamily: "JetBrains Mono, monospace",
+                        color: row.maidens > 0 ? "#fbbf24" : DIM }}>
+                        {row.maidens > 0 ? row.maidens : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "0.35rem 0.5rem",
+                        fontWeight: 800, fontFamily: "JetBrains Mono, monospace",
+                        fontSize: "0.82rem", color: ptsColor(row.pts) }}>
+                        {fmtPts(row.pts)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* ── FANTASY POINTS TAB ── */}
         {tab === "fantasy" && (
           <div>
-            {/* MOM */}
             {mom && (
               <div style={{ display: "flex", alignItems: "center", gap: 8,
                 padding: "0.55rem 0.75rem", marginBottom: "0.75rem",
@@ -557,7 +707,7 @@ function MatchCard({ match }: { match: IplMatch }) {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
             style={{ overflow: "hidden" }}>
-            <InlineScorecard matchId={match.iplId} mom={match.mom} />
+            <InlineScorecard matchId={match.iplId} mom={match.mom} isLive={match.isLive ?? false} />
           </motion.div>
         )}
       </AnimatePresence>
