@@ -2,8 +2,8 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Swords, Users, Gavel, BookOpen,
   LogOut, Settings, ChevronLeft, ChevronRight,
-  Target, BarChart2, Star, UserCircle, X,
-} , TrendingUp } from "lucide-react";
+  Target, BarChart2, Star, UserCircle, X, TrendingUp,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebar } from "@/context/SidebarContext";
 
