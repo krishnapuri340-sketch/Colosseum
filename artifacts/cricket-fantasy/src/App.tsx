@@ -17,6 +17,7 @@ import { IPL_MATCHES_KEY, IPL_STANDINGS_KEY } from "@/hooks/use-ipl-data";
 import Dashboard   from "@/pages/Dashboard";
 import Matches     from "@/pages/Matches";
 import Players     from "@/pages/Players";
+import Stats       from "@/pages/Stats";
 import MyTeams     from "@/pages/MyTeams";
 import Auction     from "@/pages/Auction";
 import Predictions from "@/pages/Predictions";
@@ -131,6 +132,7 @@ function AppRoutes() {
         <Route path="/"                 component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/matches"          component={() => <ProtectedRoute component={Matches} />} />
         <Route path="/players"          component={() => <ProtectedRoute component={Players} />} />
+        <Route path="/stats"           component={() => <ProtectedRoute component={Stats} />} />
         <Route path="/my-teams"         component={() => <ProtectedRoute component={MyTeams} />} />
         <Route path="/auction"          component={() => <ProtectedRoute component={Auction} />} />
         <Route path="/auction/join"     component={() => <ProtectedRoute component={JoinAuction} />} />
