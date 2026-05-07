@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Swords, Users, Gavel, BookOpen,
   LogOut, Settings, ChevronLeft, ChevronRight,
   Target, BarChart2, Star, UserCircle, X,
-} from "lucide-react";
+} , TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebar } from "@/context/SidebarContext";
 
@@ -11,6 +11,7 @@ const NAV = [
   { href: "/",            label: "Dashboard",   icon: LayoutDashboard },
   { href: "/matches",     label: "Matches",     icon: Swords },
   { href: "/players",     label: "Players",     icon: Users },
+  { href: "/stats",       label: "Stats",       icon: TrendingUp },
   { href: "/auction",     label: "Auction",     icon: Gavel },
   { href: "/predictions", label: "Predictions", icon: Target },
   { href: "/leaderboard", label: "Leaderboard", icon: BarChart2 },
